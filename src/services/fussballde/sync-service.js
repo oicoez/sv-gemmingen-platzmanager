@@ -38,9 +38,9 @@ async function enrichVenues(rows){
   for(let offset=0;offset<rows.length;offset+=concurrency){
     const batch=rows.slice(offset,offset+concurrency);
     const items=await Promise.all(batch.map(async row=>{
-      if(row.status==="cancelled")return {...row,venue:{locationId:null,address:"",pitchBase:""}};
+      if(row.status==="cancelled")return {...row,venue:{locationId:null,venueName:"abgesetzt",address:"",pitchBase:""}};
       try{return {...row,venue:parseVenue(await loadGameDetail(row.url))}}
-      catch(e){return {...row,venue:{locationId:null,address:"",pitchBase:""},venueError:e.name==="AbortError"?"Timeout":e.message}}
+      catch(e){return {...row,venue:{locationId:null,venueName:"",address:"",pitchBase:""},venueError:e.name==="AbortError"?"Timeout":e.message}}
     }));
     result.push(...items);
   }
@@ -58,15 +58,15 @@ export async function startFussballSync(){
       const {url,html}=await loadSeasonMatchplan();
       const all=parseSeasonMatchplan(html,url);
       const homeAll=all.filter(x=>isClubHomeTeam(x.home));
-      const home=homeAll.filter(isUpcomingFixture);
-      const past=homeAll.length-home.length;
-      state.total=home.length;
-      state.progress=`${all.length} Spiele gefunden · ${home.length} kommende Heimspiele · ${past} vergangene ausgeblendet`;
-      logger.info("FUSSBALL.DE Spielplan geladen",{all:all.length,homeAll:homeAll.length,upcoming:home.length,pastSkipped:past});
+      const upcomingCount=homeAll.filter(isUpcomingFixture).length;
+      const past=homeAll.length-upcomingCount;
+      state.total=homeAll.length;
+      state.progress=`${all.length} Spiele gefunden · ${upcomingCount} kommende Spiele · ${past} vergangene in der Standardansicht ausgeblendet`;
+      logger.info("FUSSBALL.DE Spielplan geladen",{all:all.length,homeAll:homeAll.length,upcoming:upcomingCount,pastHidden:past});
 
       state.phase="venues";
-      state.progress="Spielorte/Adressen der kommenden Spiele werden ergänzt …";
-      const rows=await enrichVenues(home);
+      state.progress="Spielorte/Adressen werden aus den offiziellen Spielseiten geprüft …";
+      const rows=await enrichVenues(homeAll);
 
       state.phase="database";
       for(const row of rows){
@@ -78,12 +78,12 @@ export async function startFussballSync(){
           const saved=await upsertImportedEvent({
             clubId:club.id,teamId:team.id,date:row.date,kickoff:row.kickoff,endTime:addMinutes(row.kickoff,120),
             title:`${row.home} – ${row.away}`,opponent:row.away,competition:row.competition,status:row.status,
-            locationId:row.venue.locationId,resourceId:resource?.id||null,address:row.venue.address||"",
+            locationId:row.venue.locationId,venueName:row.venue.venueName||"",resourceId:resource?.id||null,address:row.venue.address||"",
             externalId:row.externalId,externalUrl:row.url,gameNumber:row.gameNumber||""
           });
           state[saved.action]++;
           if(row.venueError)state.errors.push(`${row.externalId}: Spielort ${row.venueError}`);
-          logger.info("FUSSBALL.DE Spiel verarbeitet",{n:state.processed,total:state.total,date:row.date,kickoff:row.kickoff,team:row.home,opponent:row.away,location:row.venue.locationId,status:row.status,action:saved.action});
+          logger.info("FUSSBALL.DE Spiel verarbeitet",{n:state.processed,total:state.total,date:row.date,kickoff:row.kickoff,team:row.home,opponent:row.away,location:row.venue.locationId||row.venue.venueName,status:row.status,action:saved.action});
         }catch(e){state.skipped++;state.errors.push(`${row.externalId}: ${e.message}`);logger.error("FUSSBALL.DE Spiel fehlgeschlagen",{externalId:row.externalId,message:e.message})}
       }
       state.phase="done";

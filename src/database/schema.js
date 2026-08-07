@@ -75,6 +75,7 @@ export async function initSchema() {
     competition text default '',
     status text not null default 'planned',
     location_id text references cp5_locations(id) on delete set null,
+    venue_name text default '',
     resource_id uuid references cp5_resources(id) on delete set null,
     home_cabin_id uuid references cp5_resources(id) on delete set null,
     guest_cabin_id uuid references cp5_resources(id) on delete set null,
@@ -89,6 +90,8 @@ export async function initSchema() {
     created_at timestamptz not null default now(),
     updated_at timestamptz not null default now()
   )`);
+
+  await db(`alter table cp5_events add column if not exists venue_name text default ''`);
 
   await db(`create unique index if not exists uq_cp5_event_external
     on cp5_events(source,external_id) where external_id is not null`);

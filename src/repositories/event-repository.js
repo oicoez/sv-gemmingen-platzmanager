@@ -4,7 +4,7 @@ import { db } from "../database/client.js";
 export function eventHash(input){
   return crypto.createHash("sha256").update(JSON.stringify({
     teamId:input.teamId,date:input.date,kickoff:input.kickoff,opponent:input.opponent,
-    competition:input.competition,status:input.status,locationId:input.locationId,
+    competition:input.competition,status:input.status,locationId:input.locationId,venueName:input.venueName,
     resourceId:input.resourceId,address:input.address,gameNumber:input.gameNumber
   })).digest("hex");
 }
@@ -25,17 +25,26 @@ export async function upsertImportedEvent(input){
   if(existing){
     await db(`update cp5_events set
       club_id=$2,team_id=$3,event_type='home_match',event_date=$4,kickoff_time=$5,start_time=$5,end_time=$6,
-      title=$7,opponent=$8,competition=$9,status=$10,location_id=$11,resource_id=$12,
-      home_cabin_id=null,guest_cabin_id=null,address=$13,note='',source='fussballde',external_url=$14,
-      game_number=$15,source_hash=$16,last_synced_at=now(),updated_at=now()
-      where id=$1`,[id,input.clubId,input.teamId,input.date,input.kickoff,input.endTime,input.title,input.opponent,input.competition,input.status,input.locationId,input.resourceId,input.address,input.externalUrl,input.gameNumber,hash]);
+      title=$7,opponent=$8,competition=$9,status=$10,location_id=$11,venue_name=$12,resource_id=$13,
+      home_cabin_id=null,guest_cabin_id=null,address=$14,note='',source='fussballde',external_url=$15,
+      game_number=$16,source_hash=$17,last_synced_at=now(),updated_at=now()
+      where id=$1`,[
+        id,input.clubId,input.teamId,input.date,input.kickoff,input.endTime,input.title,input.opponent,
+        input.competition,input.status,input.locationId,input.venueName||"",input.resourceId,input.address,
+        input.externalUrl,input.gameNumber,hash
+      ]);
     return {action:"updated",id};
   }
   await db(`insert into cp5_events(
     id,club_id,team_id,event_type,event_date,kickoff_time,start_time,end_time,title,opponent,competition,status,
-    location_id,resource_id,home_cabin_id,guest_cabin_id,address,note,source,external_id,external_url,game_number,source_hash,last_synced_at
-  ) values($1,$2,$3,'home_match',$4,$5,$5,$6,$7,$8,$9,$10,$11,$12,null,null,$13,'','fussballde',$14,$15,$16,$17,now())`,
-  [id,input.clubId,input.teamId,input.date,input.kickoff,input.endTime,input.title,input.opponent,input.competition,input.status,input.locationId,input.resourceId,input.address,input.externalId,input.externalUrl,input.gameNumber,hash]);
+    location_id,venue_name,resource_id,home_cabin_id,guest_cabin_id,address,note,source,external_id,external_url,
+    game_number,source_hash,last_synced_at
+  ) values($1,$2,$3,'home_match',$4,$5,$5,$6,$7,$8,$9,$10,$11,$12,$13,null,null,$14,'','fussballde',$15,$16,$17,$18,now())`,
+  [
+    id,input.clubId,input.teamId,input.date,input.kickoff,input.endTime,input.title,input.opponent,input.competition,
+    input.status,input.locationId,input.venueName||"",input.resourceId,input.address,input.externalId,input.externalUrl,
+    input.gameNumber,hash
+  ]);
   return {action:"inserted",id};
 }
 
@@ -44,7 +53,7 @@ export async function listImportedEvents({includePast=false}={}){
       or (e.event_date = (now() at time zone 'Europe/Berlin')::date
           and coalesce(e.kickoff_time,time '23:59') >= (now() at time zone 'Europe/Berlin')::time))`;
   const r=await db(`select e.id,e.event_date,e.kickoff_time,e.opponent,e.competition,e.status,e.address,e.external_id,e.game_number,
-      t.name as team,l.name as location,r.display_name as resource
+      t.name as team,coalesce(l.name,nullif(e.venue_name,'')) as location,r.display_name as resource
     from cp5_events e
     left join cp5_teams t on t.id=e.team_id
     left join cp5_locations l on l.id=e.location_id

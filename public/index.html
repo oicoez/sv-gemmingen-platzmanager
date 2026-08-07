@@ -8,9 +8,9 @@
 </style>
 </head><body><div class="app">
 <header><div><h1>ClubPlanner 5.0</h1><div class="sub">SV Gemmingen · Sprint 2.2 · ABSE. & kommende Spiele</div></div><div class="toolbar"><span id="health" class="badge">System wird geprüft …</span><button id="login">Bearbeiten</button></div></header>
-<div class="cards"><div class="card"><div class="muted">Importierte Heimspiele</div><div id="count" class="big">0</div></div><div class="card"><div class="muted">Mit Anstoßzeit</div><div id="times" class="big">0</div></div><div class="card"><div class="muted">Mit Spielort</div><div id="venues" class="big">0</div></div><div class="card"><div class="muted">Abgesetzt</div><div id="cancelled" class="big">0</div></div></div>
+<div class="cards"><div class="card"><div class="muted">Importierte Spiele unserer Teams</div><div id="count" class="big">0</div></div><div class="card"><div class="muted">Mit Anstoßzeit</div><div id="times" class="big">0</div></div><div class="card"><div class="muted">Mit Spielort</div><div id="venues" class="big">0</div></div><div class="card"><div class="muted">Abgesetzt</div><div id="cancelled" class="big">0</div></div></div>
 <div class="panel"><div class="toolbar"><button id="sync" class="primary" disabled>FUSSBALL.DE synchronisieren</button><button id="reload">Aktualisieren</button><button id="past">Vergangene Spiele anzeigen</button><span class="muted">Sprint 2 speichert ausschließlich in den neuen <b>cp5_*</b>-Tabellen.</span></div><div id="syncState" class="progress">Noch nicht synchronisiert.</div></div>
-<div class="panel"><h2>Importierte Heimspiele</h2><div class="scroll"><table><thead><tr><th>Datum</th><th>Anstoß</th><th>Mannschaft</th><th>Gegner</th><th>Wettbewerb</th><th>Ort</th><th>Platz</th><th>Adresse</th><th>Status</th><th>Spiel-Nr.</th></tr></thead><tbody id="rows"></tbody></table></div></div>
+<div class="panel"><h2>Importierte Spiele unserer Teams</h2><div class="scroll"><table><thead><tr><th>Datum</th><th>Anstoß</th><th>Mannschaft</th><th>Gegner</th><th>Wettbewerb</th><th>Ort</th><th>Platz</th><th>Adresse</th><th>Status</th><th>Spiel-Nr.</th></tr></thead><tbody id="rows"></tbody></table></div></div>
 </div>
 <script>
 const $=id=>document.getElementById(id);let pin="";let timer=null;let includePast=false;
