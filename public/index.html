@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ClubPlanner – SV Gemmingen</title>
+<style>
+:root{font-family:Segoe UI,Arial,sans-serif;color:#17212b;background:#f4f6f8}
+body{margin:0}.app{max-width:1500px;margin:auto;padding:24px}
+h1{margin:0}.sub{color:#697481;margin:5px 0 20px}
+nav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+button,a.btn{border:1px solid #ccd3dc;background:#fff;border-radius:7px;padding:10px 14px;cursor:pointer;text-decoration:none;color:#17212b}
+button.active,.primary{background:#1f4e78;color:white;border-color:#1f4e78}
+.panel{background:white;border:1px solid #d8dee6;border-radius:9px;padding:16px;margin-bottom:14px}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(160px,1fr));gap:10px}
+input,select{padding:9px;border:1px solid #cbd3dc;border-radius:6px;width:100%;box-sizing:border-box}
+table{border-collapse:collapse;width:100%;font-size:14px}th,td{padding:9px;border-bottom:1px solid #e8ebef;text-align:left;white-space:nowrap}
+th{background:#1f4e78;color:white;position:sticky;top:0}.scroll{overflow:auto;max-height:56vh}
+.warn{background:#ffe1c4!important}.pill{padding:5px 9px;border-radius:14px;background:#edf2f7;font-weight:600}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.card{background:white;border:1px solid #d8dee6;border-radius:9px;padding:14px}
+.big{font-size:26px;font-weight:700}.muted{color:#6d7782}.hidden{display:none}
+@media(max-width:900px){.grid,.cards{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body><div class="app">
+<h1>ClubPlanner – SV Gemmingen</h1>
+<div class="sub">Spiele · Training · Plätze · Kabinen · Konflikte</div>
+
+<nav>
+<button class="tab active" data-tab="dashboard">Dashboard</button>
+<button class="tab" data-tab="calendar">Belegungsplan</button>
+<button class="tab" data-tab="new">Termin eintragen</button>
+<a class="btn" href="/api/export">Excel exportieren</a>
+</nav>
+
+<section id="dashboard">
+<div class="cards">
+<div class="card"><div class="muted">Termine gesamt</div><div id="countEvents" class="big">0</div></div>
+<div class="card"><div class="muted">Konflikte</div><div id="countConflicts" class="big">0</div></div>
+<div class="card"><div class="muted">Gemmingen</div><div id="countGem" class="big">0</div></div>
+<div class="card"><div class="muted">Stebbach</div><div id="countSte" class="big">0</div></div>
+</div>
+<div class="panel">
+<b>Ressourcen</b><p>Gemmingen: Hauptplatz / Trainingsplatz · Heimkabine / Gastkabine<br>
+Stebbach: Hauptplatz / Trainingsplatz · Heimkabine / Gastkabine</p>
+</div>
+</section>
+
+<section id="calendar" class="hidden">
+<div class="panel">
+<div class="scroll"><table><thead><tr>
+<th>Datum</th><th>Von</th><th>Bis</th><th>Art</th><th>Mannschaft</th><th>Gegner/Info</th>
+<th>Ort</th><th>Platz</th><th>Heimkabine</th><th>Gastkabine</th><th>Status</th><th>Aktion</th>
+</tr></thead><tbody id="rows"></tbody></table></div>
+</div>
+</section>
+
+<section id="new" class="hidden">
+<div class="panel">
+<h3>Termin eintragen</h3>
+<div class="grid">
+<label>Datum<input id="date" type="date"></label>
+<label>Von<input id="start" type="time"></label>
+<label>Bis<input id="end" type="time"></label>
+<label>Art<select id="type"><option>Training</option><option>Heimspiel</option><option>Turnier</option><option>Platzsperre</option><option>Sonstiges</option></select></label>
+<label>Mannschaft<input id="team" placeholder="z. B. B-Junioren"></label>
+<label>Gegner / Info<input id="opponent" placeholder="z. B. VfB Eppingen"></label>
+<label>Ort<select id="location"><option>Gemmingen</option><option>Stebbach</option></select></label>
+<label>Platz<select id="pitch"><option>Hauptplatz</option><option>Trainingsplatz</option></select></label>
+<label>Heimkabine<select id="homeCabin"><option value=""></option><option>Heimkabine</option><option>Gastkabine</option></select></label>
+<label>Gastkabine<select id="guestCabin"><option value=""></option><option>Gastkabine</option><option>Heimkabine</option></select></label>
+<label>Status<select id="status"><option>geplant</option><option>bestätigt</option><option>abgesetzt</option></select></label>
+<label>Bemerkung<input id="note"></label>
+</div>
+<p><button id="save" class="primary">Termin speichern</button></p>
+</div>
+</section>
+</div>
+<script>
+let data={events:[],conflicts:[]};
+const $=id=>document.getElementById(id);
+document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{
+ document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));b.classList.add("active");
+ ["dashboard","calendar","new"].forEach(id=>$(id).classList.toggle("hidden",id!==b.dataset.tab));
+});
+function conflictIds(){const s=new Set();data.conflicts.forEach(c=>{s.add(c.a);s.add(c.b)});return s}
+async function load(){
+ data=await (await fetch("/api/data",{cache:"no-store"})).json();
+ $("countEvents").textContent=data.events.length;
+ $("countConflicts").textContent=data.conflicts.length;
+ $("countGem").textContent=data.events.filter(x=>x.location==="Gemmingen").length;
+ $("countSte").textContent=data.events.filter(x=>x.location==="Stebbach").length;
+ const ids=conflictIds();
+ $("rows").innerHTML=[...data.events].sort((a,b)=>(a.date+a.start).localeCompare(b.date+b.start)).map(e=>
+ `<tr class="${ids.has(e.id)?"warn":""}">
+ <td>${e.date||""}</td><td>${e.start||""}</td><td>${e.end||""}</td><td>${e.type||""}</td>
+ <td>${e.team||""}</td><td>${e.opponent||e.info||""}</td><td>${e.location||""}</td><td>${e.pitch||""}</td>
+ <td>${e.homeCabin||""}</td><td>${e.guestCabin||""}</td><td>${e.status||""}</td>
+ <td><button onclick="del('${e.id}')">Löschen</button></td></tr>`).join("");
+}
+async function del(id){if(confirm("Termin wirklich löschen?")){await fetch("/api/events/"+id,{method:"DELETE"});load()}}
+$("save").onclick=async()=>{
+ const body={
+  date:$("date").value,start:$("start").value,end:$("end").value,type:$("type").value,
+  team:$("team").value,opponent:$("opponent").value,location:$("location").value,pitch:$("pitch").value,
+  homeCabin:$("homeCabin").value,guestCabin:$("guestCabin").value,status:$("status").value,note:$("note").value
+ };
+ if(!body.date||!body.start||!body.end||!body.team){alert("Bitte Datum, Uhrzeit und Mannschaft ausfüllen.");return}
+ await fetch("/api/events",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+ alert("Termin gespeichert.");load()
+}
+load();
+</script></body></html>
