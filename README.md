@@ -1,34 +1,32 @@
-# ClubPlanner 5.0 – Sprint 3
+# ClubPlanner 5.0 – Sprint 3.1
 
-## Neue Trainings- und Platzlogik
-Jeder Haupt- und Trainingsplatz besitzt:
-- Gesamt
-- Hälfte A
-- Hälfte B
+## Korrektur Wochenplan
+PostgreSQL liefert `date`-Felder im Node-Treiber teilweise als Date-Objekt.
+Sprint 3 hat diese Werte mit `String(...).slice(0,10)` behandelt. Dadurch
+entstanden Schlüssel wie `Tue Aug 11` statt `2026-08-11`; die gespeicherten
+Termine konnten den Tagen im Wochenplan nicht zugeordnet werden.
 
-Standardmodus eines Trainings ist `flexibel`.
+Sprint 3.1 normalisiert Datenbank-Datumswerte jetzt zuverlässig auf YYYY-MM-DD.
 
-Beispiel:
-- B-Junioren 18:00–19:30 Hauptplatz Gemmingen
-- Herren 19:00–20:30 Hauptplatz Gemmingen
+Damit erscheinen:
+- manuelle Trainings
+- synchronisierte lokale Heimspiele
+- reale Konflikte
 
-ClubPlanner zeigt:
-- 18:00–19:00 B-Junioren – Gesamt
-- 19:00–19:30 B-Junioren – Hälfte A / Herren – Hälfte B
-- 19:30–20:30 Herren – Gesamt
+im selben Wochenplan.
 
-Das ist ausdrücklich KEIN Konflikt.
+## Konfliktbeispiel
+Drei Belegungen 18:00–19:30 auf demselben Hauptplatz – insbesondere mit
+`Gesamtplatz exklusiv` – werden jetzt sichtbar und als Konflikt markiert.
 
-Konflikte entstehen u. a. bei:
-- mehr als zwei Mannschaften gleichzeitig auf demselben Platz
-- Spiel + Training gleichzeitig auf demselben Platz
-- Gesamtplatz exklusiv + weitere Belegung
-- zwei feste Buchungen derselben Hälfte
+## Monatsübersicht
+Neue Ansicht `Monat`:
+- alle lokalen Spiele
+- alle Trainings
+- Uhrzeiten
+- Gemmingen / Stebbach
+- Hauptplatz / Trainingsplatz
+- A/B-Teilung
+- Konflikte
 
-## Oberfläche
-Neue Bereiche:
-- Wochenplan
-- Training eintragen
-- Spiele
-
-Neben `flexibel` können Trainings auch fest auf Hälfte A/B oder exklusiv auf Gesamt gebucht werden.
+Die Wochen- und Monatsansicht greifen auf dieselbe Planner-Engine zu.

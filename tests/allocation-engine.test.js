@@ -16,3 +16,10 @@ test("drei gleichzeitige Trainings ergeben Konflikt",()=>{
  const r=allocateInterval([tr("1","A","18:00","19:30"),tr("2","B","18:00","19:30"),tr("3","C","18:00","19:30")]);
  assert.equal(r.conflict,true);
 });
+
+test("exclusive Gesamtplatz kollidiert mit weiterer Belegung",()=>{
+ const ex={...tr("1","Herren","18:00","19:30"),allocation_mode:"exclusive"};
+ const flex=tr("2","B-Junioren","18:00","19:30");
+ const r=allocateInterval([ex,flex]);
+ assert.equal(r.conflict,true);
+});
