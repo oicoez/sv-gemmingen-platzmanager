@@ -1,21 +1,41 @@
-# ClubPlanner – Sprint 1
+# ClubPlanner – Sprint 1.1 (Supabase/PostgreSQL)
 
-Enthalten:
-- öffentliches Dashboard / Lesemodus
-- Bearbeitungsmodus per PIN
-- Monatskalender
-- Belegungsplan
-- Trainings-, Spiel-, Turnier- und Platzsperrtermine
-- Mannschaftsverwaltung
-- Gemmingen und Stebbach
-- Hauptplatz / Trainingsplatz
-- Heimkabine / Gastkabine je Standort
-- Konflikterkennung für Plätze und Kabinen
-- Excel-Export
-- JSON-Backup
+## Neu
+Mannschaften und Termine werden dauerhaft in Supabase/PostgreSQL gespeichert. `data.json` wird nicht mehr verwendet.
 
-## Render
-Unter Environment eine Variable anlegen:
-EDIT_PIN = deine gewünschte Bearbeitungs-PIN
+Beim ersten Start legt ClubPlanner automatisch diese Tabellen an:
+- `clubplanner_teams`
+- `clubplanner_events`
 
-Wichtig: Render Free besitzt keinen persistenten Datenträger. Für den echten Vereinsbetrieb binden wir als nächsten Schritt eine permanente Cloud-Datenbank an. Bis dahin bitte die Backup-Funktion verwenden.
+Die Standardmannschaften werden ebenfalls automatisch angelegt.
+
+## Render Environment Variables
+Es müssen vorhanden sein:
+- `EDIT_PIN`
+- `DATABASE_URL`
+
+Das Datenbankpasswort gehört ausschließlich in `DATABASE_URL` bei Render und niemals nach GitHub.
+
+## GitHub-Update
+Diese Dateien hochladen und vorhandene Dateien ersetzen:
+- Dockerfile
+- package.json
+- render.yaml
+- server.js
+- public/index.html
+- README.md
+
+Danach Render -> Manual Deploy -> Deploy latest commit.
+
+## Erfolgreicher Start
+Im Render-Log muss stehen:
+- `Supabase/PostgreSQL Tabellen sind bereit.`
+- `ClubPlanner Sprint 1.1 / Supabase läuft auf Port 10000`
+
+Auf der ClubPlanner-Seite erscheint oben `Cloud-DB aktiv`.
+
+## Permanenz-Test
+1. Bearbeiten öffnen.
+2. Einen Testtermin speichern.
+3. Render erneut deployen.
+4. Ist der Termin danach noch vorhanden, läuft die dauerhafte Cloud-Speicherung korrekt.
