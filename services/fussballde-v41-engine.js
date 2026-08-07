@@ -14,145 +14,217 @@ const abs = href => {
   catch { return ""; }
 };
 
-const gameId = url =>
-  (String(url).match(/\/spiel\/(?:[^/]+\/-\/spiel\/)?([A-Z0-9]{12,})/i) ||
-   String(url).match(/\/spiel\/([A-Z0-9]{12,})(?:\/|$)/i) || [])[1] || "";
-
-function isoDate(dd, mm, yyyy) {
-  const y = yyyy.length === 2 ? `20${yyyy}` : yyyy;
-  return `${y}-${mm}-${dd}`;
+export function externalIdFromUrl(url) {
+  const s=String(url||"");
+  return (
+    s.match(/\/-\/spiel\/([A-Z0-9]{12,})(?:\/|$)/i) ||
+    s.match(/\/spiel\/([A-Z0-9]{12,})(?:\/|$)/i) ||
+    []
+  )[1] || "";
 }
 
-function status(text) {
-  const t = clean(text);
-  if (/\bABSE\.?\b|\bAbsetzung\b|\bSpielabsetzung\b/i.test(t)) return "abgesetzt";
-  if (/\bAUSF\.?\b|\bAusfall\b|\bSpielausfall\b/i.test(t)) return "ausfall";
-  if (/\bABBR\.?\b|\bAbbruch\b|\bSpielabbruch\b/i.test(t)) return "abbruch";
-  if (/\bVERL\.?\b|\bVerlegung\b|\bverlegt\b/i.test(t)) return "verlegt";
-  return "geplant";
+function isoDate(dd, mm, yyyy) {
+  return `${yyyy.length===2 ? `20${yyyy}` : yyyy}-${mm}-${dd}`;
 }
 
 function parseMeta(text) {
-  const t = clean(text);
-  let date="", kickoff="", category="", competition="", matchType="", gameNumber="";
+  const t=clean(text);
+  let date="",kickoff="",category="",competition="",matchType="",gameNumber="";
 
   let m=t.match(/(\d{2})\.(\d{2})\.(\d{4})\s*-\s*([0-2]?\d:[0-5]\d)\s*Uhr/i);
-  if (m) { date=isoDate(m[1],m[2],m[3]); kickoff=m[4].padStart(5,"0"); }
-
-  if (!date) {
-    m=t.match(/(?:Mo|Di|Mi|Do|Fr|Sa|So),?\s*(\d{2})\.(\d{2})\.(\d{2})\s*[|·]\s*([0-2]?\d:[0-5]\d)/i);
-    if (m) { date=isoDate(m[1],m[2],m[3]); kickoff=m[4].padStart(5,"0"); }
+  if(m){
+    date=isoDate(m[1],m[2],m[3]);
+    kickoff=m[4].padStart(5,"0");
+  }
+  if(!date){
+    m=t.match(/(?:Mo|Di|Mi|Do|Fr|Sa|So),?\s*(\d{2})\.(\d{2})\.(\d{2})\s*(?:\||·)?\s*([0-2]?\d:[0-5]\d)/i);
+    if(m){
+      date=isoDate(m[1],m[2],m[3]);
+      kickoff=m[4].padStart(5,"0");
+    }
   }
 
   m=t.match(/\b(Herren(?:-Reserve)?|Frauen|A-Junioren|B-Junioren|C-Junioren|D-Junioren|E-Junioren|F-Junioren)\b/i);
-  if (m) category=clean(m[1]);
+  if(m)category=clean(m[1]);
 
-  m=t.match(/\b(FS|ME|PO|TU)\b\s*(?:[|·]\s*)?(\d{6,12})\b/i);
-  if (m) { matchType=m[1].toUpperCase(); gameNumber=m[2]; }
+  m=t.match(/\b(FS|ME|PO|TU)\b\s*(?:\||·)?\s*(\d{6,12})\b/i);
+  if(m){
+    matchType=m[1].toUpperCase();
+    gameNumber=m[2];
+  }
 
-  if (category) {
+  if(category){
     const i=t.toLowerCase().indexOf(category.toLowerCase());
     let tail=clean(t.slice(i+category.length));
-    tail=tail.replace(/\s+\b(?:FS|ME|PO|TU)\b\s*(?:[|·]?\s*\d{6,12})?.*$/i,"");
+    tail=tail.replace(/\s+\b(?:FS|ME|PO|TU)\b\s*(?:\|?\s*\d{6,12})?.*$/i,"");
     competition=clean(tail.replace(/^[|·,:;\-–]+/,""));
   }
+
   return {date,kickoff,category,competition,matchType,gameNumber};
 }
 
-function likelyTeamText(text) {
+function statusFromText(text){
   const t=clean(text);
-  return t.length>1 && t.length<100 &&
-    !/Zum Spiel|Spielbericht|Absetzung|Ausfall|Abbruch|^\d+$|^\d{1,2}:\d{2}$/i.test(t);
+  if(/\bABSE\.?\b|\bAbsetzung\b|\bSpielabsetzung\b/i.test(t))return "abgesetzt";
+  if(/\bAUSF\.?\b|\bAusfall\b|\bSpielausfall\b/i.test(t))return "ausfall";
+  if(/\bABBR\.?\b|\bAbbruch\b|\bSpielabbruch\b/i.test(t))return "abbruch";
+  if(/\bVERL\.?\b|\bVerlegung\b|\bverlegt\b/i.test(t))return "verlegt";
+  return "geplant";
 }
 
-function extractTeams($, scope) {
-  const texts=$(scope).find("a").map((_,a)=>clean($(a).text())).get().filter(likelyTeamText);
-  // Drop the game-link label if present and obvious navigation.
-  const candidates=texts.filter(t=>!/^(Details|Mehr|Info)$/i.test(t));
-  if (candidates.length>=2) return {home:candidates[0],away:candidates[1]};
-
-  const t=clean($(scope).text());
-  const m=t.match(/(.{2,90}?)\s+:\s+(.{2,90}?)(?=\s+(?:Absetzung|Ausfall|Abbruch|Zum Spiel|$))/i);
-  return m ? {home:clean(m[1]),away:clean(m[2])} : {home:"",away:""};
+function isUsefulTeamText(t){
+  t=clean(t);
+  return Boolean(t) &&
+    t.length<130 &&
+    !/^(Zum Spiel|Absetzung|Spielabsetzung|Ausfall|Abbruch|Spielbericht|Details|Info)$/i.test(t) &&
+    !/^[\d:–\-]+$/.test(t);
 }
 
-function contextForAnchor($, anchor) {
-  let node=$(anchor);
-  const blocks=[];
-  // Gather small ancestors; the match component usually contains metadata + teams.
-  for(let i=0;i<10 && node.length;i++) {
-    const txt=clean(node.text());
-    if (txt && txt.length<2600) blocks.push({node:node[0],text:txt});
-    node=node.parent();
+function teamsFromRow($,row){
+  const links=$(row).find("a").map((_,a)=>clean($(a).text())).get().filter(isUsefulTeamText);
+  if(links.length>=2)return {home:links[0],away:links[1]};
+
+  const txt=clean($(row).text());
+  const parts=txt.split(/\s+:\s+/);
+  if(parts.length>=2){
+    return {
+      home:clean(parts[0]).replace(/^.*?\b(?:FS|ME|PO|TU)\b(?:\s*\|?\s*\d{6,12})?\s*/i,""),
+      away:clean(parts.slice(1).join(" : ")).replace(/\b(?:Absetzung|Ausfall|Abbruch|Zum Spiel).*$/i,"")
+    };
   }
-
-  // Score contexts: date/time + category + team separator + match number.
-  const scored=blocks.map(b=>{
-    let score=0;
-    if(/\d{2}\.\d{2}\.(?:\d{2}|\d{4})/.test(b.text)) score+=4;
-    if(/\b[0-2]?\d:[0-5]\d\b/.test(b.text)) score+=4;
-    if(/\b(?:Herren|Frauen|[A-F]-Junioren)\b/i.test(b.text)) score+=2;
-    if(/\b(?:FS|ME|PO|TU)\b/.test(b.text)) score+=2;
-    if(/\s:\s/.test(b.text)) score+=2;
-    if(b.text.length>1600) score-=2;
-    return {...b,score};
-  }).sort((a,b)=>b.score-a.score || a.text.length-b.text.length);
-
-  const best=scored[0] || {node:$(anchor).parent()[0],text:clean($(anchor).parent().text())};
-
-  // Metadata is sometimes in preceding sibling/header rather than same block.
-  let combined=best.text;
-  let n=$(best.node);
-  for(let i=0;i<5;i++) {
-    const prev=n.prev();
-    if(!prev.length) break;
-    const pt=clean(prev.text());
-    if(pt && pt.length<1200) combined=clean(`${pt} ${combined}`);
-    if(/\d{2}\.\d{2}\.(?:\d{2}|\d{4}).{0,50}\d{1,2}:\d{2}/.test(combined)) break;
-    n=prev;
-  }
-  return {scope:best.node,text:combined,rowText:best.text};
+  return {home:"",away:""};
 }
 
-export function parseClubPage(html) {
-  const $=cheerio.load(html);
-  const out=[], seen=new Set();
+function normalizeRecord(x){
+  return {
+    externalId:x.externalId||"",
+    url:x.url||"",
+    date:x.date||"",
+    kickoff:x.kickoff||"",
+    category:x.category||"",
+    competition:x.competition||"",
+    matchType:x.matchType||"",
+    gameNumber:x.gameNumber||"",
+    home:clean(x.home),
+    away:clean(x.away),
+    status:x.status||"geplant",
+    debugContext:clean(x.debugContext||"").slice(0,800)
+  };
+}
 
-  $('a[href*="/spiel/"]').each((_,a)=>{
-    const url=abs($(a).attr("href"));
-    const id=gameId(url);
-    if(!url || !id || seen.has(id)) return;
-    seen.add(id);
+function parseTableLayout($){
+  const out=[],seen=new Set();
+  let current={date:"",kickoff:"",category:"",competition:"",matchType:"",gameNumber:""};
 
-    const ctx=contextForAnchor($,a);
-    const meta=parseMeta(ctx.text);
-    const teams=extractTeams($,ctx.scope);
+  for(const row of $("tr").toArray()){
+    const text=clean($(row).text());
+    if(!text)continue;
 
-    out.push({
-      externalId:id,
-      url,
-      date:meta.date,
-      kickoff:meta.kickoff,
-      category:meta.category,
-      competition:meta.competition,
-      matchType:meta.matchType,
-      gameNumber:meta.gameNumber,
-      home:teams.home,
-      away:teams.away,
-      status:status(ctx.rowText),
-      debugContext:ctx.text.slice(0,700)
-    });
-  });
+    const m=parseMeta(text);
+    for(const k of ["date","kickoff","category","competition","matchType","gameNumber"]){
+      if(m[k])current[k]=m[k];
+    }
 
+    const gameLinks=$(row).find('a[href*="/spiel/"]').toArray();
+    if(!gameLinks.length)continue;
+
+    const teams=teamsFromRow($,row);
+    const st=statusFromText(text);
+
+    for(const a of gameLinks){
+      const url=abs($(a).attr("href"));
+      const id=externalIdFromUrl(url);
+      if(!id||seen.has(id))continue;
+      seen.add(id);
+
+      out.push(normalizeRecord({
+        externalId:id,url,
+        ...current,
+        ...teams,
+        status:st,
+        debugContext:`${current.date} ${current.kickoff} ${current.category} ${current.competition} ${current.matchType} ${current.gameNumber} | ${text}`
+      }));
+    }
+
+    // FUSSBALL.DE's next fixture starts with a fresh metadata row.
+    current={date:"",kickoff:"",category:"",competition:"",matchType:"",gameNumber:""};
+  }
   return out;
 }
 
-export function validateRows(rows) {
+function parseComponentLayout($){
+  const out=[],seen=new Set();
+
+  $('a[href*="/spiel/"]').each((_,a)=>{
+    const url=abs($(a).attr("href"));
+    const id=externalIdFromUrl(url);
+    if(!id||seen.has(id))return;
+    seen.add(id);
+
+    let node=$(a),best=null;
+    for(let level=0;level<12&&node.length;level++){
+      const txt=clean(node.text());
+      if(txt && txt.length<3000){
+        const meta=parseMeta(txt);
+        let score=0;
+        if(meta.date)score+=5;
+        if(meta.kickoff)score+=5;
+        if(meta.category)score+=2;
+        if(meta.gameNumber)score+=2;
+        if(/\s:\s/.test(txt))score+=2;
+        if(!best||score>best.score)best={node:node[0],txt,meta,score};
+      }
+      node=node.parent();
+    }
+    if(!best)return;
+
+    let context=best.txt;
+    let n=$(best.node);
+    for(let i=0;i<5;i++){
+      const p=n.prev();
+      if(!p.length)break;
+      const pt=clean(p.text());
+      if(pt&&pt.length<1500)context=clean(`${pt} ${context}`);
+      const pm=parseMeta(context);
+      if(pm.date&&pm.kickoff)break;
+      n=p;
+    }
+
+    const meta=parseMeta(context);
+    const teams=teamsFromRow($,best.node);
+    out.push(normalizeRecord({
+      externalId:id,url,...meta,...teams,
+      status:statusFromText(best.txt),
+      debugContext:context
+    }));
+  });
+  return out;
+}
+
+export function parseScheduleHtml(html){
+  const $=cheerio.load(html);
+  const table=parseTableLayout($);
+  const component=parseComponentLayout($);
+
+  // Merge both layouts by ID and keep the more complete value for each field.
+  const map=new Map();
+  for(const r of [...component,...table]){
+    const old=map.get(r.externalId)||{};
+    const merged={...old,...r};
+    for(const key of ["date","kickoff","category","competition","matchType","gameNumber","home","away"]){
+      if(old[key]&&!r[key])merged[key]=old[key];
+    }
+    merged.status=(old.status&&old.status!=="geplant")?old.status:r.status;
+    map.set(r.externalId,normalizeRecord(merged));
+  }
+  return [...map.values()];
+}
+
+export function validation(rows){
   const issues=[];
   rows.forEach((r,i)=>{
-    const missing=[];
-    for(const k of ["externalId","date","kickoff","category","home","away"]) if(!r[k]) missing.push(k);
-    if(missing.length) issues.push({index:i+1,externalId:r.externalId,missing,context:r.debugContext});
+    const missing=["date","kickoff","category","home","away"].filter(k=>!r[k]);
+    if(missing.length)issues.push({index:i+1,externalId:r.externalId,missing,context:r.debugContext});
   });
   return {
     total:rows.length,
@@ -160,32 +232,50 @@ export function validateRows(rows) {
     withKickoff:rows.filter(r=>r.kickoff).length,
     withTeams:rows.filter(r=>r.home&&r.away).length,
     withGameNumber:rows.filter(r=>r.gameNumber).length,
+    cancelled:rows.filter(r=>["abgesetzt","ausfall","abbruch"].includes(r.status)).length,
     issues
   };
 }
 
-export async function fetchClubPage({clubId=DEFAULT_CLUB_ID, timeoutMs=15000}={}) {
-  const url=`${BASE}/verein/sv-gemmingen-baden/-/id/${clubId}`;
-  const ctrl=new AbortController();
-  const timer=setTimeout(()=>ctrl.abort(),timeoutMs);
-  try {
-    const res=await fetch(url,{
-      signal:ctrl.signal,
+async function fetchText(url,timeoutMs=15000){
+  const c=new AbortController();
+  const timer=setTimeout(()=>c.abort(),timeoutMs);
+  try{
+    const r=await fetch(url,{
+      signal:c.signal,
       redirect:"follow",
       headers:{
         "user-agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131 Safari/537.36",
         "accept-language":"de-DE,de;q=0.9",
-        "accept":"text/html,application/xhtml+xml"
+        accept:"text/html,application/xhtml+xml"
       }
     });
-    if(!res.ok) throw new Error(`FUSSBALL.DE HTTP ${res.status}`);
-    return {url,html:await res.text()};
-  } finally { clearTimeout(timer); }
+    if(!r.ok)throw new Error(`HTTP ${r.status}`);
+    return await r.text();
+  }finally{clearTimeout(timer)}
 }
 
-export async function previewClubSchedule(options={}) {
-  const {url,html}=await fetchClubPage(options);
-  const rows=parseClubPage(html);
-  const validation=validateRows(rows);
-  return {source:url,generatedAt:new Date().toISOString(),validation,rows};
+export async function fetchBestSchedule({clubId=DEFAULT_CLUB_ID}={}){
+  const now=new Date();
+  const from=`${now.getFullYear()}-07-01`;
+  const to=`${now.getFullYear()+1}-06-30`;
+  const candidates=[
+    `${BASE}/vereinsspielplan.druck/-/datum-bis/${to}/datum-von/${from}/id/${clubId}/match-type/-1/max/999/mode/PRINT/show-venues/true`,
+    `${BASE}/verein/sv-gemmingen-baden/-/id/${clubId}`
+  ];
+
+  let best=null,lastError=null;
+  for(const url of candidates){
+    try{
+      const html=await fetchText(url,15000);
+      const rows=parseScheduleHtml(html);
+      const v=validation(rows);
+      const quality=v.withKickoff*10+v.withTeams*5+v.withGameNumber+v.total;
+      if(!best||quality>best.quality)best={url,html,rows,validation:v,quality};
+    }catch(e){lastError=e}
+  }
+  if(!best)throw lastError||new Error("Vereinsspielplan konnte nicht geladen werden.");
+  return best;
 }
+
+export {clean,fetchText,statusFromText};

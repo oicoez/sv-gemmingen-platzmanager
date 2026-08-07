@@ -6,7 +6,8 @@ import crypto from "crypto";
 import { db } from "./database/db.js";
 import { syncState } from "./services/sync-state.js";
 import { runFussballSync, OFFICIAL_TEAM_NAMES } from "./services/fussballde-importer.js";
-import { previewClubSchedule } from "./services/fussballde-v41-engine.js";
+import { fetchBestSchedule } from "./services/fussballde-v41-engine.js";
+import { analyseHomeFixtures } from "./services/fussballde-v41-detail.js";
 import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -118,7 +119,7 @@ async function initDb(){
   const obsolete=["Herren I","Herren II","Frauen","A-Junioren","B-Junioren","C1-Junioren","C2-Junioren","D-Junioren"];
   await db(`update clubplanner_teams set active=false where name = any($1::text[])`,[obsolete]);
 
-  console.log("ClubPlanner 4.1 Phase 1 Datenbankstruktur ist bereit.");
+  console.log("ClubPlanner 4.1 Phase 2 Datenbankstruktur ist bereit.");
 }
 
 function requirePin(req,res,next){
@@ -199,15 +200,80 @@ app.get("/api/db-status",async(req,res)=>{try{const q=await db(`select now() now
 app.post("/api/login",(req,res)=>res.json({ok:req.body?.pin===EDIT_PIN}));
 app.get("/api/data",async(req,res)=>{try{res.json(await allData())}catch(e){res.status(500).json({error:e.message})}});
 
-app.get("/api/v41/preview",requirePin,async(req,res)=>{
+
+const v41TestState={
+  running:false,phase:"idle",progress:"Noch nicht getestet",
+  total:0,processed:0,overview:null,home:null,error:null,startedAt:null,finishedAt:null
+};
+
+async function runV41Phase2Test(){
+  if(v41TestState.running)return;
+  Object.assign(v41TestState,{
+    running:true,phase:"overview",progress:"Vereinsspielplan wird analysiert …",
+    total:0,processed:0,overview:null,home:null,error:null,
+    startedAt:new Date().toISOString(),finishedAt:null
+  });
   try{
-    const result=await previewClubSchedule();
-    console.log(`[FUSSBALL-4.1] Preview: ${result.validation.total} Spiele · ${result.validation.withKickoff} Zeiten · ${result.validation.withTeams} Paarungen · ${result.validation.issues.length} Auffälligkeiten`);
-    res.json(result);
+    const source=await fetchBestSchedule();
+    v41TestState.overview={
+      source:source.url,
+      validation:source.validation,
+      sample:source.rows.slice(0,12)
+    };
+    console.log(`[FUSSBALL-4.1-P2] Übersicht: ${source.validation.total} Spiele · ${source.validation.withKickoff} Zeiten · ${source.validation.withTeams} Paarungen · ${source.validation.cancelled} abgesetzt/ausgefallen`);
+    v41TestState.phase="details";
+    v41TestState.progress="Heimspiele: Spielstätte und Adresse werden geprüft …";
+
+    const home=await analyseHomeFixtures(source.rows,{
+      concurrency:5,
+      onProgress:({processed,total,item})=>{
+        v41TestState.total=total;
+        v41TestState.processed=processed;
+        if(item.ok){
+          const r=item.row;
+          console.log(`[FUSSBALL-4.1-P2] ${processed}/${total} | ${r.date||"kein Datum"} ${r.kickoff||"keine Zeit"} | ${r.home} : ${r.away} | ${r.location||"kein Ort"} | ${r.address||"keine Adresse"} | ${r.status}`);
+        }else{
+          console.log(`[FUSSBALL-4.1-P2] ${processed}/${total} | ${item.row.externalId} | FEHLER: ${item.error}`);
+        }
+      }
+    });
+
+    const withVenue=home.results.filter(r=>r.location&&r.address).length;
+    const withKickoff=home.results.filter(r=>r.kickoff).length;
+    v41TestState.home={
+      count:home.homeCount,
+      withKickoff,
+      withVenue,
+      errors:home.errors,
+      games:home.results
+    };
+    v41TestState.phase="done";
+    v41TestState.progress=`Test fertig: ${home.homeCount} Heimspiele · ${withKickoff} mit Anstoßzeit · ${withVenue} mit Spielort/Adresse · ${home.errors.length} Detailfehler`;
+    console.log(`[FUSSBALL-4.1-P2] ${v41TestState.progress}`);
   }catch(e){
-    console.error("[FUSSBALL-4.1] Preview fehlgeschlagen:",e);
-    res.status(500).json({error:e.name==="AbortError"?"FUSSBALL.DE Timeout":e.message});
+    v41TestState.error=e.name==="AbortError"?"FUSSBALL.DE Timeout":e.message;
+    v41TestState.phase="error";
+    v41TestState.progress=`Fehler: ${v41TestState.error}`;
+    console.error("[FUSSBALL-4.1-P2]",e);
+  }finally{
+    v41TestState.running=false;
+    v41TestState.finishedAt=new Date().toISOString();
   }
+}
+
+app.get("/api/v41/test/status",requirePin,(req,res)=>res.json(v41TestState));
+app.post("/api/v41/test",requirePin,(req,res)=>{
+  if(!v41TestState.running)runV41Phase2Test();
+  res.status(202).json({ok:true,running:true});
+});
+app.get("/api/v41/test/result",requirePin,(req,res)=>{
+  res.json({
+    phase:v41TestState.phase,
+    progress:v41TestState.progress,
+    overview:v41TestState.overview,
+    home:v41TestState.home,
+    error:v41TestState.error
+  });
 });
 
 app.get("/api/sync/status",(req,res)=>res.json(syncState));
@@ -287,5 +353,5 @@ app.get("/api/export",async(req,res)=>{
   }catch(e){res.status(500).send(e.message)}
 });
 
-initDb().then(()=>app.listen(PORT,"0.0.0.0",()=>console.log(`ClubPlanner 4.1 Phase 1 läuft auf Port ${PORT}`)))
+initDb().then(()=>app.listen(PORT,"0.0.0.0",()=>console.log(`ClubPlanner 4.1 Phase 2 läuft auf Port ${PORT}`)))
 .catch(e=>{console.error("DB-Startfehler",e);process.exit(1)});

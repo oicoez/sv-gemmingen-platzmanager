@@ -1,4 +1,4 @@
-<!doctype html>
+<!doc<div id="v41TestPanel" class="notice hidden" style="margin-top:8px"></div>type html>
 <html lang="de">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -50,7 +50,7 @@ th{background:#1f4e78;color:white;position:sticky;top:0;z-index:1}tr:nth-child(e
 <button class="tab editOnly hidden" data-tab="new">Termin eintragen</button>
 <button class="tab editOnly hidden" data-tab="teams">Mannschaften</button>
 <button class="tab editOnly hidden" data-tab="resources">Plätze & Kabinen</button>
-<button id="syncBtn" class="editOnly hidden">FUSSBALL.DE synchronisieren</button><button id="resetCalendarBtn" class="editOnly hidden">Kalender zurücksetzen</button><span id="syncState" class="muted"></span><a class="btn" href="/api/export">Excel</a>
+<button id="v41TestBtn" class="editOnly hidden">4.1 Testlauf</button><button id="syncBtn" class="editOnly hidden">FUSSBALL.DE synchronisieren</button><button id="resetCalendarBtn" class="editOnly hidden">Kalender zurücksetzen</button><span id="syncState" class="muted"></span><a class="btn" href="/api/export">Excel</a>
 </nav>
 
 <section id="dashboard">
@@ -314,6 +314,41 @@ $("resetCalendarBtn").onclick=async()=>{
   }
 };
 
+
+
+let v41Timer=null;
+async function pollV41Test(){
+  try{
+    const r=await fetch("/api/v41/test/status",{headers:{"x-edit-pin":editPin||""},cache:"no-store"});
+    const s=await r.json();
+    const p=$("v41TestPanel");
+    p.classList.remove("hidden");
+    p.innerHTML=`<b>4.1 Test:</b> ${esc(s.progress||"")}${s.running&&s.total?` (${s.processed}/${s.total})`:""}`;
+    $("v41TestBtn").disabled=Boolean(s.running);
+    if(s.running){
+      clearTimeout(v41Timer);
+      v41Timer=setTimeout(pollV41Test,1200);
+    }else if(s.phase==="done"){
+      const rr=await fetch("/api/v41/test/result",{headers:{"x-edit-pin":editPin||""},cache:"no-store"});
+      const result=await rr.json();
+      const ov=result.overview?.validation||{};
+      const hm=result.home||{};
+      p.innerHTML=`<b>4.1 Test fertig:</b> Übersicht ${ov.total||0} Spiele / ${ov.withKickoff||0} Anstoßzeiten / ${ov.withTeams||0} Paarungen · Heimspiele ${hm.count||0} / ${hm.withKickoff||0} Zeiten / ${hm.withVenue||0} Spielorte+Adressen · ${hm.errors?.length||0} Detailfehler. <b>Der Kalender wurde nicht verändert.</b>`;
+    }
+  }catch(e){
+    $("v41TestPanel").classList.remove("hidden");
+    $("v41TestPanel").innerHTML=`<b>4.1 Testfehler:</b> ${esc(e.message)}`;
+    $("v41TestBtn").disabled=false;
+  }
+}
+$("v41TestBtn").onclick=async()=>{
+  if(!confirm("4.1 Testlauf starten? Es werden KEINE Kalenderdaten verändert."))return;
+  try{
+    const r=await fetch("/api/v41/test",{method:"POST",headers:{"x-edit-pin":editPin||""}});
+    if(!r.ok)throw new Error((await r.json()).error||"Test konnte nicht gestartet werden");
+    pollV41Test();
+  }catch(e){alert(e.message)}
+};
 
 showEdit();checkDb();load().then(updateCabinVisibility);pollSync();
 </script>
