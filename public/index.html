@@ -130,7 +130,7 @@ let calDate=new Date(), calView="month";
 const $=id=>document.getElementById(id), iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 function showEdit(){document.querySelectorAll(".editOnly").forEach(x=>x.classList.toggle("hidden",!edit));$("editState").textContent=edit?"Bearbeitungsmodus":"Lesemodus";$("loginBtn").textContent=edit?"Abmelden":"Bearbeiten"}
-$("loginBtn").onclick=async()=>{if(edit){pin="";edit=false;sessionStorage.removeItem("clubPin");showEdit();renderTable();return}const p=prompt("Bearbeitungs-PIN:");if(!p)return;const j=await (await fetch("/api/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({pin:p})})).json();if(j.ok){pin=p;edit=true;sessionStorage.setItem("clubPin",p);showEdit();renderTable()}else alert("PIN falsch")};
+$("loginBtn").onclick=async()=>{if(edit){pin="";edit=false;sessionStorage.removeItem("clubPin");showEdit();renderTable();return}const p=prompt("Bearbeitungs-PIN:");if(!p)return;const j=await (await fetch("/api/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({pin:p})})).json();if(j.ok){pin=p;window.__clubplannerPin=p;sessionStorage.setItem("clubplanner_edit_pin",p);edit=true;sessionStorage.setItem("clubPin",p);showEdit();renderTable()}else alert("PIN falsch")};
 document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));b.classList.add("active");["dashboard","calendar","occupancy","conflicts","new","teams","resources"].forEach(id=>$(id).classList.toggle("hidden",id!==b.dataset.tab));if(b.dataset.tab==="calendar")renderCalendar()});
 document.querySelectorAll(".viewBtn").forEach(b=>b.onclick=()=>{document.querySelectorAll(".viewBtn").forEach(x=>x.classList.remove("active"));b.classList.add("active");calView=b.dataset.view;renderCalendar()});
 function cm(){const m=new Map();for(const c of data.conflicts)for(const id of [c.a,c.b]){const arr=m.get(id)||[];arr.push(...c.reasons);m.set(id,arr)}return m}
@@ -316,10 +316,12 @@ $("resetCalendarBtn").onclick=async()=>{
 
 
 
+
+
 let v41Timer=null;
 async function pollV41Test(){
   try{
-    const r=await fetch("/api/v41/test/status",{headers:{"x-edit-pin":editPin||""},cache:"no-store"});
+    const r=await fetch("/api/v41/test/status",{headers:{"x-edit-pin":pin},cache:"no-store"});
     const s=await r.json();
     const p=$("v41TestPanel");
     p.classList.remove("hidden");
@@ -329,7 +331,7 @@ async function pollV41Test(){
       clearTimeout(v41Timer);
       v41Timer=setTimeout(pollV41Test,1200);
     }else if(s.phase==="done"){
-      const rr=await fetch("/api/v41/test/result",{headers:{"x-edit-pin":editPin||""},cache:"no-store"});
+      const rr=await fetch("/api/v41/test/result",{headers:{"x-edit-pin":pin},cache:"no-store"});
       const result=await rr.json();
       const ov=result.overview?.validation||{};
       const hm=result.home||{};
@@ -344,7 +346,7 @@ async function pollV41Test(){
 $("v41TestBtn").onclick=async()=>{
   if(!confirm("4.1 Testlauf starten? Es werden KEINE Kalenderdaten verändert."))return;
   try{
-    const r=await fetch("/api/v41/test",{method:"POST",headers:{"x-edit-pin":editPin||""}});
+    const r=await fetch("/api/v41/test",{method:"POST",headers:{"x-edit-pin":pin}});
     if(!r.ok)throw new Error((await r.json()).error||"Test konnte nicht gestartet werden");
     pollV41Test();
   }catch(e){alert(e.message)}

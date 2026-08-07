@@ -13,7 +13,15 @@ import { fileURLToPath } from "url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 app.use(express.json({limit:"3mb"}));
-app.use(express.static(path.join(__dirname,"public")));
+app.use((req,res,next)=>{
+  if(req.path==="/" || req.path.endsWith(".html") || req.path.startsWith("/api/v41/")){
+    res.set("Cache-Control","no-store, no-cache, must-revalidate, proxy-revalidate");
+    res.set("Pragma","no-cache");
+    res.set("Expires","0");
+  }
+  next();
+});
+app.use(express.static(path.join(__dirname,"public"),{etag:false,lastModified:false,maxAge:0}));
 
 const PORT = process.env.PORT || 10000;
 const EDIT_PIN = process.env.EDIT_PIN || "1234";
@@ -119,7 +127,7 @@ async function initDb(){
   const obsolete=["Herren I","Herren II","Frauen","A-Junioren","B-Junioren","C1-Junioren","C2-Junioren","D-Junioren"];
   await db(`update clubplanner_teams set active=false where name = any($1::text[])`,[obsolete]);
 
-  console.log("ClubPlanner 4.1 Phase 2 Datenbankstruktur ist bereit.");
+  console.log("ClubPlanner 4.1 Phase 2.2 Datenbankstruktur ist bereit.");
 }
 
 function requirePin(req,res,next){
@@ -353,5 +361,5 @@ app.get("/api/export",async(req,res)=>{
   }catch(e){res.status(500).send(e.message)}
 });
 
-initDb().then(()=>app.listen(PORT,"0.0.0.0",()=>console.log(`ClubPlanner 4.1 Phase 2 läuft auf Port ${PORT}`)))
+initDb().then(()=>app.listen(PORT,"0.0.0.0",()=>console.log(`ClubPlanner 4.1 Phase 2.2 läuft auf Port ${PORT}`)))
 .catch(e=>{console.error("DB-Startfehler",e);process.exit(1)});
