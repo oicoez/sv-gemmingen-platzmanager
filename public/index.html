@@ -50,7 +50,7 @@ th{background:#1f4e78;color:white;position:sticky;top:0;z-index:1}tr:nth-child(e
 <button class="tab editOnly hidden" data-tab="new">Termin eintragen</button>
 <button class="tab editOnly hidden" data-tab="teams">Mannschaften</button>
 <button class="tab editOnly hidden" data-tab="resources">Plätze & Kabinen</button>
-<button id="v41TestBtn" class="editOnly hidden">4.3 Browser-/Netzwerk-Test</button><button id="syncBtn" class="editOnly hidden">FUSSBALL.DE synchronisieren</button><button id="resetCalendarBtn" class="editOnly hidden">Kalender zurücksetzen</button><span id="syncState" class="muted"></span><a class="btn" href="/api/export">Excel</a>
+<button id="v41TestBtn" class="editOnly hidden">4.4 Direkt-Spielplan-Test</button><button id="syncBtn" class="editOnly hidden">FUSSBALL.DE synchronisieren</button><button id="resetCalendarBtn" class="editOnly hidden">Kalender zurücksetzen</button><span id="syncState" class="muted"></span><a class="btn" href="/api/export">Excel</a>
 </nav>
 
 <section id="dashboard">
@@ -321,31 +321,31 @@ $("resetCalendarBtn").onclick=async()=>{
 let v41Timer=null;
 async function pollV41Test(){
   try{
-    const r=await fetch("/api/v43/test/status",{headers:{"x-edit-pin":pin},cache:"no-store"});
+    const r=await fetch("/api/v44/test/status",{headers:{"x-edit-pin":pin},cache:"no-store"});
     const s=await r.json();
     const p=$("v41TestPanel");
     p.classList.remove("hidden");
-    p.innerHTML=`<b>4.3 Browser-/Netzwerk-Test:</b> ${esc(s.progress||"")}${s.running&&s.total?` (${s.processed}/${s.total})`:""}`;
+    p.innerHTML=`<b>4.4 Direkt-Spielplan-Test:</b> ${esc(s.progress||"")}${s.running&&s.total?` (${s.processed}/${s.total})`:""}`;
     $("v41TestBtn").disabled=Boolean(s.running);
     if(s.running){
       clearTimeout(v41Timer);
       v41Timer=setTimeout(pollV41Test,1200);
     }else if(s.phase==="done"){
-      const rr=await fetch("/api/v43/test/result",{headers:{"x-edit-pin":pin},cache:"no-store"});
+      const rr=await fetch("/api/v44/test/result",{headers:{"x-edit-pin":pin},cache:"no-store"});
       const result=await rr.json();
       const st=result.result?.stats||{};
-      p.innerHTML=`<b>4.3 Test fertig:</b> ${st.parsed||0}/${st.totalLinks||0} Detailseiten · ${st.withDate||0} Datum · ${st.withKickoff||0} Anstoßzeiten · ${st.withTeams||0} Paarungen · ${st.withVenue||0} Spielorte/Adressen · Heimspiele ${st.homeGames||0}, davon ${st.homeWithKickoff||0} mit Zeit und ${st.homeWithVenue||0} mit Ort/Adresse · ${st.errors||0} Fehler. <b>Der Kalender wurde nicht verändert.</b>`;
+      p.innerHTML=`<b>4.4 Test fertig:</b> ${st.total||0} Spiele · ${st.withDate||0} Datum · ${st.withKickoff||0} Anstoßzeiten · ${st.withTeams||0} Paarungen · ${st.withGameNumber||0} Spielnummern · ${st.cancelled||0} abgesetzt/ausgefallen. <b>Der Kalender wurde nicht verändert.</b>`;
     }
   }catch(e){
     $("v41TestPanel").classList.remove("hidden");
-    $("v41TestPanel").innerHTML=`<b>4.3 Browser-/Netzwerk-Testfehler:</b> ${esc(e.message)}`;
+    $("v41TestPanel").innerHTML=`<b>4.4 Direkt-Spielplan-Testfehler:</b> ${esc(e.message)}`;
     $("v41TestBtn").disabled=false;
   }
 }
 $("v41TestBtn").onclick=async()=>{
-  if(!confirm("4.3 Browser-/Netzwerk-Testlauf starten? Es werden KEINE Kalenderdaten verändert."))return;
+  if(!confirm("4.4 Direkt-Spielplan-Testlauf starten? Es werden KEINE Kalenderdaten verändert."))return;
   try{
-    const r=await fetch("/api/v43/test",{method:"POST",headers:{"x-edit-pin":pin}});
+    const r=await fetch("/api/v44/test",{method:"POST",headers:{"x-edit-pin":pin}});
     if(!r.ok)throw new Error((await r.json()).error||"Test konnte nicht gestartet werden");
     pollV41Test();
   }catch(e){alert(e.message)}

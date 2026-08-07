@@ -1,48 +1,40 @@
-# ClubPlanner 4.3
+# ClubPlanner 4.4 – direkter FUSSBALL.DE-Spielplan
 
-## Architektur
-4.3 verwendet erstmals einen echten Chromium-Browser über Playwright.
+4.4 entfernt Playwright wieder vollständig.
 
-### Vereinsseite
-- JavaScript wird vollständig ausgeführt.
-- `Mehr laden` wird automatisch geklickt.
-- alle sichtbaren Spiel-Links werden gesammelt.
+## Datenquelle
+Verwendet wird der FUSSBALL.DE-Endpunkt:
+`/ajax.club.matchplan/...`
 
-### Einzelne Spiele
-Bis zu vier Detailseiten werden parallel geöffnet.
-ClubPlanner überwacht dabei:
-- `fetch`
-- XHR
-- JSON-Antworten
-- JSON-LD
-- eingebettete JSON-Daten
-- vollständig gerenderten DOM
-
-Aus diesen Quellen werden gesucht:
+Dieser Spielplan enthält bereits:
 - Datum
 - Anstoßzeit
+- Mannschaftsart
+- Wettbewerb
+- Spielnummer
 - Heimteam
 - Gastteam
-- Wettbewerb
-- Status
-- Spielnummer
-- Spielstätte
-- Adresse
+- Status / Absetzung
+- Link zum Spiel
 
-## Render
-Der Docker-Build installiert Chromium automatisch:
-`npx playwright install --with-deps chromium`
+ClubPlanner testet mehrere URL-Varianten:
+- ajax-default
+- ajax-max-a
+- ajax-max-b
+- ajax-season
+- print-season
 
-Der erste Build kann deshalb deutlich länger dauern als bisher.
+Die Ergebnisse werden über Spiel-ID bzw. Spielnummer zusammengeführt.
 
-## Sicherheit
-Der Button `4.3 Browser-/Netzwerk-Test` verändert noch keine Kalenderdaten.
+## Test
+Button: `4.4 Direkt-Spielplan-Test`
 
-Render-Log:
-[FUSSBALL-4.3] TEST START
-[FUSSBALL-4.3] 1/95 | 2026-08-09 10:30 | ... | NET:3 | ...
-...
-[FUSSBALL-4.3] Test fertig: ...
+Der Kalender wird noch nicht verändert.
 
-Wichtigster Wert:
-`withNetworkData` zeigt, bei wie vielen Spielen JSON/XHR/Fetch-Daten abgefangen wurden.
+Render zeigt pro Quelle:
+`[FUSSBALL-4.4] QUELLE ajax-default | 10 Spiele | 10 Datum | 10 Zeiten | ...`
+
+Danach:
+`[FUSSBALL-4.4] Test fertig: ...`
+
+Das wichtigste Ziel ist zunächst, mindestens eine Quelle mit echten Datum-/Anstoßzeitwerten auf Render zu bestätigen.
