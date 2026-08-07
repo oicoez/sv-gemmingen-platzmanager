@@ -28,7 +28,16 @@ const pool = new Pool({
 });
 const db=(q,p=[])=>pool.query(q,p);
 
-const DEFAULT_TEAMS=["Herren I","Herren II","Frauen","A-Junioren","B-Junioren","C1-Junioren","C2-Junioren","D-Junioren"];
+const OFFICIAL_TEAMS=[
+  "Herren - SG Stebbach/Gemmingen",
+  "Herren - SG Stebbach/Gemmingen 2",
+  "A-Junioren - JSG Gemmingen / Stebbach",
+  "B-Junioren - JSG Gemmingen/Stebbach",
+  "C-Junioren - JSG Gemmingen/Stebbach",
+  "C-Junioren - JSG Gemmingen/Stebbach 2",
+  "D-Junioren - JSG Gemmingen/Stebbach",
+  "Frauen - SV Gemmingen"
+];
 
 const syncState = {
   running:false,
@@ -114,22 +123,31 @@ async function initDb(){
     on conflict(id) do update set name=excluded.name,address=excluded.address`);
 
   for(const loc of ["gemmingen","stebbach"]){
-    for(const name of ["Hauptplatz","Trainingsplatz"]){
-      await db(`insert into clubplanner_resources(id,location_id,resource_type,name)
-        values($1,$2,'pitch',$3) on conflict(location_id,resource_type,name) do nothing`,
-        [crypto.randomUUID(),loc,name]);
+    for(const base of ["Hauptplatz","Trainingsplatz"]){
+      for(const suffix of ["Gesamt","Hälfte A","Hälfte B"]){
+        const name=`${base} – ${suffix}`;
+        await db(`insert into clubplanner_resources(id,location_id,resource_type,name)
+          values($1,$2,'pitch',$3) on conflict(location_id,resource_type,name) do update set active=true`,
+          [crypto.randomUUID(),loc,name]);
+      }
     }
     for(const name of ["Heimkabine","Gastkabine"]){
       await db(`insert into clubplanner_resources(id,location_id,resource_type,name)
-        values($1,$2,'cabin',$3) on conflict(location_id,resource_type,name) do nothing`,
+        values($1,$2,'cabin',$3) on conflict(location_id,resource_type,name) do update set active=true`,
         [crypto.randomUUID(),loc,name]);
     }
+    await db(`update clubplanner_resources set active=false
+      where location_id=$1 and resource_type='pitch' and name in ('Hauptplatz','Trainingsplatz')`,[loc]);
   }
 
-  for(const name of DEFAULT_TEAMS){
+  for(const name of OFFICIAL_TEAMS){
     await db(`insert into clubplanner_teams(id,name) values($1,$2) on conflict(name) do nothing`,[crypto.randomUUID(),name]);
   }
-  console.log("Sprint 3.4 Datenbankstruktur ist bereit.");
+  // Remove only the old template names from earlier sprints. User-created teams remain untouched.
+  const obsolete=["Herren I","Herren II","Frauen","A-Junioren","B-Junioren","C1-Junioren","C2-Junioren","D-Junioren"];
+  await db(`update clubplanner_teams set active=false where name = any($1::text[])`,[obsolete]);
+
+  console.log("Sprint 3.5 Datenbankstruktur ist bereit.");
 }
 
 function requirePin(req,res,next){
@@ -143,12 +161,33 @@ function overlap(a,b){
   const as=tmin(a.start),ae=tmin(a.end),bs=tmin(b.start),be=tmin(b.end);
   return ![as,ae,bs,be].some(x=>x===null) && as<be && bs<ae;
 }
+function pitchParts(name){
+  const n=String(name||"").trim();
+  if(!n)return null;
+  const base=/^Trainingsplatz/i.test(n)?"Trainingsplatz":(/^Hauptplatz/i.test(n)?"Hauptplatz":n);
+  let part="Gesamt";
+  if(/Hälfte\s*A/i.test(n))part="A";
+  else if(/Hälfte\s*B/i.test(n))part="B";
+  return {base,part};
+}
+function pitchesConflict(aName,bName){
+  const a=pitchParts(aName),b=pitchParts(bName);
+  if(!a||!b||a.base!==b.base)return false;
+  if(a.part==="Gesamt"||b.part==="Gesamt")return true;
+  return a.part===b.part; // A+A conflict, B+B conflict, A+B allowed
+}
 function conflicts(events){
   const out=[];
   for(let i=0;i<events.length;i++)for(let j=i+1;j<events.length;j++){
-    const a=events[i],b=events[j]; if(!active(a)||!active(b)||!overlap(a,b))continue;
+    const a=events[i],b=events[j];
+    if(!active(a)||!active(b)||!overlap(a,b))continue;
     const reasons=[];
-    if(a.location===b.location && a.pitch && b.pitch && a.pitch===b.pitch)reasons.push(`Platz: ${a.pitch}`);
+
+    if(a.location===b.location && pitchesConflict(a.pitch,b.pitch)){
+      reasons.push(`Platz: ${a.pitch} ↔ ${b.pitch}`);
+    }
+
+    // Kabinen only matter when actually assigned (normally training/manual events).
     if(a.location===b.location){
       const ac=[a.homeCabin,a.guestCabin].filter(Boolean),bc=[b.homeCabin,b.guestCabin].filter(Boolean);
       for(const c of ac)if(bc.includes(c))reasons.push(`Kabine: ${c}`);
@@ -157,6 +196,7 @@ function conflicts(events){
   }
   return out;
 }
+
 function mapEvent(r){
   return {
     id:r.id,
@@ -302,145 +342,174 @@ function externalIdFromUrl(url){
   return m ? m[1] : String(url||"");
 }
 
+function officialDisplayName(category,team){
+  const cat=clean(category);
+  const raw=clean(team).replace(/\u200b/g,"");
+  const normalized=raw.replace(/\s*\/\s*/g,"/").replace(/\s+/g," ").trim();
+
+  if(/^Herren$/i.test(cat) && /SG Stebbach\/Gemmingen 2/i.test(normalized))return "Herren - SG Stebbach/Gemmingen 2";
+  if(/^Herren$/i.test(cat) && /SG Stebbach\/Gemmingen/i.test(normalized))return "Herren - SG Stebbach/Gemmingen";
+  if(/^Frauen$/i.test(cat) && /SV Gemmingen/i.test(normalized))return "Frauen - SV Gemmingen";
+  if(/^A-Junioren$/i.test(cat))return "A-Junioren - JSG Gemmingen / Stebbach";
+  if(/^B-Junioren$/i.test(cat))return "B-Junioren - JSG Gemmingen/Stebbach";
+  if(/^C-Junioren$/i.test(cat) && /2\b/.test(normalized))return "C-Junioren - JSG Gemmingen/Stebbach 2";
+  if(/^C-Junioren$/i.test(cat))return "C-Junioren - JSG Gemmingen/Stebbach";
+  if(/^D-Junioren$/i.test(cat))return "D-Junioren - JSG Gemmingen/Stebbach";
+  return `${cat} - ${raw}`;
+}
+
+function isOurTeamName(name){
+  return /(?:SV Gemmingen|SG Stebbach\/?\s*Gemmingen|JSG Gemmingen\s*\/?\s*Stebbach)/i.test(String(name||""));
+}
+
+function parseDateTimeHeader(text){
+  const t=clean(text);
+  const dm=t.match(/(\d{2})\.(\d{2})\.(\d{4})\s*-\s*([0-2]?\d:[0-5]\d)\s*Uhr/i);
+  if(dm)return {date:`${dm[3]}-${dm[2]}-${dm[1]}`,kickoff:dm[4].padStart(5,"0")};
+  const dm2=t.match(/(\d{2})\.(\d{2})\.(\d{2}).{0,20}([0-2]?\d:[0-5]\d)/i);
+  if(dm2)return {date:`20${dm2[3]}-${dm2[2]}-${dm2[1]}`,kickoff:dm2[4].padStart(5,"0")};
+  return {date:"",kickoff:""};
+}
+
 async function collectOverviewItems(){
-  const printUrl=`https://www.fussball.de/vereinsspielplan.druck/-/datum-bis/2027-06-30/datum-von/2026-08-07/id/${FUSSBALL_CLUB_ID}/match-type/-1/max/999/mode/PRINT/show-venues/true`;
+  // The normal club page exposes the fixture headers very reliably:
+  // "Sonntag, 09.08.2026 - 10:30 Uhr | Frauen | ..."
   const clubUrl=`https://www.fussball.de/verein/sv-gemmingen-baden/-/id/${FUSSBALL_CLUB_ID}`;
-
-  let html="";
-  try{
-    syncLog("Lade kompletten Vereinsspielplan …");
-    html=await fetchText(printUrl,15000);
-  }catch(e){
-    console.warn("[FUSSBALL-SYNC] Druckansicht fehlgeschlagen:",e.message);
-    syncLog("Druckansicht nicht erreichbar – nutze Vereinsseite …");
-    html=await fetchText(clubUrl,15000);
-  }
-
+  syncLog("Lade aktuellen Vereinsspielplan …");
+  const html=await fetchText(clubUrl,15000);
   const $=cheerio.load(html);
   const out=[],seen=new Set();
 
   $('a[href*="/spiel/"]').each((_,a)=>{
     let url=$(a).attr("href")||"";
-    if(!url)return;
     try{url=new URL(url,"https://www.fussball.de").href.split("?")[0]}catch{return}
-    if(seen.has(url))return;
-    seen.add(url);
+    const externalId=externalIdFromUrl(url);
+    if(!externalId||seen.has(externalId))return;
+    seen.add(externalId);
 
-    const {current,nearby}=rowTextForAnchor($,a);
-    const parsedTeams=inferHomeFromCurrentRow(current);
+    // Get the smallest fixture container containing both teams.
+    let node=$(a),fixtureText="";
+    for(let i=0;i<12;i++){
+      node=node.parent();
+      if(!node.length)break;
+      const txt=clean(node.text());
+      if(txt.length>20 && txt.length<2200 && /:\s*/.test(txt)){
+        fixtureText=txt;
+        if(/\d{1,2}:\d{2}|Absetzung|ABSE\./i.test(txt))break;
+      }
+    }
+
+    // Search this container and a few preceding siblings for the date/time/category header.
+    let headerText=fixtureText;
+    let sib=node;
+    for(let i=0;i<4;i++){
+      sib=sib.prev();
+      if(!sib.length)break;
+      headerText=clean(sib.text()+" "+headerText);
+      if(/\d{2}\.\d{2}\.\d{4}\s*-\s*\d{1,2}:\d{2}\s*Uhr/i.test(headerText))break;
+    }
+
+    const meta=parseDateTimeHeader(headerText);
+    const categoryMatch=headerText.match(/\b(Herren|Frauen|A-Junioren|B-Junioren|C-Junioren|D-Junioren)\b/i);
+    const category=categoryMatch?categoryMatch[1]:"";
+
+    // Extract home/away from links in fixture container when possible.
+    const teamLinks=node.find("a").map((_,x)=>clean($(x).text())).get()
+      .filter(t=>t && !/Zum Spiel|Absetzung|Spielbericht/i.test(t));
+    let home="",away="";
+    if(teamLinks.length>=2){
+      // last two real named participants around the match link are generally the teams
+      const candidates=teamLinks.filter(t=>!/^(\d+|FS|ME|PO|TU)$/i.test(t));
+      if(candidates.length>=2){home=candidates[0];away=candidates[1]}
+    }
+    if(!home||!away){
+      const colon=fixtureText.split(/\s+:\s+/);
+      if(colon.length>=2){
+        home=clean(colon[0]).replace(/^.*?\b(?:FS|ME|PO|TU)\b\s*\d*\s*/,"");
+        away=clean(colon.slice(1).join(" : ")).replace(/\b(?:Absetzung|Zum Spiel).*$/i,"");
+      }
+    }
+
+    // Status only from THIS fixture's text.
+    let status="geplant";
+    if(/\bABSE\.?\b|\bAbsetzung\b|\bSpielabsetzung\b/i.test(fixtureText))status="abgesetzt";
+    else if(/\bAusfall\b|\bSpielausfall\b/i.test(fixtureText))status="ausfall";
+    else if(/\bAbbruch\b|\bSpielabbruch\b/i.test(fixtureText))status="abbruch";
+
+    // competition usually appears alongside category in the header
+    let competition="";
+    const compMatch=headerText.match(/\b(?:Herren|Frauen|A-Junioren|B-Junioren|C-Junioren|D-Junioren)\b\s+(.{2,80}?)(?=\s+(?:FS|ME|PO|TU)\b|$)/i);
+    if(compMatch)competition=clean(compMatch[1]);
 
     out.push({
-      url,
-      externalId:externalIdFromUrl(url),
-      kickoff:extractKickoff(nearby),
-      status:statusFromSameRow(current),
-      date:dateFromOverview(nearby),
-      currentText:current,
-      nearbyText:nearby,
-      homeLikely:parsedTeams?.isHome ?? null,
-      rowHome:parsedTeams?.home||"",
-      rowAway:parsedTeams?.away||""
+      url,externalId,date:meta.date,kickoff:meta.kickoff,category,
+      home,away,status,competition,fixtureText,headerText
     });
   });
 
-  syncLog(`Spielplan geladen: ${out.length} Begegnungen`);
+  syncLog(`Vereinsspielplan geladen: ${out.length} Begegnungen`);
   return out;
 }
 
-async function fastUpdateExisting(items){
-  const qr=await db(`select id,external_id,location,pitch,note from clubplanner_events where source='fussball.de' and external_id is not null`);
-  const byId=new Map(qr.rows.map(r=>[r.external_id,r]));
-  const newItems=[];
-  let done=0;
-
-  for(const item of items){
-    const found=byId.get(item.externalId);
-    if(!found){
-      newItems.push(item);
-      continue;
-    }
-
-    const cancelled=["abgesetzt","ausfall","abbruch"].includes(item.status);
-    const fields=[
-      `status=$2`,
-      `note=$3`,
-      `kickoff_known=$4`,
-      `updated_at=now()`
-    ];
-    const params=[
-      found.id,
-      item.status||"geplant",
-      cancelled?"ABGESETZT":(found.note==="ABGESETZT"?"":(found.note||"")),
-      Boolean(item.kickoff)
-    ];
-    let p=5;
-
-    if(item.kickoff){
-      fields.push(`start_time=$${p++}`,`end_time=$${p++}`);
-      params.push(item.kickoff,datePlusMinutes("2000-01-01",item.kickoff,120));
-    }
-
-    // Spieltermine benötigen keine Kabinenzuordnung im ClubPlanner.
-    // Kabinen werden nur für Trainings/sonstige manuelle Belegungen verwendet.
-    fields.push(`home_cabin=''`,`guest_cabin=''`);
-
-    await db(`update clubplanner_events set ${fields.join(",")} where id=$1`,params);
-    syncState.updated++;
-    done++;
-    if(done%10===0)syncLog(`Bekannte Spiele aktualisiert: ${done}`);
+async function getVenueFromDetail(item){
+  if(item.status==="abgesetzt"||item.status==="ausfall"||item.status==="abbruch"){
+    return {location:"",address:"",pitch:""};
   }
-  return newItems;
+  try{
+    const html=await fetchText(item.url,10000);
+    const $=cheerio.load(html);
+
+    // FUSSBALL.DE detail page exposes a Google Maps link whose text contains
+    // e.g. "Rasenplatz, SV Gemmingen, Beim Sportplatz 3, 75050 Gemmingen".
+    let venue="";
+    $('a[href*="google"]').each((_,a)=>{
+      const txt=clean($(a).text());
+      if(!venue && /75050\s+Gemmingen|Beim Sportplatz|Jahnweg/i.test(txt))venue=txt;
+    });
+    if(!venue){
+      const body=clean($("body").text());
+      const m=body.match(/((?:Rasenplatz|Kunstrasenplatz|Hartplatz|Sportplatz).{0,100}(?:Beim Sportplatz|Jahnweg).{0,100}75050\s+Gemmingen(?:-Stebbach)?)/i);
+      if(m)venue=clean(m[1]);
+    }
+
+    let location="",address="",base="Hauptplatz";
+    if(/Jahnweg/i.test(venue)){
+      location="Stebbach";address="Jahnweg 1, 75050 Gemmingen-Stebbach";
+    }else if(/Beim Sportplatz/i.test(venue)){
+      location="Gemmingen";address="Beim Sportplatz 3, 75050 Gemmingen";
+    }
+    if(/Kunstrasen|Trainingsplatz/i.test(venue))base="Trainingsplatz";
+    return {location,address,pitch:location?`${base} – Gesamt`:""};
+  }catch(e){
+    console.warn(`[FUSSBALL-SYNC] Spielstätte ${item.externalId}: ${e.message}`);
+    return {location:"",address:"",pitch:""};
+  }
 }
 
-async function parseNewGame(item,index,total){
-  syncState.processed=index;
-  syncLog(`Neues Heimspiel ${index}/${total} wird ergänzt …`);
+async function buildHomeGame(item){
+  if(!item.date)return null;
 
-  let html;
-  try{
-    html=await fetchText(item.url,12000);
-  }catch(e){
-    throw new Error(`Detailseite Timeout/Fehler: ${e.message}`);
-  }
+  // Use the fixture home/away assignment to decide if it is actually a home game.
+  if(!isOurTeamName(item.home))return null;
 
-  const $=cheerio.load(html);
-  const title=clean($("title").first().text());
-  const body=clean($("body").text());
-
-  const m=title.match(/^(.*?)\s+-\s+(.*?)\s+Ergebnis:\s+(.*?)\s+-\s+(.*?)\s+-\s+(\d{2}\.\d{2}\.\d{4})/);
-  let home=item.rowHome,away=item.rowAway,competition="",date=item.date;
-
-  if(m){
-    home=clean(m[1]);away=clean(m[2]);competition=clean(m[3]);date=parseDeDate(m[5])||date;
-  }
-
-  if(!home || !/Gemmingen/i.test(home))return null;
-  if(!date)return null;
-
-  let venueText="";
-  const venueMatch=body.match(/(.{0,160}(?:Beim Sportplatz|Jahnweg).{0,180}75050\s+Gemmingen(?:-Stebbach)?)/i);
-  if(venueMatch)venueText=clean(venueMatch[1]);
-
-  const loc=inferLocation(venueText);
-  const pitch=inferPitch(venueText);
-  const cancelled=["abgesetzt","ausfall","abbruch"].includes(item.status);
-
+  const venue=await getVenueFromDetail(item);
+  const displayTeam=officialDisplayName(item.category,item.home);
   return {
-    date,
+    date:item.date,
     start:item.kickoff||"00:00",
-    end:item.kickoff?datePlusMinutes(date,item.kickoff,120):"00:01",
+    end:item.kickoff?datePlusMinutes(item.date,item.kickoff,120):"00:01",
     kickoffKnown:Boolean(item.kickoff),
     type:"Heimspiel",
-    team:home,
-    opponent:away,
-    competition,
-    location:loc.location||(cancelled?"—":"PRÜFEN"),
-    address:loc.address,
-    pitch,
+    team:displayTeam,
+    opponent:clean(item.away),
+    competition:item.competition||item.category,
+    location:venue.location||(item.status==="abgesetzt"?"—":"PRÜFEN"),
+    address:venue.address,
+    pitch:venue.pitch,
     homeCabin:"",
     guestCabin:"",
-    status:item.status||"geplant",
-    note:cancelled?"ABGESETZT":(loc.location?"":"SPIELORT PRÜFEN"),
+    status:item.status,
+    note:item.status==="abgesetzt"?"ABGESETZT":(venue.location?"":"SPIELORT PRÜFEN"),
     source:"fussball.de",
     externalId:item.externalId,
     externalUrl:item.url
@@ -471,62 +540,58 @@ async function upsertImported(e){
 
 async function runSync(){
   if(syncState.running)return;
-
   Object.assign(syncState,{
-    running:true,
-    progress:"Starte Synchronisierung …",
-    total:0,processed:0,imported:0,updated:0,skipped:0,error:null,
+    running:true,progress:"Starte Synchronisierung …",total:0,processed:0,
+    imported:0,updated:0,skipped:0,error:null,
     startedAt:new Date().toISOString(),finishedAt:null,lastActivity:new Date().toISOString()
   });
 
-  const overallTimeout=setTimeout(()=>{
-    syncState.error="Sicherheits-Timeout nach 90 Sekunden";
-    syncLog("Sicherheits-Timeout erreicht – Synchronisierung wird beendet.");
-  },90000);
+  const overall=setTimeout(()=>{
+    syncState.error="Sicherheits-Timeout nach 120 Sekunden";
+  },120000);
 
   try{
     const items=await collectOverviewItems();
     syncState.total=items.length;
-    if(items.length<3)throw new Error(`FUSSBALL.DE lieferte nur ${items.length} Spielzeilen.`);
+    if(items.length<3)throw new Error(`FUSSBALL.DE lieferte nur ${items.length} Begegnungen.`);
 
-    syncLog("Aktualisiere bekannte Spiele mit Anstoßzeit und Status …");
-    const newItems=await fastUpdateExisting(items);
-    syncState.processed=items.length-newItems.length;
+    // Correct all old false statuses by rebuilding every detected home fixture from current source.
+    const homeItems=items.filter(i=>isOurTeamName(i.home));
+    syncState.skipped=items.length-homeItems.length;
 
-    // Avoid opening detail pages for obvious away fixtures.
-    const homeCandidates=newItems.filter(i=>i.homeLikely!==false);
-    syncState.skipped += newItems.length-homeCandidates.length;
-
-    // Small bounded concurrency, each request itself has a 12s AbortController timeout.
-    const concurrency=5;
-    for(let offset=0;offset<homeCandidates.length;offset+=concurrency){
-      if(syncState.error?.startsWith("Sicherheits-Timeout"))break;
-
-      const batch=homeCandidates.slice(offset,offset+concurrency);
+    const concurrency=6;
+    for(let offset=0;offset<homeItems.length;offset+=concurrency){
+      if(syncState.error)break;
+      const batch=homeItems.slice(offset,offset+concurrency);
       await Promise.all(batch.map(async(item,k)=>{
-        const idx=(items.length-homeCandidates.length)+offset+k+1;
+        const idx=offset+k+1;
         try{
-          const game=await parseNewGame(item,idx,items.length);
+          syncLog(`Heimspiel ${idx}/${homeItems.length}: ${item.kickoff||"Zeit offen"} ${item.home||""}`);
+          const game=await buildHomeGame(item);
           if(!game){syncState.skipped++;return}
           await upsertImported(game);
         }catch(e){
-          console.error(`[FUSSBALL-SYNC] ${item.url}: ${e.message}`);
+          console.error(`[FUSSBALL-SYNC] ${item.externalId}: ${e.message}`);
           syncState.skipped++;
         }finally{
-          syncState.processed=Math.min(items.length,Math.max(syncState.processed,idx));
+          syncState.processed=Math.max(syncState.processed,idx);
         }
       }));
     }
 
-    if(!syncState.error){
-      syncLog(`Fertig: ${syncState.imported} neu · ${syncState.updated} aktualisiert · ${syncState.skipped} übersprungen`);
+    // Sync exactly the eight official team labels, but preserve user-added teams.
+    for(const name of OFFICIAL_TEAMS){
+      await db(`insert into clubplanner_teams(id,name,active) values($1,$2,true)
+        on conflict(name) do update set active=true`,[crypto.randomUUID(),name]);
     }
+
+    if(!syncState.error)syncLog(`Fertig: ${syncState.imported} neu · ${syncState.updated} aktualisiert · ${syncState.skipped} übersprungen`);
     syncState.finishedAt=new Date().toISOString();
   }catch(e){
-    syncState.error=e.name==="AbortError"?"Netzwerk-Timeout bei FUSSBALL.DE":e.message;
+    syncState.error=e.name==="AbortError"?"FUSSBALL.DE Timeout":e.message;
     syncLog(`Synchronisierung fehlgeschlagen: ${syncState.error}`);
   }finally{
-    clearTimeout(overallTimeout);
+    clearTimeout(overall);
     syncState.running=false;
     syncState.finishedAt=syncState.finishedAt||new Date().toISOString();
   }
@@ -602,5 +667,5 @@ app.get("/api/export",async(req,res)=>{
   }catch(e){res.status(500).send(e.message)}
 });
 
-initDb().then(()=>app.listen(PORT,"0.0.0.0",()=>console.log(`ClubPlanner Sprint 3.4 läuft auf Port ${PORT}`)))
+initDb().then(()=>app.listen(PORT,"0.0.0.0",()=>console.log(`ClubPlanner Sprint 3.5 läuft auf Port ${PORT}`)))
 .catch(e=>{console.error("DB-Startfehler",e);process.exit(1)});

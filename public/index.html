@@ -40,7 +40,7 @@ th{background:#1f4e78;color:white;position:sticky;top:0;z-index:1}tr:nth-child(e
 <div class="topright"><span id="dbState" class="muted">Cloud-DB…</span><span id="editState" class="muted">Lesemodus</span><button id="loginBtn">Bearbeiten</button></div>
 </header>
 
-<div class="notice"><b>Sprint 3.4 aktiv:</b> Sync-Fehler behoben · Spielkabinen entfernt · sicherer Kalender-Reset · robuster FUSSBALL.DE-Import.</div>
+<div class="notice"><b>Sprint 3.5 aktiv:</b> echte FUSSBALL.DE-Anstoßzeiten · Detail-Spielstätten/Adressen · 8 offizielle Teams · geteilte Plätze A/B/Gesamt · intelligente Konfliktprüfung.</div>
 
 <nav>
 <button class="tab active" data-tab="dashboard">Dashboard</button>
@@ -101,7 +101,7 @@ th{background:#1f4e78;color:white;position:sticky;top:0;z-index:1}tr:nth-child(e
 <label>Datum<input id="date" type="date"></label><label>Von<input id="start" type="time"></label><label>Bis<input id="end" type="time"></label>
 <label>Art<select id="type"><option>Training</option><option>Heimspiel</option><option>Turnier</option><option>Platzsperre</option><option>Sonstiges</option></select></label>
 <label>Mannschaft<select id="team"></select></label><label>Gegner / Info<input id="opponent"></label><label>Wettbewerb<input id="competition"></label>
-<label>Ort<select id="location"></select></label><label>Platz<select id="pitch"></select></label>
+<label>Ort<select id="location"></select></label><label>Platz / Bereich<select id="pitch"></select></label>
 <label>Heimkabine<select id="homeCabin"><option value=""></option></select></label><label>Gastkabine<select id="guestCabin"><option value=""></option></select></label>
 <label>Status<select id="status"><option>geplant</option><option>bestätigt</option><option>abgesetzt</option><option>ausfall</option></select></label><label>Bemerkung<input id="note"></label>
 <label style="grid-column:span 2"><span class="inline"><input id="repeatWeekly" type="checkbox" style="width:auto"> Wöchentlich wiederholen</span></label>
@@ -117,7 +117,7 @@ th{background:#1f4e78;color:white;position:sticky;top:0;z-index:1}tr:nth-child(e
 </section>
 
 <section id="resources" class="hidden">
-<div class="panel"><h3>Plätze & Kabinen</h3><div id="resourceList" class="resourceCols"></div>
+<div class="panel"><h3>Plätze & Kabinen</h3><p class="muted">Jeder Haupt- und Trainingsplatz ist als Gesamtfläche sowie Hälfte A und Hälfte B verfügbar. Hälfte A und B können gleichzeitig genutzt werden; „Gesamt“ blockiert beide Hälften.</p><div id="resourceList" class="resourceCols"></div>
 <h4>Ressource hinzufügen</h4><div class="grid">
 <label>Ort<select id="resLocation"></select></label><label>Typ<select id="resType"><option value="pitch">Platz</option><option value="cabin">Kabine</option></select></label>
 <label>Name<input id="resName"></label></div><p><button id="saveResource" class="primary">Hinzufügen</button></p></div>

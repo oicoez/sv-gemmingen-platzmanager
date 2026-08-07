@@ -1,34 +1,47 @@
-# ClubPlanner – Sprint 3.4
+# ClubPlanner – Sprint 3.5
 
-## Korrekturen
-- Fehler `externalIdFromUrl is not defined` behoben.
-- FUSSBALL.DE-Synchronisierung kann wieder gestartet werden.
-- Importierte Spiele erhalten keine Heim-/Gastkabine mehr.
-- Bereits vorhandene FUSSBALL.DE-Spiele werden beim Start/Sync von alten Kabinenzuordnungen bereinigt.
-- Bei manuell gewählter Art `Heimspiel` werden die Kabinenfelder ausgeblendet.
+## FUSSBALL.DE
+- Anstoßzeit wird aus dem aktuellen SV-Gemmingen-Vereinsspielplan gelesen.
+- Heimspiel-Spielstätte und Adresse werden zusätzlich auf der jeweiligen Spiel-Detailseite geprüft.
+- ABSE./Absetzung wird nur dem konkreten Spiel zugeordnet.
+- Alte falsche 00:00/ABGESETZT-Werte werden beim Sync durch den aktuellen Stand überschrieben.
 
-## Kalender zurücksetzen
-Im Bearbeitungsmodus gibt es einen neuen Button `Kalender zurücksetzen`.
+## 8 offizielle Mannschaften
+Die Mannschaftsverwaltung enthält die aktuell auf FUSSBALL.DE geführten Teams:
+1. Herren - SG Stebbach/Gemmingen
+2. Herren - SG Stebbach/Gemmingen 2
+3. A-Junioren - JSG Gemmingen / Stebbach
+4. B-Junioren - JSG Gemmingen/Stebbach
+5. C-Junioren - JSG Gemmingen/Stebbach
+6. C-Junioren - JSG Gemmingen/Stebbach 2
+7. D-Junioren - JSG Gemmingen/Stebbach
+8. Frauen - SV Gemmingen
 
-Sicherheitsablauf:
-1. Warnabfrage.
-2. Bearbeitungs-PIN erneut eingeben.
-3. PIN wird serverseitig geprüft.
-4. Zweite letzte Bestätigung.
-5. Erst dann werden ALLE Kalendertermine gelöscht.
+Selbst angelegte zusätzliche Mannschaften bleiben erhalten.
 
-Nicht gelöscht werden:
-- Mannschaften
-- Plätze
-- Kabinen
-- Datenbankstruktur
+## Platzaufteilung
+Je Standort:
+- Hauptplatz – Gesamt
+- Hauptplatz – Hälfte A
+- Hauptplatz – Hälfte B
+- Trainingsplatz – Gesamt
+- Trainingsplatz – Hälfte A
+- Trainingsplatz – Hälfte B
 
-Danach kann der FUSSBALL.DE-Spielplan komplett frisch synchronisiert werden.
+Konfliktlogik:
+- Hälfte A + Hälfte B = erlaubt.
+- Gesamt + Hälfte A/B = Konflikt.
+- A + A bzw. B + B = Konflikt.
+- Hauptplatz und Trainingsplatz sind unabhängig.
+
+Heimspiele werden immer einer Gesamtfläche zugeordnet.
 
 ## Deployment
-Wie bisher gesamten Inhalt nach GitHub hochladen und vorhandene Dateien ersetzen.
-Dann Render -> Manual Deploy -> Deploy latest commit.
-
+Dateien in GitHub ersetzen, danach Render -> Manual Deploy -> Deploy latest commit.
 Im Log:
-- Sprint 3.4 Datenbankstruktur ist bereit.
-- ClubPlanner Sprint 3.4 läuft auf Port 10000
+- Sprint 3.5 Datenbankstruktur ist bereit.
+- ClubPlanner Sprint 3.5 läuft auf Port 10000
+
+Danach am besten:
+1. Kalender zurücksetzen (PIN-Bestätigung).
+2. FUSSBALL.DE synchronisieren.
