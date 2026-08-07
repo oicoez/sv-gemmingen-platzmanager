@@ -9,7 +9,7 @@
 header{display:flex;justify-content:space-between;gap:16px;align-items:center;flex-wrap:wrap}
 h1{margin:0;font-size:30px}.sub{color:#697481;margin-top:4px}.topright{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 button,a.btn{border:1px solid #ccd3dc;background:#fff;border-radius:8px;padding:10px 14px;cursor:pointer;text-decoration:none;color:#17212b;font-weight:600}
-button.primary,.active{background:#1f4e78!important;color:white!important;border-color:#1f4e78!important}
+button.primary,.active{background:#1f4e78!important;color:white!important;border-color:#1f4e78!important}button:disabled{opacity:.55;cursor:not-allowed}
 nav{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0 14px}
 .panel,.card{background:#fff;border:1px solid #d8dee6;border-radius:10px}.panel{padding:16px;margin-bottom:14px}
 .cards{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}.card{padding:14px}.big{font-size:27px;font-weight:750}
@@ -40,7 +40,7 @@ th{background:#1f4e78;color:white;position:sticky;top:0;z-index:1}tr:nth-child(e
 <div class="topright"><span id="dbState" class="muted">Cloud-DB…</span><span id="editState" class="muted">Lesemodus</span><button id="loginBtn">Bearbeiten</button></div>
 </header>
 
-<div class="notice"><b>Sprint 2 aktiv:</b> Monats-, Wochen- und Tagesansicht · Ressourcenverwaltung · Mannschaftsdaten · wiederkehrende Trainings · Konflikt-Center.</div>
+<div class="notice"><b>Sprint 3 aktiv:</b> FUSSBALL.DE-Synchronisierung · Live-Konfliktprüfung · Spielort/Adresse · bestehender Kalender & Ressourcenverwaltung.</div>
 
 <nav>
 <button class="tab active" data-tab="dashboard">Dashboard</button>
@@ -50,7 +50,7 @@ th{background:#1f4e78;color:white;position:sticky;top:0;z-index:1}tr:nth-child(e
 <button class="tab editOnly hidden" data-tab="new">Termin eintragen</button>
 <button class="tab editOnly hidden" data-tab="teams">Mannschaften</button>
 <button class="tab editOnly hidden" data-tab="resources">Plätze & Kabinen</button>
-<a class="btn" href="/api/export">Excel</a>
+<button id="syncBtn" class="editOnly hidden">FUSSBALL.DE synchronisieren</button><span id="syncState" class="muted"></span><a class="btn" href="/api/export">Excel</a>
 </nav>
 
 <section id="dashboard">
@@ -86,7 +86,7 @@ th{background:#1f4e78;color:white;position:sticky;top:0;z-index:1}tr:nth-child(e
 <label>Ab Datum<input id="fDate" type="date"></label><button id="clearFilter">Filter löschen</button>
 </div>
 <div class="scroll"><table><thead><tr>
-<th>Datum</th><th>Von</th><th>Bis</th><th>Art</th><th>Mannschaft</th><th>Gegner/Info</th><th>Ort</th><th>Platz</th>
+<th>Datum</th><th>Von</th><th>Bis</th><th>Art</th><th>Mannschaft</th><th>Gegner/Info</th><th>Wettbewerb</th><th>Ort</th><th>Adresse</th><th>Platz</th>
 <th>Heimkabine</th><th>Gastkabine</th><th>Status</th><th>Konflikt</th><th class="editOnly hidden">Aktion</th>
 </tr></thead><tbody id="rows"></tbody></table></div>
 </div>
@@ -97,10 +97,10 @@ th{background:#1f4e78;color:white;position:sticky;top:0;z-index:1}tr:nth-child(e
 </section>
 
 <section id="new" class="hidden">
-<div class="panel"><h3>Termin / Training eintragen</h3><div class="grid">
+<div class="panel"><h3>Termin / Training eintragen</h3><div id="liveConflict" class="notice hidden"></div><div class="grid">
 <label>Datum<input id="date" type="date"></label><label>Von<input id="start" type="time"></label><label>Bis<input id="end" type="time"></label>
 <label>Art<select id="type"><option>Training</option><option>Heimspiel</option><option>Turnier</option><option>Platzsperre</option><option>Sonstiges</option></select></label>
-<label>Mannschaft<select id="team"></select></label><label>Gegner / Info<input id="opponent"></label>
+<label>Mannschaft<select id="team"></select></label><label>Gegner / Info<input id="opponent"></label><label>Wettbewerb<input id="competition"></label>
 <label>Ort<select id="location"></select></label><label>Platz<select id="pitch"></select></label>
 <label>Heimkabine<select id="homeCabin"><option value=""></option></select></label><label>Gastkabine<select id="guestCabin"><option value=""></option></select></label>
 <label>Status<select id="status"><option>geplant</option><option>bestätigt</option><option>abgesetzt</option><option>ausfall</option></select></label><label>Bemerkung<input id="note"></label>
@@ -145,7 +145,7 @@ async function load(){
 async function checkDb(){try{const j=await (await fetch("/api/db-status")).json();$("dbState").textContent=j.ok?`Cloud-DB aktiv · ${j.events} Termine · ${j.resources} Ressourcen`:"DB-Fehler";$("dbState").className=j.ok?"good":"danger"}catch{$("dbState").textContent="DB nicht erreichbar";$("dbState").className="danger"}}
 function renderDashboard(){const today=iso(new Date()),map=cm(),arr=sorted().filter(e=>e.date>=today).slice(0,10);$("nextEvents").innerHTML=arr.length?arr.map(e=>`<div class="teamrow"><span><b>${esc(e.date)} ${esc(e.start)}</b> · ${esc(e.team)} · ${esc(e.type)} · ${esc(e.location)} / ${esc(e.pitch)}</span>${map.has(e.id)?'<b class="danger">Konflikt</b>':''}</div>`).join(""):"Keine zukünftigen Termine."}
 function filtered(){return sorted().filter(e=>(!$("fLocation").value||e.location===$("fLocation").value)&&(!$("fTeam").value||e.team===$("fTeam").value)&&(!$("fType").value||e.type===$("fType").value)&&(!$("fDate").value||e.date>=$("fDate").value))}
-function renderTable(){const map=cm();$("rows").innerHTML=filtered().map(e=>`<tr class="${map.has(e.id)?"warn":""}"><td>${esc(e.date)}</td><td>${esc(e.start)}</td><td>${esc(e.end)}</td><td>${esc(e.type)}</td><td>${esc(e.team)}</td><td>${esc(e.opponent)}</td><td>${esc(e.location)}</td><td>${esc(e.pitch)}</td><td>${esc(e.homeCabin)}</td><td>${esc(e.guestCabin)}</td><td>${esc(e.status)}</td><td>${map.has(e.id)?esc([...new Set(map.get(e.id))].join(", ")):""}</td><td class="editOnly ${edit?"":"hidden"}"><button onclick="delEvent('${e.id}')">Löschen</button>${e.seriesId?` <button onclick="delSeries('${e.seriesId}')">Serie</button>`:""}</td></tr>`).join("")}
+function renderTable(){const map=cm();$("rows").innerHTML=filtered().map(e=>`<tr class="${map.has(e.id)?"warn":""}"><td>${esc(e.date)}</td><td>${esc(e.start)}</td><td>${esc(e.end)}</td><td>${esc(e.type)}</td><td>${esc(e.team)}</td><td>${esc(e.opponent)}</td><td>${esc(e.competition||"")}</td><td>${esc(e.location)}</td><td>${esc(e.address||"")}</td><td>${esc(e.pitch)}</td><td>${esc(e.homeCabin)}</td><td>${esc(e.guestCabin)}</td><td>${esc(e.status)}</td><td>${map.has(e.id)?esc([...new Set(map.get(e.id))].join(", ")):""}</td><td class="editOnly ${edit?"":"hidden"}"><button onclick="delEvent('${e.id}')">Löschen</button>${e.seriesId?` <button onclick="delSeries('${e.seriesId}')">Serie</button>`:""}</td></tr>`).join("")}
 ["fLocation","fTeam","fType","fDate"].forEach(id=>$(id).onchange=renderTable);$("clearFilter").onclick=()=>{["fLocation","fTeam","fType","fDate"].forEach(id=>$(id).value="");renderTable()};
 function monday(d){const x=new Date(d),day=(x.getDay()+6)%7;x.setDate(x.getDate()-day);x.setHours(12,0,0,0);return x}
 function renderCalendar(){
@@ -173,13 +173,72 @@ function renderTeams(){$("teamList").innerHTML=data.teams.filter(t=>t.active!==f
 window.editTeam=s=>{const t=JSON.parse(s);$("teamName").value=t.name;$("teamCoach").value=t.coach||"";$("teamContact").value=t.contact||"";$("teamNote").value=t.note||"";$("teamName").dataset.id=t.id};
 function renderResources(){$("resourceList").innerHTML=data.locations.map(l=>{const rr=data.resources.filter(r=>r.location_id===l.id);return `<div class="resourceGroup"><h4>${esc(l.name)}</h4><b>Plätze</b>${rr.filter(r=>r.resource_type==="pitch").map(r=>`<div class="teamrow"><span>${esc(r.name)}</span>${edit?`<button onclick="delRes('${r.id}')">Deaktivieren</button>`:""}</div>`).join("")}<br><b>Kabinen</b>${rr.filter(r=>r.resource_type==="cabin").map(r=>`<div class="teamrow"><span>${esc(r.name)}</span>${edit?`<button onclick="delRes('${r.id}')">Deaktivieren</button>`:""}</div>`).join("")}</div>`}).join("")}
 async function api(url,opt={}){opt.headers={...(opt.headers||{}),"x-edit-pin":pin};const r=await fetch(url,opt);const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||"Fehler");return j}
-$("save").onclick=async()=>{const body={date:$("date").value,start:$("start").value,end:$("end").value,type:$("type").value,team:$("team").value,opponent:$("opponent").value,location:$("location").value,pitch:$("pitch").value,homeCabin:$("homeCabin").value,guestCabin:$("guestCabin").value,status:$("status").value,note:$("note").value,repeatWeekly:$("repeatWeekly").checked,repeatUntil:$("repeatUntil").value};if(!body.date||!body.start||!body.end||!body.team)return alert("Datum, Von, Bis und Mannschaft sind Pflicht.");try{const j=await api("/api/events",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});await load();alert(j.count>1?`${j.count} Termine als Serie gespeichert.`:"Termin gespeichert.")}catch(e){alert(e.message)}};
+$("save").onclick=async()=>{const body={date:$("date").value,start:$("start").value,end:$("end").value,type:$("type").value,team:$("team").value,opponent:$("opponent").value,competition:$("competition").value,location:$("location").value,address:(data.locations.find(l=>l.name===$("location").value)||{}).address||"",pitch:$("pitch").value,homeCabin:$("homeCabin").value,guestCabin:$("guestCabin").value,status:$("status").value,note:$("note").value,repeatWeekly:$("repeatWeekly").checked,repeatUntil:$("repeatUntil").value};if(!body.date||!body.start||!body.end||!body.team)return alert("Datum, Von, Bis und Mannschaft sind Pflicht.");try{const j=await api("/api/events",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});await load();alert(j.count>1?`${j.count} Termine als Serie gespeichert.`:"Termin gespeichert.")}catch(e){alert(e.message)}};
 window.delEvent=async id=>{if(confirm("Termin löschen?")){try{await api("/api/events/"+id,{method:"DELETE"});load()}catch(e){alert(e.message)}}};
 window.delSeries=async id=>{if(confirm("Komplette Trainingsserie löschen?")){try{await api("/api/series/"+id,{method:"DELETE"});load()}catch(e){alert(e.message)}}};
 $("saveTeam").onclick=async()=>{const body={name:$("teamName").value.trim(),coach:$("teamCoach").value,contact:$("teamContact").value,note:$("teamNote").value};if(!body.name)return;try{const id=$("teamName").dataset.id;if(id)await api("/api/teams/"+id,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({...body,active:true})});else await api("/api/teams",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});["teamName","teamCoach","teamContact","teamNote"].forEach(x=>$(x).value="");delete $("teamName").dataset.id;load()}catch(e){alert(e.message)}};
 window.delTeam=async id=>{if(confirm("Mannschaft deaktivieren?")){try{await api("/api/teams/"+id,{method:"DELETE"});load()}catch(e){alert(e.message)}}};
 $("saveResource").onclick=async()=>{const body={locationId:$("resLocation").value,type:$("resType").value,name:$("resName").value.trim()};if(!body.name)return;try{await api("/api/resources",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});$("resName").value="";load()}catch(e){alert(e.message)}};
 window.delRes=async id=>{if(confirm("Ressource deaktivieren?")){try{await api("/api/resources/"+id,{method:"DELETE"});load()}catch(e){alert(e.message)}}};
-showEdit();checkDb();load();
+
+let syncTimer=null;
+async function pollSync(){
+  try{
+    const s=await (await fetch("/api/sync/status",{cache:"no-store"})).json();
+    $("syncState").textContent=s.running?`${s.progress} (${s.processed}/${s.total||"?"})`:(s.error?`Fehler: ${s.error}`:s.progress);
+    $("syncState").className=s.error?"danger":(s.running?"muted":"good");
+    if(s.running){
+      $("syncBtn").disabled=true;
+      syncTimer=setTimeout(pollSync,1500);
+    }else{
+      $("syncBtn").disabled=false;
+      if(s.finishedAt) await load();
+    }
+  }catch(e){
+    $("syncState").textContent="Sync-Status nicht erreichbar";
+    $("syncState").className="danger";
+    $("syncBtn").disabled=false;
+  }
+}
+$("syncBtn").onclick=async()=>{
+  if(!confirm("Aktuellen Vereinsspielplan von FUSSBALL.DE synchronisieren?"))return;
+  try{
+    await api("/api/sync",{method:"POST"});
+    $("syncBtn").disabled=true;
+    pollSync();
+  }catch(e){alert(e.message)}
+};
+
+let conflictTimer=null;
+async function liveCheck(){
+  clearTimeout(conflictTimer);
+  conflictTimer=setTimeout(async()=>{
+    const body={
+      date:$("date").value,start:$("start").value,end:$("end").value,type:$("type").value,
+      team:$("team").value,location:$("location").value,pitch:$("pitch").value,
+      homeCabin:$("homeCabin").value,guestCabin:$("guestCabin").value,status:$("status").value
+    };
+    if(!body.date||!body.start||!body.end||!body.location||!body.pitch){
+      $("liveConflict").classList.add("hidden"); return;
+    }
+    try{
+      const j=await (await fetch("/api/check-conflicts",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)})).json();
+      if(j.conflicts?.length){
+        $("liveConflict").classList.remove("hidden");
+        $("liveConflict").style.background="#fff1eb";
+        $("liveConflict").style.borderColor="#e0a18c";
+        $("liveConflict").innerHTML="<b>⚠ Konflikt erkannt:</b> "+[...new Set(j.conflicts.flatMap(x=>x.reasons))].join(", ");
+      }else{
+        $("liveConflict").classList.remove("hidden");
+        $("liveConflict").style.background="#eaf8ee";
+        $("liveConflict").style.borderColor="#9bd0aa";
+        $("liveConflict").innerHTML="<b>✓ Ressource frei</b>";
+      }
+    }catch{}
+  },350);
+}
+["date","start","end","type","team","location","pitch","homeCabin","guestCabin","status"].forEach(id=>{if($(id))$(id).addEventListener("change",liveCheck)});
+
+showEdit();checkDb();load();pollSync();
 </script>
 </body></html>
