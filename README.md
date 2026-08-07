@@ -1,40 +1,34 @@
-# ClubPlanner 4.4 – direkter FUSSBALL.DE-Spielplan
+# ClubPlanner 5.0 – Sprint 1
 
-4.4 entfernt Playwright wieder vollständig.
+Dieser Branch beginnt den sauberen Neuaufbau von ClubPlanner 5.0.
 
-## Datenquelle
-Verwendet wird der FUSSBALL.DE-Endpunkt:
-`/ajax.club.matchplan/...`
+## Was Sprint 1 enthält
+- schlanker `server.js`
+- neue Modulstruktur unter `src/`
+- zentrale Konfiguration
+- zentraler PostgreSQL/Supabase-Client
+- neues `cp5_*` Datenbankschema
+- getrennte API-Routen und Services
+- neues Ressourcenmodell mit `Gesamt`, `Hälfte A`, `Hälfte B`
+- acht offizielle Mannschaften als Startdaten
+- Sync-Historie und Settings-Grundlage
+- alte 4.x Tabellen bleiben unangetastet
+- vorhandenes Frontend bleibt in Sprint 1 als Übergangsoberfläche erreichbar
 
-Dieser Spielplan enthält bereits:
-- Datum
-- Anstoßzeit
-- Mannschaftsart
-- Wettbewerb
-- Spielnummer
-- Heimteam
-- Gastteam
-- Status / Absetzung
-- Link zum Spiel
+## Neue API-Endpunkte
+- `GET /health`
+- `GET /api/v5/system/status`
+- `POST /api/v5/auth/login`
+- `GET /api/v5/teams`
+- `GET /api/v5/resources`
 
-ClubPlanner testet mehrere URL-Varianten:
-- ajax-default
-- ajax-max-a
-- ajax-max-b
-- ajax-season
-- print-season
+## Nach dem Deploy im Render-Log
+Es muss erscheinen:
 
-Die Ergebnisse werden über Spiel-ID bzw. Spielnummer zusammengeführt.
+`[CP5] ... ClubPlanner 5.0 Sprint 1 Datenbankschema bereit`
 
-## Test
-Button: `4.4 Direkt-Spielplan-Test`
+`[CP5] ... ClubPlanner 5.0 Sprint 1 läuft auf Port 10000`
 
-Der Kalender wird noch nicht verändert.
-
-Render zeigt pro Quelle:
-`[FUSSBALL-4.4] QUELLE ajax-default | 10 Spiele | 10 Datum | 10 Zeiten | ...`
-
-Danach:
-`[FUSSBALL-4.4] Test fertig: ...`
-
-Das wichtigste Ziel ist zunächst, mindestens eine Quelle mit echten Datum-/Anstoßzeitwerten auf Render zu bestätigen.
+## Wichtig
+Sprint 1 importiert noch keine FUSSBALL.DE-Spiele in die neuen `cp5_*` Tabellen.
+Das kommt im nächsten Sprint auf diesem sauberen Fundament.

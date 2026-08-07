@@ -1,15 +1,17 @@
 {
-  "name": "clubplanner-sv-gemmingen",
-  "version": "4.4.0",
+  "name": "clubplanner-5",
+  "version": "5.0.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "check": "node --check server.js && node --check src/app.js && node --check src/database/schema.js"
   },
   "dependencies": {
     "express": "^5.1.0",
     "exceljs": "^4.4.0",
     "pg": "^8.16.3",
     "cheerio": "^1.1.2"
-  }
+  },
+  "description": "ClubPlanner 5.0 - Vereins-, Spiel-, Trainings- und Ressourcenplanung"
 }
