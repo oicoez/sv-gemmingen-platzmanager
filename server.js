@@ -102,6 +102,9 @@ async function initDb(){
   ]) await db(alter);
 
   await db(`update clubplanner_events set kickoff_known=false where source='fussball.de' and start_time='00:00:00'`);
+  await db(`update clubplanner_events
+    set home_cabin='', guest_cabin=''
+    where source='fussball.de' and (coalesce(home_cabin,'')<>'' or coalesce(guest_cabin,'')<>'')`);
   await db(`create index if not exists idx_cp_events_date on clubplanner_events(event_date)`);
   await db(`create unique index if not exists uq_cp_external on clubplanner_events(source,external_id) where external_id is not null`);
 
@@ -126,7 +129,7 @@ async function initDb(){
   for(const name of DEFAULT_TEAMS){
     await db(`insert into clubplanner_teams(id,name) values($1,$2) on conflict(name) do nothing`,[crypto.randomUUID(),name]);
   }
-  console.log("Sprint 3.3 Datenbankstruktur ist bereit.");
+  console.log("Sprint 3.4 Datenbankstruktur ist bereit.");
 }
 
 function requirePin(req,res,next){
@@ -293,6 +296,12 @@ function inferHomeFromCurrentRow(text){
   return {home:left,away:right,isHome:/Gemmingen/i.test(left)};
 }
 
+
+function externalIdFromUrl(url){
+  const m=String(url||"").match(/\/spiel\/([A-Z0-9]+)(?:\/|$)/i);
+  return m ? m[1] : String(url||"");
+}
+
 async function collectOverviewItems(){
   const printUrl=`https://www.fussball.de/vereinsspielplan.druck/-/datum-bis/2027-06-30/datum-von/2026-08-07/id/${FUSSBALL_CLUB_ID}/match-type/-1/max/999/mode/PRINT/show-venues/true`;
   const clubUrl=`https://www.fussball.de/verein/sv-gemmingen-baden/-/id/${FUSSBALL_CLUB_ID}`;
@@ -371,12 +380,9 @@ async function fastUpdateExisting(items){
       params.push(item.kickoff,datePlusMinutes("2000-01-01",item.kickoff,120));
     }
 
-    if(cancelled){
-      fields.push(`home_cabin=''`,`guest_cabin=''`);
-    }else if(["Gemmingen","Stebbach"].includes(found.location)){
-      // Restore cabins that an earlier buggy parser may have removed.
-      fields.push(`home_cabin='Heimkabine'`,`guest_cabin='Gastkabine'`);
-    }
+    // Spieltermine benötigen keine Kabinenzuordnung im ClubPlanner.
+    // Kabinen werden nur für Trainings/sonstige manuelle Belegungen verwendet.
+    fields.push(`home_cabin=''`,`guest_cabin=''`);
 
     await db(`update clubplanner_events set ${fields.join(",")} where id=$1`,params);
     syncState.updated++;
@@ -431,8 +437,8 @@ async function parseNewGame(item,index,total){
     location:loc.location||(cancelled?"—":"PRÜFEN"),
     address:loc.address,
     pitch,
-    homeCabin:(!cancelled&&loc.location)?"Heimkabine":"",
-    guestCabin:(!cancelled&&loc.location)?"Gastkabine":"",
+    homeCabin:"",
+    guestCabin:"",
     status:item.status||"geplant",
     note:cancelled?"ABGESETZT":(loc.location?"":"SPIELORT PRÜFEN"),
     source:"fussball.de",
@@ -571,6 +577,20 @@ app.delete("/api/teams/:id",requirePin,async(req,res)=>{try{await db(`update clu
 app.post("/api/resources",requirePin,async(req,res)=>{try{const x=req.body||{};await db(`insert into clubplanner_resources(id,location_id,resource_type,name,active) values($1,$2,$3,$4,true) on conflict(location_id,resource_type,name) do update set active=true`,[crypto.randomUUID(),x.locationId,x.type,x.name]);res.json({ok:true})}catch(e){res.status(500).json({error:e.message})}});
 app.delete("/api/resources/:id",requirePin,async(req,res)=>{try{await db(`update clubplanner_resources set active=false where id=$1`,[req.params.id]);res.json({ok:true})}catch(e){res.status(500).json({error:e.message})}});
 
+
+app.delete("/api/calendar/reset",requirePin,async(req,res)=>{
+  try{
+    // Explicit destructive action: the same edit PIN is required again
+    // via x-edit-pin header. This deletes calendar events only, not teams/resources.
+    const before=await db(`select count(*)::int as count from clubplanner_events`);
+    await db(`delete from clubplanner_events`);
+    res.json({ok:true,deleted:before.rows[0]?.count||0});
+  }catch(e){
+    console.error("Kalender-Reset fehlgeschlagen:",e);
+    res.status(500).json({error:"Kalender konnte nicht zurückgesetzt werden: "+e.message});
+  }
+});
+
 app.get("/api/export",async(req,res)=>{
   try{
     const d=await allData(),ids=new Set(d.conflicts.flatMap(x=>[x.a,x.b]));
@@ -582,5 +602,5 @@ app.get("/api/export",async(req,res)=>{
   }catch(e){res.status(500).send(e.message)}
 });
 
-initDb().then(()=>app.listen(PORT,"0.0.0.0",()=>console.log(`ClubPlanner Sprint 3.3 läuft auf Port ${PORT}`)))
+initDb().then(()=>app.listen(PORT,"0.0.0.0",()=>console.log(`ClubPlanner Sprint 3.4 läuft auf Port ${PORT}`)))
 .catch(e=>{console.error("DB-Startfehler",e);process.exit(1)});

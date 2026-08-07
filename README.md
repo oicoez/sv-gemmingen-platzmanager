@@ -1,36 +1,34 @@
-# ClubPlanner – Sprint 3.3
+# ClubPlanner – Sprint 3.4
 
-Diese Version ersetzt den fehleranfälligen Playwright/Chromium-Scraper vollständig.
+## Korrekturen
+- Fehler `externalIdFromUrl is not defined` behoben.
+- FUSSBALL.DE-Synchronisierung kann wieder gestartet werden.
+- Importierte Spiele erhalten keine Heim-/Gastkabine mehr.
+- Bereits vorhandene FUSSBALL.DE-Spiele werden beim Start/Sync von alten Kabinenzuordnungen bereinigt.
+- Bei manuell gewählter Art `Heimspiel` werden die Kabinenfelder ausgeblendet.
 
-## Anstoßzeit
-FUSSBALL.DE wird über die serverseitige Vereinsspielplan-Tabelle gelesen.
-Für jede Spiel-ID werden Datum, Anstoßzeit und Status aus dem direkt zugehörigen Tabellenblock ermittelt.
+## Kalender zurücksetzen
+Im Bearbeitungsmodus gibt es einen neuen Button `Kalender zurücksetzen`.
 
-## ABSE.
-`ABSE.` / `Absetzung` wird nur aus derselben Spielzeile ausgewertet.
-Ein Status aus einem benachbarten Spiel kann nicht mehr versehentlich übernommen werden.
-Abgesetzte Spiele erzeugen weiterhin keine Platz- oder Kabinenkonflikte.
+Sicherheitsablauf:
+1. Warnabfrage.
+2. Bearbeitungs-PIN erneut eingeben.
+3. PIN wird serverseitig geprüft.
+4. Zweite letzte Bestätigung.
+5. Erst dann werden ALLE Kalendertermine gelöscht.
 
-## Kein Hängen mehr
-- kein Chromium / Playwright
-- jeder FUSSBALL.DE-Abruf: 12–15 Sekunden Timeout
-- gesamter Sync: 90 Sekunden Sicherheitsgrenze
-- Fortschritt zusätzlich im Render-Log als `[FUSSBALL-SYNC] ...`
-- Oberfläche zeigt während des Syncs `· aktiv`
+Nicht gelöscht werden:
+- Mannschaften
+- Plätze
+- Kabinen
+- Datenbankstruktur
 
-## Geschwindigkeit
-Bekannte Spiele werden direkt aus EINER geladenen Spielplanseite aktualisiert.
-Detailseiten werden ausschließlich für neue, wahrscheinlich echte Heimspiele benötigt und bis zu fünf gleichzeitig geladen.
-
-## Bestehende falsche 00:00-Werte
-Beim Start werden alte FUSSBALL.DE-Einträge mit `00:00` zunächst als `Anstoßzeit offen` gekennzeichnet.
-Beim nächsten erfolgreichen Sync werden sie mit den echten Tabellenzeiten ersetzt.
-In der Oberfläche erscheint bis dahin `OFFEN`, nicht irreführend `00:00`.
+Danach kann der FUSSBALL.DE-Spielplan komplett frisch synchronisiert werden.
 
 ## Deployment
-1. Kompletten Inhalt in das bestehende GitHub-Repository hochladen und Dateien ersetzen.
-2. Render -> Manual Deploy -> Deploy latest commit.
-3. Log prüfen:
-   - `Sprint 3.3 Datenbankstruktur ist bereit.`
-   - `ClubPlanner Sprint 3.3 läuft auf Port 10000`
-4. Einmal `FUSSBALL.DE synchronisieren` drücken.
+Wie bisher gesamten Inhalt nach GitHub hochladen und vorhandene Dateien ersetzen.
+Dann Render -> Manual Deploy -> Deploy latest commit.
+
+Im Log:
+- Sprint 3.4 Datenbankstruktur ist bereit.
+- ClubPlanner Sprint 3.4 läuft auf Port 10000

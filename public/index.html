@@ -40,7 +40,7 @@ th{background:#1f4e78;color:white;position:sticky;top:0;z-index:1}tr:nth-child(e
 <div class="topright"><span id="dbState" class="muted">Cloud-DB…</span><span id="editState" class="muted">Lesemodus</span><button id="loginBtn">Bearbeiten</button></div>
 </header>
 
-<div class="notice"><b>Sprint 3.3 aktiv:</b> robuster Tabellenimport ohne Browser · echte Anstoßzeiten · ABSE. nur aus derselben Spielzeile · feste Timeouts · schneller Sync.</div>
+<div class="notice"><b>Sprint 3.4 aktiv:</b> Sync-Fehler behoben · Spielkabinen entfernt · sicherer Kalender-Reset · robuster FUSSBALL.DE-Import.</div>
 
 <nav>
 <button class="tab active" data-tab="dashboard">Dashboard</button>
@@ -50,7 +50,7 @@ th{background:#1f4e78;color:white;position:sticky;top:0;z-index:1}tr:nth-child(e
 <button class="tab editOnly hidden" data-tab="new">Termin eintragen</button>
 <button class="tab editOnly hidden" data-tab="teams">Mannschaften</button>
 <button class="tab editOnly hidden" data-tab="resources">Plätze & Kabinen</button>
-<button id="syncBtn" class="editOnly hidden">FUSSBALL.DE synchronisieren</button><span id="syncState" class="muted"></span><a class="btn" href="/api/export">Excel</a>
+<button id="syncBtn" class="editOnly hidden">FUSSBALL.DE synchronisieren</button><button id="resetCalendarBtn" class="editOnly hidden">Kalender zurücksetzen</button><span id="syncState" class="muted"></span><a class="btn" href="/api/export">Excel</a>
 </nav>
 
 <section id="dashboard">
@@ -145,7 +145,7 @@ async function load(){
 async function checkDb(){try{const j=await (await fetch("/api/db-status")).json();$("dbState").textContent=j.ok?`Cloud-DB aktiv · ${j.events} Termine · ${j.resources} Ressourcen`:"DB-Fehler";$("dbState").className=j.ok?"good":"danger"}catch{$("dbState").textContent="DB nicht erreichbar";$("dbState").className="danger"}}
 function renderDashboard(){const today=iso(new Date()),map=cm(),arr=sorted().filter(e=>e.date>=today).slice(0,10);$("nextEvents").innerHTML=arr.length?arr.map(e=>`<div class="teamrow"><span><b>${esc(e.date)} ${["abgesetzt","ausfall","abbruch"].includes(String(e.status).toLowerCase())?"ABGESETZT":(e.kickoffKnown===false?"OFFEN":esc(e.start))}</b> · ${esc(e.team)} · ${esc(e.type)} · ${esc(e.location)} / ${esc(e.pitch)}</span>${map.has(e.id)?'<b class="danger">Konflikt</b>':''}</div>`).join(""):"Keine zukünftigen Termine."}
 function filtered(){return sorted().filter(e=>(!$("fLocation").value||e.location===$("fLocation").value)&&(!$("fTeam").value||e.team===$("fTeam").value)&&(!$("fType").value||e.type===$("fType").value)&&(!$("fDate").value||e.date>=$("fDate").value))}
-function renderTable(){const map=cm();$("rows").innerHTML=filtered().map(e=>`<tr class="${map.has(e.id)?"warn":""}"><td>${esc(e.date)}</td><td>${["abgesetzt","ausfall","abbruch"].includes(String(e.status).toLowerCase())?"ABGESETZT":(e.kickoffKnown===false?"OFFEN":esc(e.start))}</td><td>${esc(e.type)}</td><td>${esc(e.team)}</td><td>${esc(e.opponent)}</td><td>${esc(e.competition||"")}</td><td>${esc(e.location)}</td><td>${esc(e.address||"")}</td><td>${esc(e.pitch)}</td><td>${esc(e.homeCabin)}</td><td>${esc(e.guestCabin)}</td><td>${esc(e.status)}</td><td>${map.has(e.id)?esc([...new Set(map.get(e.id))].join(", ")):""}</td><td class="editOnly ${edit?"":"hidden"}"><button onclick="delEvent('${e.id}')">Löschen</button>${e.seriesId?` <button onclick="delSeries('${e.seriesId}')">Serie</button>`:""}</td></tr>`).join("")}
+function renderTable(){const map=cm();$("rows").innerHTML=filtered().map(e=>`<tr class="${map.has(e.id)?"warn":""}"><td>${esc(e.date)}</td><td>${["abgesetzt","ausfall","abbruch"].includes(String(e.status).toLowerCase())?"ABGESETZT":(e.kickoffKnown===false?"OFFEN":esc(e.start))}</td><td>${esc(e.type)}</td><td>${esc(e.team)}</td><td>${esc(e.opponent)}</td><td>${esc(e.competition||"")}</td><td>${esc(e.location)}</td><td>${esc(e.address||"")}</td><td>${esc(e.pitch)}</td><td>${e.type==="Heimspiel"?"":esc(e.homeCabin)}</td><td>${e.type==="Heimspiel"?"":esc(e.guestCabin)}</td><td>${esc(e.status)}</td><td>${map.has(e.id)?esc([...new Set(map.get(e.id))].join(", ")):""}</td><td class="editOnly ${edit?"":"hidden"}"><button onclick="delEvent('${e.id}')">Löschen</button>${e.seriesId?` <button onclick="delSeries('${e.seriesId}')">Serie</button>`:""}</td></tr>`).join("")}
 ["fLocation","fTeam","fType","fDate"].forEach(id=>$(id).onchange=renderTable);$("clearFilter").onclick=()=>{["fLocation","fTeam","fType","fDate"].forEach(id=>$(id).value="");renderTable()};
 function monday(d){const x=new Date(d),day=(x.getDay()+6)%7;x.setDate(x.getDate()-day);x.setHours(12,0,0,0);return x}
 function renderCalendar(){
@@ -262,6 +262,59 @@ async function liveCheck(){
 }
 ["date","start","end","type","team","location","pitch","homeCabin","guestCabin","status"].forEach(id=>{if($(id))$(id).addEventListener("change",liveCheck)});
 
-showEdit();checkDb();load();pollSync();
+
+function updateCabinVisibility(){
+  const isGame=$("type")?.value==="Heimspiel";
+  const hc=$("homeCabin")?.closest("label");
+  const gc=$("guestCabin")?.closest("label");
+  if(hc)hc.classList.toggle("hidden",isGame);
+  if(gc)gc.classList.toggle("hidden",isGame);
+  if(isGame){
+    if($("homeCabin"))$("homeCabin").value="";
+    if($("guestCabin"))$("guestCabin").value="";
+  }
+}
+if($("type"))$("type").addEventListener("change",updateCabinVisibility);
+
+$("resetCalendarBtn").onclick=async()=>{
+  const first=confirm("ACHTUNG: Soll der gesamte Kalender wirklich gelöscht werden? Mannschaften, Plätze und Kabinen bleiben erhalten.");
+  if(!first)return;
+
+  const confirmPin=prompt("Zur Sicherheit Bearbeitungs-PIN erneut eingeben:");
+  if(!confirmPin)return;
+
+  // Verify the entered PIN first
+  try{
+    const login=await fetch("/api/login",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({pin:confirmPin})
+    });
+    const check=await login.json();
+    if(!check.ok){
+      alert("PIN falsch. Der Kalender wurde NICHT gelöscht.");
+      return;
+    }
+
+    const second=confirm("Letzte Bestätigung: Wirklich ALLE Kalendertermine löschen?");
+    if(!second)return;
+
+    const r=await fetch("/api/calendar/reset",{
+      method:"DELETE",
+      headers:{"x-edit-pin":confirmPin}
+    });
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(j.error||"Kalender konnte nicht gelöscht werden.");
+
+    alert(`${j.deleted||0} Kalendertermine wurden gelöscht.`);
+    await load();
+    await checkDb();
+  }catch(e){
+    alert(e.message);
+  }
+};
+
+
+showEdit();checkDb();load().then(updateCabinVisibility);pollSync();
 </script>
 </body></html>
