@@ -1,13 +1,10 @@
-# ClubPlanner 5.0 – Sprint 2.1
+# ClubPlanner 5.0 – Sprint 2.2
 
-Korrekturen nach dem ersten produktiven V5-Import:
-
-- Datum wird in der Oberfläche als `TT.MM.JJJJ` dargestellt.
-- Mannschaften werden nicht mehr nur über den externen Namen erkannt.
-- Altersklasse + Mannschaftsname bilden gemeinsam die Zuordnung.
-- Damit werden gleichnamige JSG-Mannschaften aus B- und C-Junioren nicht mehr verwechselt.
-- Beim nächsten FUSSBALL.DE-Sync werden bereits importierte Events per `external_id` automatisch auf die korrekte Mannschaft aktualisiert.
-- Status wird in der UI deutsch dargestellt (`geplant`, `abgesetzt`, `verlegt`).
-
-## Testfall
-Das Spiel vom 08.09.2026 mit `JSG Richen / Eppingen 3` muss nach erneutem Sync als **C-Junioren** erscheinen.
+## Änderungen
+- FUSSBALL.DE `ABSE.` wird als `cancelled`/`abgesetzt` behandelt.
+- Abgesetzte Spiele bleiben rot; in der Spalte **Ort** steht `abgesetzt` statt `noch offen`.
+- Standardansicht zeigt nur Spiele, deren Datum und Anstoßzeit in Europe/Berlin noch nicht vergangen sind.
+- Button **Vergangene Spiele anzeigen** blendet die Historie bei Bedarf wieder ein.
+- Die Synchronisierung ergänzt Detail-Spielort/Adresse nur noch für kommende Heimspiele. Das reduziert externe Abrufe und beschleunigt den Sync.
+- Vergangene Datensätze bleiben in `cp5_events` erhalten.
+- Abgesetzte Spiele werden in späteren Konfliktprüfungen grundsätzlich ausgeschlossen.

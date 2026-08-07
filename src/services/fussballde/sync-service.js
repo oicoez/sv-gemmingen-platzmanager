@@ -11,6 +11,22 @@ import { upsertImportedEvent } from "../../repositories/event-repository.js";
 const state={running:false,phase:"idle",progress:"Noch nicht synchronisiert",total:0,processed:0,inserted:0,updated:0,unchanged:0,skipped:0,errors:[],startedAt:null,finishedAt:null};
 export function getSyncState(){return {...state,errors:[...state.errors]}}
 
+
+function berlinNowParts(){
+  const parts=new Intl.DateTimeFormat("sv-SE",{
+    timeZone:"Europe/Berlin",year:"numeric",month:"2-digit",day:"2-digit",
+    hour:"2-digit",minute:"2-digit",hourCycle:"h23"
+  }).formatToParts(new Date());
+  const get=t=>parts.find(x=>x.type===t)?.value||"";
+  return {date:`${get("year")}-${get("month")}-${get("day")}`,time:`${get("hour")}:${get("minute")}`};
+}
+
+function isUpcomingFixture(row){
+  if(!row.date||!row.kickoff)return false;
+  const now=berlinNowParts();
+  return row.date>now.date || (row.date===now.date && row.kickoff>=now.time);
+}
+
 function addMinutes(time,minutes){
   if(!time)return null;
   const [h,m]=time.split(":").map(Number);const total=(h*60+m+minutes)%(24*60);
@@ -41,13 +57,15 @@ export async function startFussballSync(){
       const club=await getClub();
       const {url,html}=await loadSeasonMatchplan();
       const all=parseSeasonMatchplan(html,url);
-      const home=all.filter(x=>isClubHomeTeam(x.home));
+      const homeAll=all.filter(x=>isClubHomeTeam(x.home));
+      const home=homeAll.filter(isUpcomingFixture);
+      const past=homeAll.length-home.length;
       state.total=home.length;
-      state.progress=`${all.length} Spiele gefunden · ${home.length} Heimspiele`;
-      logger.info("FUSSBALL.DE Spielplan geladen",{all:all.length,home:home.length});
+      state.progress=`${all.length} Spiele gefunden · ${home.length} kommende Heimspiele · ${past} vergangene ausgeblendet`;
+      logger.info("FUSSBALL.DE Spielplan geladen",{all:all.length,homeAll:homeAll.length,upcoming:home.length,pastSkipped:past});
 
       state.phase="venues";
-      state.progress="Spielorte/Adressen werden ergänzt …";
+      state.progress="Spielorte/Adressen der kommenden Spiele werden ergänzt …";
       const rows=await enrichVenues(home);
 
       state.phase="database";

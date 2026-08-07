@@ -39,14 +39,17 @@ export async function upsertImportedEvent(input){
   return {action:"inserted",id};
 }
 
-export async function listImportedEvents(){
+export async function listImportedEvents({includePast=false}={}){
+  const pastFilter=includePast ? "" : `and (e.event_date > (now() at time zone 'Europe/Berlin')::date
+      or (e.event_date = (now() at time zone 'Europe/Berlin')::date
+          and coalesce(e.kickoff_time,time '23:59') >= (now() at time zone 'Europe/Berlin')::time))`;
   const r=await db(`select e.id,e.event_date,e.kickoff_time,e.opponent,e.competition,e.status,e.address,e.external_id,e.game_number,
       t.name as team,l.name as location,r.display_name as resource
     from cp5_events e
     left join cp5_teams t on t.id=e.team_id
     left join cp5_locations l on l.id=e.location_id
     left join cp5_resources r on r.id=e.resource_id
-    where e.source='fussballde'
+    where e.source='fussballde' ${pastFilter}
     order by e.event_date,e.kickoff_time nulls last`);
   return r.rows;
 }
