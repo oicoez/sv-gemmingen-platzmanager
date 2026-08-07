@@ -127,7 +127,7 @@ async function initDb(){
   const obsolete=["Herren I","Herren II","Frauen","A-Junioren","B-Junioren","C1-Junioren","C2-Junioren","D-Junioren"];
   await db(`update clubplanner_teams set active=false where name = any($1::text[])`,[obsolete]);
 
-  console.log("ClubPlanner 4.1 Phase 2.2 Datenbankstruktur ist bereit.");
+  console.log("ClubPlanner 4.1 Phase 3 Datenbankstruktur ist bereit.");
 }
 
 function requirePin(req,res,next){
@@ -214,7 +214,7 @@ const v41TestState={
   total:0,processed:0,overview:null,home:null,error:null,startedAt:null,finishedAt:null
 };
 
-async function runV41Phase2Test(){
+async function runV41Phase3Test(){
   if(v41TestState.running)return;
   Object.assign(v41TestState,{
     running:true,phase:"overview",progress:"Vereinsspielplan wird analysiert …",
@@ -228,7 +228,13 @@ async function runV41Phase2Test(){
       validation:source.validation,
       sample:source.rows.slice(0,12)
     };
-    console.log(`[FUSSBALL-4.1-P2] Übersicht: ${source.validation.total} Spiele · ${source.validation.withKickoff} Zeiten · ${source.validation.withTeams} Paarungen · ${source.validation.cancelled} abgesetzt/ausgefallen`);
+    const timeSources={};
+    for(const row of source.rows){
+      const k=row.timeSource||"keine";
+      timeSources[k]=(timeSources[k]||0)+1;
+    }
+    console.log(`[FUSSBALL-4.1-P3] Übersicht: ${source.validation.total} Spiele · ${source.validation.withKickoff} Zeiten · ${source.validation.withTeams} Paarungen · ${source.validation.cancelled} abgesetzt/ausgefallen`);
+    console.log(`[FUSSBALL-4.1-P3] Zeitquellen: ${JSON.stringify(timeSources)}`);
     v41TestState.phase="details";
     v41TestState.progress="Heimspiele: Spielstätte und Adresse werden geprüft …";
 
@@ -239,9 +245,9 @@ async function runV41Phase2Test(){
         v41TestState.processed=processed;
         if(item.ok){
           const r=item.row;
-          console.log(`[FUSSBALL-4.1-P2] ${processed}/${total} | ${r.date||"kein Datum"} ${r.kickoff||"keine Zeit"} | ${r.home} : ${r.away} | ${r.location||"kein Ort"} | ${r.address||"keine Adresse"} | ${r.status}`);
+          console.log(`[FUSSBALL-4.1-P3] ${processed}/${total} | ${r.date||"kein Datum"} ${r.kickoff||"keine Zeit"} | ${r.home} : ${r.away} | ${r.location||"kein Ort"} | ${r.address||"keine Adresse"} | ${r.status}`);
         }else{
-          console.log(`[FUSSBALL-4.1-P2] ${processed}/${total} | ${item.row.externalId} | FEHLER: ${item.error}`);
+          console.log(`[FUSSBALL-4.1-P3] ${processed}/${total} | ${item.row.externalId} | FEHLER: ${item.error}`);
         }
       }
     });
@@ -257,12 +263,12 @@ async function runV41Phase2Test(){
     };
     v41TestState.phase="done";
     v41TestState.progress=`Test fertig: ${home.homeCount} Heimspiele · ${withKickoff} mit Anstoßzeit · ${withVenue} mit Spielort/Adresse · ${home.errors.length} Detailfehler`;
-    console.log(`[FUSSBALL-4.1-P2] ${v41TestState.progress}`);
+    console.log(`[FUSSBALL-4.1-P3] ${v41TestState.progress}`);
   }catch(e){
     v41TestState.error=e.name==="AbortError"?"FUSSBALL.DE Timeout":e.message;
     v41TestState.phase="error";
     v41TestState.progress=`Fehler: ${v41TestState.error}`;
-    console.error("[FUSSBALL-4.1-P2]",e);
+    console.error("[FUSSBALL-4.1-P3]",e);
   }finally{
     v41TestState.running=false;
     v41TestState.finishedAt=new Date().toISOString();
@@ -271,7 +277,7 @@ async function runV41Phase2Test(){
 
 app.get("/api/v41/test/status",requirePin,(req,res)=>res.json(v41TestState));
 app.post("/api/v41/test",requirePin,(req,res)=>{
-  if(!v41TestState.running)runV41Phase2Test();
+  if(!v41TestState.running)runV41Phase3Test();
   res.status(202).json({ok:true,running:true});
 });
 app.get("/api/v41/test/result",requirePin,(req,res)=>{
@@ -361,5 +367,5 @@ app.get("/api/export",async(req,res)=>{
   }catch(e){res.status(500).send(e.message)}
 });
 
-initDb().then(()=>app.listen(PORT,"0.0.0.0",()=>console.log(`ClubPlanner 4.1 Phase 2.2 läuft auf Port ${PORT}`)))
+initDb().then(()=>app.listen(PORT,"0.0.0.0",()=>console.log(`ClubPlanner 4.1 Phase 3 läuft auf Port ${PORT}`)))
 .catch(e=>{console.error("DB-Startfehler",e);process.exit(1)});

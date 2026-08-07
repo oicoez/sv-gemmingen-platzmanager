@@ -50,7 +50,7 @@ th{background:#1f4e78;color:white;position:sticky;top:0;z-index:1}tr:nth-child(e
 <button class="tab editOnly hidden" data-tab="new">Termin eintragen</button>
 <button class="tab editOnly hidden" data-tab="teams">Mannschaften</button>
 <button class="tab editOnly hidden" data-tab="resources">Plätze & Kabinen</button>
-<button id="v41TestBtn" class="editOnly hidden">4.1 Testlauf</button><button id="syncBtn" class="editOnly hidden">FUSSBALL.DE synchronisieren</button><button id="resetCalendarBtn" class="editOnly hidden">Kalender zurücksetzen</button><span id="syncState" class="muted"></span><a class="btn" href="/api/export">Excel</a>
+<button id="v41TestBtn" class="editOnly hidden">4.1 Phase-3 Testlauf</button><button id="syncBtn" class="editOnly hidden">FUSSBALL.DE synchronisieren</button><button id="resetCalendarBtn" class="editOnly hidden">Kalender zurücksetzen</button><span id="syncState" class="muted"></span><a class="btn" href="/api/export">Excel</a>
 </nav>
 
 <section id="dashboard">
@@ -325,7 +325,7 @@ async function pollV41Test(){
     const s=await r.json();
     const p=$("v41TestPanel");
     p.classList.remove("hidden");
-    p.innerHTML=`<b>4.1 Test:</b> ${esc(s.progress||"")}${s.running&&s.total?` (${s.processed}/${s.total})`:""}`;
+    p.innerHTML=`<b>4.1 Phase-3 Test:</b> ${esc(s.progress||"")}${s.running&&s.total?` (${s.processed}/${s.total})`:""}`;
     $("v41TestBtn").disabled=Boolean(s.running);
     if(s.running){
       clearTimeout(v41Timer);
@@ -335,7 +335,7 @@ async function pollV41Test(){
       const result=await rr.json();
       const ov=result.overview?.validation||{};
       const hm=result.home||{};
-      p.innerHTML=`<b>4.1 Test fertig:</b> Übersicht ${ov.total||0} Spiele / ${ov.withKickoff||0} Anstoßzeiten / ${ov.withTeams||0} Paarungen · Heimspiele ${hm.count||0} / ${hm.withKickoff||0} Zeiten / ${hm.withVenue||0} Spielorte+Adressen · ${hm.errors?.length||0} Detailfehler. <b>Der Kalender wurde nicht verändert.</b>`;
+      p.innerHTML=`<b>4.1 Phase-3 Test fertig:</b> Übersicht ${ov.total||0} Spiele / ${ov.withKickoff||0} Anstoßzeiten / ${ov.withTeams||0} Paarungen · Heimspiele ${hm.count||0} / ${hm.withKickoff||0} Zeiten / ${hm.withVenue||0} Spielorte+Adressen · ${hm.errors?.length||0} Detailfehler. <b>Der Kalender wurde nicht verändert.</b>`;
     }
   }catch(e){
     $("v41TestPanel").classList.remove("hidden");

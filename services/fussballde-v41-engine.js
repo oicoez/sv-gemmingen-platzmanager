@@ -31,13 +31,25 @@ function parseMeta(text) {
   const t=clean(text);
   let date="",kickoff="",category="",competition="",matchType="",gameNumber="";
 
-  let m=t.match(/(\d{2})\.(\d{2})\.(\d{4})\s*-\s*([0-2]?\d:[0-5]\d)\s*Uhr/i);
+  // Long FUSSBALL.DE form: Sonntag, 23.08.2026 - 13:15 Uhr
+  let m=t.match(/(\d{2})\.(\d{2})\.(\d{4})\s*[-–]\s*([0-2]?\d:[0-5]\d)\s*Uhr/i);
   if(m){
     date=isoDate(m[1],m[2],m[3]);
     kickoff=m[4].padStart(5,"0");
   }
+
+  // Compact form: So, 23.08.26 | 13:15
   if(!date){
-    m=t.match(/(?:Mo|Di|Mi|Do|Fr|Sa|So),?\s*(\d{2})\.(\d{2})\.(\d{2})\s*(?:\||·)?\s*([0-2]?\d:[0-5]\d)/i);
+    m=t.match(/(?:Mo|Di|Mi|Do|Fr|Sa|So),?\s*(\d{2})\.(\d{2})\.(\d{2})\s*(?:\||·|[-–])?\s*([0-2]?\d:[0-5]\d)/i);
+    if(m){
+      date=isoDate(m[1],m[2],m[3]);
+      kickoff=m[4].padStart(5,"0");
+    }
+  }
+
+  // Very defensive fallback: date + time inside a reasonably short block.
+  if(!date){
+    m=t.match(/(\d{2})\.(\d{2})\.(\d{2,4}).{0,80}?([0-2]?\d:[0-5]\d)(?:\s*Uhr)?/i);
     if(m){
       date=isoDate(m[1],m[2],m[3]);
       kickoff=m[4].padStart(5,"0");
@@ -80,11 +92,11 @@ function isUsefulTeamText(t){
     !/^[\d:–\-]+$/.test(t);
 }
 
-function teamsFromRow($,row){
-  const links=$(row).find("a").map((_,a)=>clean($(a).text())).get().filter(isUsefulTeamText);
+function teamsFromScope($,scope){
+  const links=$(scope).find("a").map((_,a)=>clean($(a).text())).get().filter(isUsefulTeamText);
   if(links.length>=2)return {home:links[0],away:links[1]};
 
-  const txt=clean($(row).text());
+  const txt=clean($(scope).text());
   const parts=txt.split(/\s+:\s+/);
   if(parts.length>=2){
     return {
@@ -108,116 +120,203 @@ function normalizeRecord(x){
     home:clean(x.home),
     away:clean(x.away),
     status:x.status||"geplant",
-    debugContext:clean(x.debugContext||"").slice(0,800)
+    timeSource:x.timeSource||"",
+    debugContext:clean(x.debugContext||"").slice(0,1000)
   };
 }
 
-function parseTableLayout($){
-  const out=[],seen=new Set();
-  let current={date:"",kickoff:"",category:"",competition:"",matchType:"",gameNumber:""};
+// Extract every visible date/time occurrence from the document in DOM order.
+// We keep the element itself and its document order index.
+function collectMetaBlocks($){
+  const blocks=[];
+  let order=0;
+  $("body *").each((_,el)=>{
+    order++;
+    const own=clean($(el).clone().children().remove().end().text());
+    if(!own || own.length>500)return;
 
-  for(const row of $("tr").toArray()){
-    const text=clean($(row).text());
-    if(!text)continue;
-
-    const m=parseMeta(text);
-    for(const k of ["date","kickoff","category","competition","matchType","gameNumber"]){
-      if(m[k])current[k]=m[k];
+    const meta=parseMeta(own);
+    if(meta.date&&meta.kickoff){
+      blocks.push({order,el,meta,text:own});
     }
+  });
 
-    const gameLinks=$(row).find('a[href*="/spiel/"]').toArray();
-    if(!gameLinks.length)continue;
-
-    const teams=teamsFromRow($,row);
-    const st=statusFromText(text);
-
-    for(const a of gameLinks){
-      const url=abs($(a).attr("href"));
-      const id=externalIdFromUrl(url);
-      if(!id||seen.has(id))continue;
-      seen.add(id);
-
-      out.push(normalizeRecord({
-        externalId:id,url,
-        ...current,
-        ...teams,
-        status:st,
-        debugContext:`${current.date} ${current.kickoff} ${current.category} ${current.competition} ${current.matchType} ${current.gameNumber} | ${text}`
-      }));
+  // Remove duplicate nested/text occurrences with identical consecutive date+time.
+  const dedup=[];
+  for(const b of blocks){
+    const last=dedup[dedup.length-1];
+    if(last && last.meta.date===b.meta.date && last.meta.kickoff===b.meta.kickoff && Math.abs(last.order-b.order)<8){
+      continue;
     }
-
-    // FUSSBALL.DE's next fixture starts with a fresh metadata row.
-    current={date:"",kickoff:"",category:"",competition:"",matchType:"",gameNumber:""};
+    dedup.push(b);
   }
-  return out;
+  return dedup;
 }
 
-function parseComponentLayout($){
+function elementOrderMap($){
+  const map=new Map();
+  let order=0;
+  $("body *").each((_,el)=>{order++;map.set(el,order)});
+  return map;
+}
+
+function bestFixtureScope($,anchor){
+  let node=$(anchor),best=null;
+  for(let level=0;level<12&&node.length;level++){
+    const txt=clean(node.text());
+    if(txt && txt.length<2600){
+      let score=0;
+      if(/\s+:\s+/.test(txt))score+=5;
+      if(/Zum Spiel/i.test(txt))score+=2;
+      if(/\b(?:Absetzung|Ausfall|Abbruch)\b/i.test(txt))score+=1;
+      if(txt.length<900)score+=1;
+      if(!best||score>best.score)best={node:node[0],text:txt,score};
+    }
+    node=node.parent();
+  }
+  return best || {node:$(anchor).parent()[0],text:clean($(anchor).parent().text()),score:0};
+}
+
+function nearestPreviousMeta(metaBlocks, anchorOrder){
+  let best=null;
+  for(const b of metaBlocks){
+    if(b.order>=anchorOrder)break;
+    best=b;
+  }
+  return best;
+}
+
+function rawHtmlMetaBefore(html,url,externalId){
+  // Method 3: locate the game URL/id in raw source and search only backwards.
+  const needles=[
+    externalId,
+    String(url||"").replace("https://www.fussball.de","")
+  ].filter(Boolean);
+
+  let pos=-1;
+  for(const n of needles){
+    const p=html.indexOf(n);
+    if(p>=0 && (pos<0||p<pos))pos=p;
+  }
+  if(pos<0)return null;
+
+  // The metadata block normally sits shortly before the fixture row.
+  const snippet=html.slice(Math.max(0,pos-14000),pos)
+    .replace(/<script[\s\S]*?<\/script>/gi," ")
+    .replace(/<style[\s\S]*?<\/style>/gi," ")
+    .replace(/<[^>]+>/g," ")
+    .replace(/&nbsp;|&#160;/gi," ")
+    .replace(/&amp;/gi,"&")
+    .replace(/&ndash;|&#8211;/gi,"–")
+    .replace(/&mdash;|&#8212;/gi,"—");
+
+  // Take the LAST matching date/time in the backwards snippet, not the first.
+  const patterns=[
+    /(\d{2})\.(\d{2})\.(\d{4})\s*[-–]\s*([0-2]?\d:[0-5]\d)\s*Uhr/gi,
+    /(?:Mo|Di|Mi|Do|Fr|Sa|So),?\s*(\d{2})\.(\d{2})\.(\d{2})\s*(?:\||·|[-–])?\s*([0-2]?\d:[0-5]\d)/gi
+  ];
+
+  let found=null;
+  for(const p of patterns){
+    for(const m of snippet.matchAll(p)){
+      found={
+        date:isoDate(m[1],m[2],m[3]),
+        kickoff:m[4].padStart(5,"0")
+      };
+    }
+    if(found)break;
+  }
+  return found;
+}
+
+export function parseScheduleHtml(html){
+  const $=cheerio.load(html);
+  const orderMap=elementOrderMap($);
+  const metaBlocks=collectMetaBlocks($);
   const out=[],seen=new Set();
 
-  $('a[href*="/spiel/"]').each((_,a)=>{
+  const gameAnchors=$('a[href*="/spiel/"]').toArray();
+
+  // Strong fallback if DOM metadata blocks count matches/approaches game count:
+  // map in document order. We do not rely solely on this, but it repairs
+  // layouts where metadata and fixture rows are siblings in separate wrappers.
+  const chronologicalMeta=metaBlocks.map(b=>b.meta);
+
+  gameAnchors.forEach((a,index)=>{
     const url=abs($(a).attr("href"));
     const id=externalIdFromUrl(url);
     if(!id||seen.has(id))return;
     seen.add(id);
 
-    let node=$(a),best=null;
-    for(let level=0;level<12&&node.length;level++){
-      const txt=clean(node.text());
-      if(txt && txt.length<3000){
-        const meta=parseMeta(txt);
-        let score=0;
-        if(meta.date)score+=5;
-        if(meta.kickoff)score+=5;
-        if(meta.category)score+=2;
-        if(meta.gameNumber)score+=2;
-        if(/\s:\s/.test(txt))score+=2;
-        if(!best||score>best.score)best={node:node[0],txt,meta,score};
+    const scope=bestFixtureScope($,a);
+    const teams=teamsFromScope($,scope.node);
+    const anchorOrder=orderMap.get(a)||0;
+
+    let meta=parseMeta(scope.text);
+    let timeSource=meta.date&&meta.kickoff?"fixture-scope":"";
+
+    // Method 1: nearest preceding date/time block in actual DOM order.
+    if(!meta.date||!meta.kickoff){
+      const prev=nearestPreviousMeta(metaBlocks,anchorOrder);
+      if(prev){
+        meta={...prev.meta,...Object.fromEntries(Object.entries(meta).filter(([,v])=>v))};
+        if(meta.date&&meta.kickoff)timeSource="nearest-previous-dom";
       }
-      node=node.parent();
-    }
-    if(!best)return;
-
-    let context=best.txt;
-    let n=$(best.node);
-    for(let i=0;i<5;i++){
-      const p=n.prev();
-      if(!p.length)break;
-      const pt=clean(p.text());
-      if(pt&&pt.length<1500)context=clean(`${pt} ${context}`);
-      const pm=parseMeta(context);
-      if(pm.date&&pm.kickoff)break;
-      n=p;
     }
 
-    const meta=parseMeta(context);
-    const teams=teamsFromRow($,best.node);
+    // Method 2: by document sequence. Useful on FUSSBALL.DE where each visible
+    // fixture has one heading immediately before it.
+    if((!meta.date||!meta.kickoff) && chronologicalMeta[index]){
+      const seq=chronologicalMeta[index];
+      meta={
+        date:meta.date||seq.date,
+        kickoff:meta.kickoff||seq.kickoff,
+        category:meta.category||seq.category,
+        competition:meta.competition||seq.competition,
+        matchType:meta.matchType||seq.matchType,
+        gameNumber:meta.gameNumber||seq.gameNumber
+      };
+      if(meta.date&&meta.kickoff)timeSource="document-sequence";
+    }
+
+    // Method 3: raw HTML search immediately before this exact game id.
+    if(!meta.date||!meta.kickoff){
+      const raw=rawHtmlMetaBefore(html,url,id);
+      if(raw){
+        meta.date=meta.date||raw.date;
+        meta.kickoff=meta.kickoff||raw.kickoff;
+        if(meta.date&&meta.kickoff)timeSource="raw-html-backscan";
+      }
+    }
+
+    // Read category/competition/game number from a larger nearby text block if missing.
+    if(!meta.category||!meta.gameNumber){
+      let node=$(scope.node),around=scope.text;
+      for(let i=0;i<5;i++){
+        const prev=node.prev();
+        if(!prev.length)break;
+        around=clean(`${prev.text()} ${around}`);
+        const pm=parseMeta(around);
+        meta.category=meta.category||pm.category;
+        meta.competition=meta.competition||pm.competition;
+        meta.matchType=meta.matchType||pm.matchType;
+        meta.gameNumber=meta.gameNumber||pm.gameNumber;
+        node=prev;
+      }
+    }
+
     out.push(normalizeRecord({
-      externalId:id,url,...meta,...teams,
-      status:statusFromText(best.txt),
-      debugContext:context
+      externalId:id,
+      url,
+      ...meta,
+      ...teams,
+      status:statusFromText(scope.text),
+      timeSource,
+      debugContext:`${timeSource} | ${meta.date} ${meta.kickoff} | ${scope.text}`
     }));
   });
+
   return out;
-}
-
-export function parseScheduleHtml(html){
-  const $=cheerio.load(html);
-  const table=parseTableLayout($);
-  const component=parseComponentLayout($);
-
-  // Merge both layouts by ID and keep the more complete value for each field.
-  const map=new Map();
-  for(const r of [...component,...table]){
-    const old=map.get(r.externalId)||{};
-    const merged={...old,...r};
-    for(const key of ["date","kickoff","category","competition","matchType","gameNumber","home","away"]){
-      if(old[key]&&!r[key])merged[key]=old[key];
-    }
-    merged.status=(old.status&&old.status!=="geplant")?old.status:r.status;
-    map.set(r.externalId,normalizeRecord(merged));
-  }
-  return [...map.values()];
 }
 
 export function validation(rows){
