@@ -7,6 +7,7 @@ import { syncRouter } from "./sync.js";
 import { eventsRouter } from "./events.js";
 import { trainingsRouter } from "./trainings.js";
 import { plannerRouter } from "./planner.js";
+import { dashboardRouter } from "./dashboard.js";
 
 export const apiRouter=Router();
 apiRouter.use("/system",systemRouter);
@@ -19,3 +20,5 @@ apiRouter.use("/events",eventsRouter);
 
 apiRouter.use("/trainings",trainingsRouter);
 apiRouter.use("/planner",plannerRouter);
+
+apiRouter.use("/dashboard",dashboardRouter);

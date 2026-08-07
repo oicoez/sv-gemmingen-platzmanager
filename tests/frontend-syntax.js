@@ -1,70 +1,4 @@
-<!doctype html>
-<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ClubPlanner 5.0 – Sprint 3.2</title>
-<style>
-:root{font-family:Segoe UI,Arial,sans-serif;color:#17212b;background:#f4f6f8}*{box-sizing:border-box}body{margin:0}.app{max-width:1600px;margin:auto;padding:22px}
-header{display:flex;justify-content:space-between;gap:16px;align-items:center;flex-wrap:wrap}h1{margin:0;font-size:30px}.sub,.muted{color:#6b7785}
-.badge{padding:7px 11px;border-radius:999px;background:#eaf4ff;border:1px solid #add0f0}.good{color:#14723b}.bad{color:#b42318}
-.panel,.card{background:#fff;border:1px solid #d8dee6;border-radius:10px}.panel{padding:18px;margin-top:16px}.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:16px}.card{padding:16px}.big{font-size:28px;font-weight:760}
-button,select,input{font:inherit}button{border:1px solid #cad2dc;background:#fff;border-radius:8px;padding:10px 14px;font-weight:650;cursor:pointer}button.primary,.tab.active{background:#1f4e78;color:#fff;border-color:#1f4e78}button:disabled{opacity:.5}
-.toolbar,.tabs{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.tabs{margin-top:18px}.hidden{display:none}.help,.notice,.progress{padding:12px;border-radius:8px;margin-top:12px}.help{background:#f6f9fc}.notice{background:#fff7e6;border:1px solid #f1d39b}.progress{background:#eef6ff;border:1px solid #b7d4f0}
-.weeknav{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}.days{display:grid;grid-template-columns:repeat(7,minmax(190px,1fr));gap:10px;margin-top:14px;overflow-x:auto}
-.day{min-width:190px;background:#fff;border:1px solid #d8dee6;border-radius:9px;min-height:180px}.dayhead{padding:10px;background:#1f4e78;color:#fff;font-weight:700;border-radius:8px 8px 0 0}.pitch{padding:9px;border-bottom:1px solid #edf0f3}.pitchtitle{font-weight:700;font-size:13px;margin-bottom:7px}
-.seg{border-left:4px solid #5c7994;padding:6px 7px;margin:5px 0;background:#f6f8fa;border-radius:5px;font-size:12px}.seg.split{border-left-color:#247d52;background:#eef8f2}.seg.conflict{border-left-color:#c62828;background:#fff0f0}.time{font-weight:750}.half{font-weight:700;color:#1f5f43}.conflictText{color:#b42318;font-weight:700;margin-top:4px}
-.formgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.field label{display:block;font-size:13px;color:#667085;margin-bottom:5px}.field input,.field select{width:100%;padding:9px;border:1px solid #cbd3dc;border-radius:7px;background:#fff}.field.span2{grid-column:span 2}
-table{border-collapse:collapse;width:100%;font-size:14px}th,td{padding:10px;border-bottom:1px solid #e6eaf0;text-align:left;vertical-align:top}th{background:#1f4e78;color:#fff;position:sticky;top:0}.scroll{overflow:auto;max-height:62vh}.cancelled{background:#f8eeee}.conflictRow{background:#fff0f0}.conflictPill{display:inline-block;color:#b42318;background:#ffe7e7;border:1px solid #efb0b0;padding:4px 7px;border-radius:999px;font-weight:700;font-size:12px}.empty{padding:18px;color:#7a8490;text-align:center}
-.monthgrid{display:grid;grid-template-columns:repeat(7,minmax(160px,1fr));gap:8px;margin-top:14px}.monthday{min-height:135px;background:#fff;border:1px solid #d8dee6;border-radius:8px;padding:7px}.monthday.blank{background:#f7f8fa}.monthnum{font-weight:750;margin-bottom:6px}.monthitem{font-size:11px;padding:5px;margin:4px 0;border-left:3px solid #5c7994;background:#f5f7f9;border-radius:4px}.monthitem.split{border-left-color:#247d52;background:#eef8f2}.monthitem.conflict{border-left-color:#c62828;background:#fff0f0}.monthdow{font-weight:750;text-align:center;padding:5px;color:#5f6b78}
-.dashboardList{display:grid;gap:8px}.dashEvent{display:grid;grid-template-columns:120px 110px 1fr 160px 180px;gap:10px;padding:10px;border-bottom:1px solid #edf0f3;align-items:start}.dashEvent.conflict{background:#fff0f0}.typeGame{font-weight:700}.typeTraining{font-weight:700;color:#225f87}.errorBox{color:#b42318;background:#fff0f0;border:1px solid #efb0b0;padding:12px;border-radius:8px}
-@media(max-width:1000px){.cards{grid-template-columns:1fr 1fr}.formgrid{grid-template-columns:1fr 1fr}.days{grid-template-columns:repeat(7,220px)}.monthgrid{grid-template-columns:repeat(7,180px);overflow-x:auto}.dashEvent{grid-template-columns:1fr}}
-</style></head><body><div class="app">
-<header><div><h1>ClubPlanner 5.0</h1><div class="sub">SV Gemmingen · Sprint 3.2 · Dashboard, Woche, Monat & Konflikte</div></div><div class="toolbar"><span id="health" class="badge">System wird geprüft …</span><button id="login">Bearbeiten</button></div></header>
 
-<div class="tabs">
-<button class="tab active" data-view="dashboard">Dashboard</button>
-<button class="tab" data-view="week">Wochenplan</button>
-<button class="tab" data-view="month">Monat</button>
-<button class="tab" data-view="training">Training eintragen</button>
-<button class="tab" data-view="games">Spiele</button>
-</div>
-
-<section id="view-dashboard">
-<div class="cards">
-<div class="card"><div class="muted">Woche</div><div id="dashWeek" class="big" style="font-size:21px">–</div></div>
-<div class="card"><div class="muted">Spiele</div><div id="dashGames" class="big">0</div></div>
-<div class="card"><div class="muted">Trainings</div><div id="dashTrainings" class="big">0</div></div>
-<div class="card"><div class="muted">Konflikte</div><div id="dashConflicts" class="big">0</div></div>
-</div>
-<div class="panel"><h2>Diese Woche</h2><div id="dashboardList" class="dashboardList"></div></div>
-</section>
-
-<section id="view-week" class="hidden"><div class="panel"><div class="weeknav">
-<div class="toolbar"><button id="prevWeek">‹ Vorherige Woche</button><button id="todayWeek">Aktuelle Woche</button><button id="nextWeek">Nächste Woche ›</button></div>
-<h2 id="weekTitle" style="margin:0"></h2><div id="conflictCount" class="badge"></div></div>
-<div class="help"><b>Flexibel:</b> allein = Gesamtplatz; bei genau zwei gleichzeitigen flexiblen Trainings = während der Überschneidung automatisch Hälfte A/B.</div>
-<div id="weekDays" class="days"></div></div></section>
-
-<section id="view-month" class="hidden"><div class="panel"><div class="weeknav">
-<div class="toolbar"><button id="prevMonth">‹ Vorheriger Monat</button><button id="todayMonth">Aktueller Monat</button><button id="nextMonth">Nächster Monat ›</button></div>
-<h2 id="monthTitle" style="margin:0"></h2><div id="monthConflictCount" class="badge"></div></div>
-<div class="help">Hier stehen <b>alle lokalen Spiele und Trainings</b>. Rot = tatsächlicher Konflikt.</div>
-<div id="monthError"></div><div id="monthGrid" class="monthgrid"></div></div></section>
-
-<section id="view-training" class="hidden">
-<div class="panel"><h2>Training eintragen</h2><div class="formgrid">
-<div class="field span2"><label>Mannschaft</label><select id="trTeam"></select></div><div class="field"><label>Datum</label><input id="trDate" type="date"></div><div class="field"><label>Ort</label><select id="trLocation"><option value="gemmingen">Gemmingen</option><option value="stebbach">Stebbach</option></select></div>
-<div class="field"><label>Von</label><input id="trStart" type="time" value="18:00"></div><div class="field"><label>Bis</label><input id="trEnd" type="time" value="19:30"></div><div class="field"><label>Platz</label><select id="trBase"><option>Hauptplatz</option><option>Trainingsplatz</option></select></div>
-<div class="field"><label>Belegung</label><select id="trMode"><option value="flexible">Flexibel – automatisch Gesamt/A/B</option><option value="half_a">Fest Hälfte A</option><option value="half_b">Fest Hälfte B</option><option value="exclusive">Gesamtplatz exklusiv</option></select></div><div class="field span2"><label>Bemerkung</label><input id="trNote" placeholder="optional"></div>
-</div><div class="toolbar" style="margin-top:15px"><button id="saveTraining" class="primary" disabled>Training speichern</button><span id="trainingMsg" class="muted"></span></div></div>
-<div class="panel"><h2>Trainings der angezeigten Woche</h2><div class="help">Wenn ein Training mit einem Spiel oder einer anderen Belegung kollidiert, wird der Konflikt direkt in dieser Tabelle angezeigt.</div><div id="trainingList"></div></div>
-</section>
-
-<section id="view-games" class="hidden">
-<div class="cards"><div class="card"><div class="muted">Lokale Spiele</div><div id="count" class="big">0</div></div><div class="card"><div class="muted">Mit Anstoßzeit</div><div id="times" class="big">0</div></div><div class="card"><div class="muted">Mit Spielort</div><div id="venues" class="big">0</div></div><div class="card"><div class="muted">Abgesetzt</div><div id="cancelled" class="big">0</div></div></div>
-<div class="panel"><div class="toolbar"><button id="sync" class="primary" disabled>FUSSBALL.DE synchronisieren</button><button id="reload">Aktualisieren</button><button id="past">Vergangene Spiele anzeigen</button></div><div id="syncState" class="progress">Noch nicht synchronisiert.</div></div>
-<div class="panel"><h2>Lokale Spiele / Platzbelegung</h2><div class="scroll"><table><thead><tr><th>Datum</th><th>Anstoß</th><th>Mannschaft</th><th>Gegner</th><th>Wettbewerb</th><th>Ort</th><th>Platz</th><th>Adresse</th><th>Status</th></tr></thead><tbody id="rows"></tbody></table></div></div>
-</section>
-</div>
-<script>
 const $=id=>document.getElementById(id);let pin="",timer=null,includePast=false,weekStart="",monthValue="",serverToday="";
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const fmtDate=v=>{const s=String(v||"").slice(0,10),m=s.match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?`${m[3]}.${m[2]}.${m[1]}`:s};
@@ -176,4 +110,3 @@ $("sync").onclick=async()=>{if(!confirm("FUSSBALL.DE jetzt synchronisieren?"))re
 async function poll(){try{const s=await json("/api/v5/sync/status");$("syncState").textContent=s.running?`${s.progress} (${s.processed}/${s.total||"?"})`:s.progress;if(s.running){clearTimeout(timer);timer=setTimeout(poll,1000)}else{$("sync").disabled=!pin;await loadGames();await loadWeek();await loadMonth();await loadDashboard()}}catch(e){$("syncState").textContent=e.message}}
 
 (async()=>{try{await bootstrapToday();await Promise.all([check(),loadTeams(),loadGames()]);await loadDashboard();await loadWeek();await loadMonth();poll()}catch(e){console.error(e);alert("Startfehler: "+e.message)}})();
-</script></body></html>

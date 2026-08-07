@@ -1,32 +1,30 @@
-# ClubPlanner 5.0 – Sprint 3.1
+# ClubPlanner 5.0 – Sprint 3.2
 
-## Korrektur Wochenplan
-PostgreSQL liefert `date`-Felder im Node-Treiber teilweise als Date-Objekt.
-Sprint 3 hat diese Werte mit `String(...).slice(0,10)` behandelt. Dadurch
-entstanden Schlüssel wie `Tue Aug 11` statt `2026-08-11`; die gespeicherten
-Termine konnten den Tagen im Wochenplan nicht zugeordnet werden.
+## Korrekturen
+1. `Aktuelle Woche` kommt jetzt vom Server mit Zeitzone Europe/Berlin.
+   Die Browser-Uhr wird dafür nicht mehr verwendet.
 
-Sprint 3.1 normalisiert Datenbank-Datumswerte jetzt zuverlässig auf YYYY-MM-DD.
+2. Monatsansicht:
+   - alle lokalen Spiele
+   - alle Trainings
+   - automatische A/B-Teilung
+   - Konflikte
+   - sichtbare Fehlermeldung statt leerer Ansicht, falls die API nicht antwortet.
 
-Damit erscheinen:
-- manuelle Trainings
-- synchronisierte lokale Heimspiele
-- reale Konflikte
+3. Trainingsliste:
+   Die Tabelle fragt gleichzeitig die Planner-Engine ab. Betroffene Trainings
+   werden rot markiert und zeigen den Konfliktpartner, auch wenn dieser ein
+   synchronisiertes FUSSBALL.DE-Spiel ist.
 
-im selben Wochenplan.
+4. Neues Dashboard:
+   Startseite mit der aktuellen Woche:
+   - Anzahl Spiele
+   - Anzahl Trainings
+   - Anzahl Konflikte
+   - chronologische Liste aller Wochen-Termine
+   - Platz und dynamische Belegung Gesamt/A/B
 
-## Konfliktbeispiel
-Drei Belegungen 18:00–19:30 auf demselben Hauptplatz – insbesondere mit
-`Gesamtplatz exklusiv` – werden jetzt sichtbar und als Konflikt markiert.
-
-## Monatsübersicht
-Neue Ansicht `Monat`:
-- alle lokalen Spiele
-- alle Trainings
-- Uhrzeiten
-- Gemmingen / Stebbach
-- Hauptplatz / Trainingsplatz
-- A/B-Teilung
-- Konflikte
-
-Die Wochen- und Monatsansicht greifen auf dieselbe Planner-Engine zu.
+## Fachlogik
+Die Planner-Engine bleibt die einzige Quelle für Wochenplan, Monat, Dashboard
+und Konfliktanzeige. Dadurch sollen unterschiedliche Ergebnisse zwischen den
+Ansichten vermieden werden.

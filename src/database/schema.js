@@ -164,6 +164,6 @@ export async function initSchema() {
       [crypto.randomUUID(),clubId,name]);
   }
 
-  logger.info("ClubPlanner 5.0 Sprint 3.1 Datenbankschema bereit", { clubId });
+  logger.info("ClubPlanner 5.0 Sprint 3.2 Datenbankschema bereit", { clubId });
   return { clubId };
 }

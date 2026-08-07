@@ -1,102 +1,179 @@
-<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ClubPlanner 5.0 – Sprint 3</title>
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ClubPlanner 5.0 – Sprint 3.2</title>
 <style>
-:root{font-family:Segoe UI,Arial,sans-serif;color:#17212b;background:#f4f6f8}*{box-sizing:border-box}body{margin:0}.app{max-width:1550px;margin:auto;padding:22px}header{display:flex;justify-content:space-between;gap:16px;align-items:center;flex-wrap:wrap}h1{margin:0;font-size:30px}.sub,.muted{color:#6b7785}.badge{padding:7px 10px;border-radius:999px;background:#eaf4ff;border:1px solid #add0f0}.good{color:#14723b}.bad{color:#b42318}.panel,.card{background:#fff;border:1px solid #d8dee6;border-radius:10px}.panel{padding:18px;margin-top:16px}.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:18px}.card{padding:16px}.big{font-size:28px;font-weight:750}button,select,input{font:inherit}button{border:1px solid #cad2dc;background:#fff;border-radius:8px;padding:10px 14px;font-weight:650;cursor:pointer}button.primary,.tab.active{background:#1f4e78;color:#fff;border-color:#1f4e78}button:disabled{opacity:.5}.toolbar,.tabs{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.tabs{margin-top:18px}.progress{padding:12px;border-radius:8px;background:#eef6ff;border:1px solid #b7d4f0;margin-top:12px}.scroll{overflow:auto;max-height:62vh}table{border-collapse:collapse;width:100%;font-size:14px}th,td{padding:10px;border-bottom:1px solid #e6eaf0;text-align:left;white-space:nowrap}th{background:#1f4e78;color:#fff;position:sticky;top:0}.cancelled{background:#f8eeee}.hidden{display:none}.weeknav{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}.days{display:grid;grid-template-columns:repeat(7,minmax(190px,1fr));gap:10px;margin-top:14px;overflow-x:auto}.day{min-width:190px;background:#fff;border:1px solid #d8dee6;border-radius:9px;min-height:180px}.dayhead{padding:10px;background:#1f4e78;color:#fff;font-weight:700;border-radius:8px 8px 0 0}.pitch{padding:9px;border-bottom:1px solid #edf0f3}.pitchtitle{font-weight:700;font-size:13px;margin-bottom:7px}.seg{border-left:4px solid #5c7994;padding:6px 7px;margin:5px 0;background:#f6f8fa;border-radius:5px;font-size:12px}.seg.split{border-left-color:#247d52;background:#eef8f2}.seg.conflict{border-left-color:#c62828;background:#fff0f0}.time{font-weight:750}.half{font-weight:700;color:#1f5f43}.conflictText{color:#b42318;font-weight:700;margin-top:4px}.formgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.field label{display:block;font-size:13px;color:#667085;margin-bottom:5px}.field input,.field select{width:100%;padding:9px;border:1px solid #cbd3dc;border-radius:7px;background:#fff}.field.span2{grid-column:span 2}.help,.notice{padding:12px;border-radius:8px;margin-top:12px;font-size:14px}.help{background:#f6f9fc}.notice{background:#fff7e6;border:1px solid #f1d39b}.empty{padding:18px;color:#7a8490;text-align:center}.monthgrid{display:grid;grid-template-columns:repeat(7,minmax(150px,1fr));gap:8px;margin-top:14px}
-.monthday{min-height:135px;background:#fff;border:1px solid #d8dee6;border-radius:8px;padding:7px}
-.monthday.emptyMonth{background:#f7f8fa}.monthnum{font-weight:750;margin-bottom:6px}.monthitem{font-size:11px;padding:4px 5px;margin:3px 0;border-left:3px solid #5c7994;background:#f5f7f9;border-radius:4px}
-.monthitem.split{border-left-color:#247d52;background:#eef8f2}.monthitem.conflict{border-left-color:#c62828;background:#fff0f0}
-.monthdow{font-weight:750;text-align:center;padding:5px;color:#5f6b78}
-@media(max-width:1000px){.monthgrid{grid-template-columns:repeat(7,180px);overflow-x:auto}.cards{grid-template-columns:1fr 1fr}.formgrid{grid-template-columns:1fr 1fr}.days{grid-template-columns:repeat(7,220px)}}
+:root{font-family:Segoe UI,Arial,sans-serif;color:#17212b;background:#f4f6f8}*{box-sizing:border-box}body{margin:0}.app{max-width:1600px;margin:auto;padding:22px}
+header{display:flex;justify-content:space-between;gap:16px;align-items:center;flex-wrap:wrap}h1{margin:0;font-size:30px}.sub,.muted{color:#6b7785}
+.badge{padding:7px 11px;border-radius:999px;background:#eaf4ff;border:1px solid #add0f0}.good{color:#14723b}.bad{color:#b42318}
+.panel,.card{background:#fff;border:1px solid #d8dee6;border-radius:10px}.panel{padding:18px;margin-top:16px}.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:16px}.card{padding:16px}.big{font-size:28px;font-weight:760}
+button,select,input{font:inherit}button{border:1px solid #cad2dc;background:#fff;border-radius:8px;padding:10px 14px;font-weight:650;cursor:pointer}button.primary,.tab.active{background:#1f4e78;color:#fff;border-color:#1f4e78}button:disabled{opacity:.5}
+.toolbar,.tabs{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.tabs{margin-top:18px}.hidden{display:none}.help,.notice,.progress{padding:12px;border-radius:8px;margin-top:12px}.help{background:#f6f9fc}.notice{background:#fff7e6;border:1px solid #f1d39b}.progress{background:#eef6ff;border:1px solid #b7d4f0}
+.weeknav{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}.days{display:grid;grid-template-columns:repeat(7,minmax(190px,1fr));gap:10px;margin-top:14px;overflow-x:auto}
+.day{min-width:190px;background:#fff;border:1px solid #d8dee6;border-radius:9px;min-height:180px}.dayhead{padding:10px;background:#1f4e78;color:#fff;font-weight:700;border-radius:8px 8px 0 0}.pitch{padding:9px;border-bottom:1px solid #edf0f3}.pitchtitle{font-weight:700;font-size:13px;margin-bottom:7px}
+.seg{border-left:4px solid #5c7994;padding:6px 7px;margin:5px 0;background:#f6f8fa;border-radius:5px;font-size:12px}.seg.split{border-left-color:#247d52;background:#eef8f2}.seg.conflict{border-left-color:#c62828;background:#fff0f0}.time{font-weight:750}.half{font-weight:700;color:#1f5f43}.conflictText{color:#b42318;font-weight:700;margin-top:4px}
+.formgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.field label{display:block;font-size:13px;color:#667085;margin-bottom:5px}.field input,.field select{width:100%;padding:9px;border:1px solid #cbd3dc;border-radius:7px;background:#fff}.field.span2{grid-column:span 2}
+table{border-collapse:collapse;width:100%;font-size:14px}th,td{padding:10px;border-bottom:1px solid #e6eaf0;text-align:left;vertical-align:top}th{background:#1f4e78;color:#fff;position:sticky;top:0}.scroll{overflow:auto;max-height:62vh}.cancelled{background:#f8eeee}.conflictRow{background:#fff0f0}.conflictPill{display:inline-block;color:#b42318;background:#ffe7e7;border:1px solid #efb0b0;padding:4px 7px;border-radius:999px;font-weight:700;font-size:12px}.empty{padding:18px;color:#7a8490;text-align:center}
+.monthgrid{display:grid;grid-template-columns:repeat(7,minmax(160px,1fr));gap:8px;margin-top:14px}.monthday{min-height:135px;background:#fff;border:1px solid #d8dee6;border-radius:8px;padding:7px}.monthday.blank{background:#f7f8fa}.monthnum{font-weight:750;margin-bottom:6px}.monthitem{font-size:11px;padding:5px;margin:4px 0;border-left:3px solid #5c7994;background:#f5f7f9;border-radius:4px}.monthitem.split{border-left-color:#247d52;background:#eef8f2}.monthitem.conflict{border-left-color:#c62828;background:#fff0f0}.monthdow{font-weight:750;text-align:center;padding:5px;color:#5f6b78}
+.dashboardList{display:grid;gap:8px}.dashEvent{display:grid;grid-template-columns:120px 110px 1fr 160px 180px;gap:10px;padding:10px;border-bottom:1px solid #edf0f3;align-items:start}.dashEvent.conflict{background:#fff0f0}.typeGame{font-weight:700}.typeTraining{font-weight:700;color:#225f87}.errorBox{color:#b42318;background:#fff0f0;border:1px solid #efb0b0;padding:12px;border-radius:8px}
+@media(max-width:1000px){.cards{grid-template-columns:1fr 1fr}.formgrid{grid-template-columns:1fr 1fr}.days{grid-template-columns:repeat(7,220px)}.monthgrid{grid-template-columns:repeat(7,180px);overflow-x:auto}.dashEvent{grid-template-columns:1fr}}
 </style></head><body><div class="app">
-<header><div><h1>ClubPlanner 5.0</h1><div class="sub">SV Gemmingen · Sprint 3.1 · Woche, Monat & Konflikte</div></div><div class="toolbar"><span id="health" class="badge">System wird geprüft …</span><button id="login">Bearbeiten</button></div></header>
-<div class="tabs"><button class="tab active" data-view="week">Wochenplan</button><button class="tab" data-view="month">Monat</button><button class="tab" data-view="training">Training eintragen</button><button class="tab" data-view="games">Spiele</button></div>
-<section id="view-week"><div class="panel"><div class="weeknav"><div class="toolbar"><button id="prevWeek">‹ Vorherige Woche</button><button id="todayWeek">Aktuelle Woche</button><button id="nextWeek">Nächste Woche ›</button></div><h2 id="weekTitle" style="margin:0"></h2><div id="conflictCount" class="badge"></div></div>
-<div class="help"><b>Flexibel:</b> Eine Mannschaft allein nutzt den <b>Gesamtplatz</b>. Überschneiden sich genau zwei flexible Trainings, teilt ClubPlanner nur während dieser Zeit automatisch in <b>Hälfte A</b> und <b>Hälfte B</b>. Danach erhält die verbleibende Mannschaft wieder den Gesamtplatz.</div><div id="weekDays" class="days"></div></div></section>
+<header><div><h1>ClubPlanner 5.0</h1><div class="sub">SV Gemmingen · Sprint 3.2 · Dashboard, Woche, Monat & Konflikte</div></div><div class="toolbar"><span id="health" class="badge">System wird geprüft …</span><button id="login">Bearbeiten</button></div></header>
 
-<section id="view-month" class="hidden">
-  <div class="panel">
-    <div class="weeknav">
-      <div class="toolbar">
-        <button id="prevMonth">‹ Vorheriger Monat</button>
-        <button id="todayMonth">Aktueller Monat</button>
-        <button id="nextMonth">Nächster Monat ›</button>
-      </div>
-      <h2 id="monthTitle" style="margin:0"></h2>
-      <div id="monthConflictCount" class="badge"></div>
-    </div>
-    <div class="help">Monatsübersicht zeigt <b>Spiele und Trainings</b>. Grün bedeutet normale/automatisch geteilte Belegung, rot bedeutet tatsächlichen Konflikt.</div>
-    <div id="monthGrid" class="monthgrid"></div>
-  </div>
+<div class="tabs">
+<button class="tab active" data-view="dashboard">Dashboard</button>
+<button class="tab" data-view="week">Wochenplan</button>
+<button class="tab" data-view="month">Monat</button>
+<button class="tab" data-view="training">Training eintragen</button>
+<button class="tab" data-view="games">Spiele</button>
+</div>
+
+<section id="view-dashboard">
+<div class="cards">
+<div class="card"><div class="muted">Woche</div><div id="dashWeek" class="big" style="font-size:21px">–</div></div>
+<div class="card"><div class="muted">Spiele</div><div id="dashGames" class="big">0</div></div>
+<div class="card"><div class="muted">Trainings</div><div id="dashTrainings" class="big">0</div></div>
+<div class="card"><div class="muted">Konflikte</div><div id="dashConflicts" class="big">0</div></div>
+</div>
+<div class="panel"><h2>Diese Woche</h2><div id="dashboardList" class="dashboardList"></div></div>
 </section>
 
-<section id="view-training" class="hidden"><div class="panel"><h2>Training eintragen</h2><div class="formgrid">
+<section id="view-week" class="hidden"><div class="panel"><div class="weeknav">
+<div class="toolbar"><button id="prevWeek">‹ Vorherige Woche</button><button id="todayWeek">Aktuelle Woche</button><button id="nextWeek">Nächste Woche ›</button></div>
+<h2 id="weekTitle" style="margin:0"></h2><div id="conflictCount" class="badge"></div></div>
+<div class="help"><b>Flexibel:</b> allein = Gesamtplatz; bei genau zwei gleichzeitigen flexiblen Trainings = während der Überschneidung automatisch Hälfte A/B.</div>
+<div id="weekDays" class="days"></div></div></section>
+
+<section id="view-month" class="hidden"><div class="panel"><div class="weeknav">
+<div class="toolbar"><button id="prevMonth">‹ Vorheriger Monat</button><button id="todayMonth">Aktueller Monat</button><button id="nextMonth">Nächster Monat ›</button></div>
+<h2 id="monthTitle" style="margin:0"></h2><div id="monthConflictCount" class="badge"></div></div>
+<div class="help">Hier stehen <b>alle lokalen Spiele und Trainings</b>. Rot = tatsächlicher Konflikt.</div>
+<div id="monthError"></div><div id="monthGrid" class="monthgrid"></div></div></section>
+
+<section id="view-training" class="hidden">
+<div class="panel"><h2>Training eintragen</h2><div class="formgrid">
 <div class="field span2"><label>Mannschaft</label><select id="trTeam"></select></div><div class="field"><label>Datum</label><input id="trDate" type="date"></div><div class="field"><label>Ort</label><select id="trLocation"><option value="gemmingen">Gemmingen</option><option value="stebbach">Stebbach</option></select></div>
 <div class="field"><label>Von</label><input id="trStart" type="time" value="18:00"></div><div class="field"><label>Bis</label><input id="trEnd" type="time" value="19:30"></div><div class="field"><label>Platz</label><select id="trBase"><option>Hauptplatz</option><option>Trainingsplatz</option></select></div>
-<div class="field"><label>Belegung</label><select id="trMode"><option value="flexible">Flexibel – automatisch Gesamt/A/B</option><option value="half_a">Fest Hälfte A</option><option value="half_b">Fest Hälfte B</option><option value="exclusive">Gesamtplatz exklusiv</option></select></div><div class="field span2"><label>Bemerkung</label><input id="trNote" placeholder="optional"></div></div>
-<div class="toolbar" style="margin-top:15px"><button id="saveTraining" class="primary" disabled>Training speichern</button><span id="trainingMsg" class="muted"></span></div>
-<div class="notice"><b>Dein Beispiel:</b> B-Junioren 18:00–19:30 + Herren 19:00–20:30 → 18:00–19:00 B-Junioren Gesamt · 19:00–19:30 A/B geteilt · 19:30–20:30 Herren Gesamt.</div></div>
-<div class="panel"><h2>Trainings dieser Woche</h2><div id="trainingList"></div></div></section>
-<section id="view-games" class="hidden"><div class="cards"><div class="card"><div class="muted">Lokale Spiele</div><div id="count" class="big">0</div></div><div class="card"><div class="muted">Mit Anstoßzeit</div><div id="times" class="big">0</div></div><div class="card"><div class="muted">Mit Spielort</div><div id="venues" class="big">0</div></div><div class="card"><div class="muted">Abgesetzt</div><div id="cancelled" class="big">0</div></div></div>
+<div class="field"><label>Belegung</label><select id="trMode"><option value="flexible">Flexibel – automatisch Gesamt/A/B</option><option value="half_a">Fest Hälfte A</option><option value="half_b">Fest Hälfte B</option><option value="exclusive">Gesamtplatz exklusiv</option></select></div><div class="field span2"><label>Bemerkung</label><input id="trNote" placeholder="optional"></div>
+</div><div class="toolbar" style="margin-top:15px"><button id="saveTraining" class="primary" disabled>Training speichern</button><span id="trainingMsg" class="muted"></span></div></div>
+<div class="panel"><h2>Trainings der angezeigten Woche</h2><div class="help">Wenn ein Training mit einem Spiel oder einer anderen Belegung kollidiert, wird der Konflikt direkt in dieser Tabelle angezeigt.</div><div id="trainingList"></div></div>
+</section>
+
+<section id="view-games" class="hidden">
+<div class="cards"><div class="card"><div class="muted">Lokale Spiele</div><div id="count" class="big">0</div></div><div class="card"><div class="muted">Mit Anstoßzeit</div><div id="times" class="big">0</div></div><div class="card"><div class="muted">Mit Spielort</div><div id="venues" class="big">0</div></div><div class="card"><div class="muted">Abgesetzt</div><div id="cancelled" class="big">0</div></div></div>
 <div class="panel"><div class="toolbar"><button id="sync" class="primary" disabled>FUSSBALL.DE synchronisieren</button><button id="reload">Aktualisieren</button><button id="past">Vergangene Spiele anzeigen</button></div><div id="syncState" class="progress">Noch nicht synchronisiert.</div></div>
-<div class="panel"><h2>Lokale Spiele / Platzbelegung</h2><div class="scroll"><table><thead><tr><th>Datum</th><th>Anstoß</th><th>Mannschaft</th><th>Gegner</th><th>Wettbewerb</th><th>Ort</th><th>Platz</th><th>Adresse</th><th>Status</th></tr></thead><tbody id="rows"></tbody></table></div></div></section>
-</div><script>
-const $=id=>document.getElementById(id);let pin="",timer=null,includePast=false,weekStart="",monthValue="";
+<div class="panel"><h2>Lokale Spiele / Platzbelegung</h2><div class="scroll"><table><thead><tr><th>Datum</th><th>Anstoß</th><th>Mannschaft</th><th>Gegner</th><th>Wettbewerb</th><th>Ort</th><th>Platz</th><th>Adresse</th><th>Status</th></tr></thead><tbody id="rows"></tbody></table></div></div>
+</section>
+</div>
+<script>
+const $=id=>document.getElementById(id);let pin="",timer=null,includePast=false,weekStart="",monthValue="",serverToday="";
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const fmtDate=v=>{const s=String(v||"").slice(0,10),m=s.match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?`${m[3]}.${m[2]}.${m[1]}`:s};
 const fmtStatus=v=>({planned:"geplant",cancelled:"abgesetzt",rescheduled:"verlegt"}[v]||v||"");
 async function json(url,opt){const r=await fetch(url,opt);const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||j.detail||`HTTP ${r.status}`);return j}
-function localMonday(date=new Date()){const d=new Date(date);const day=d.getDay()||7;d.setDate(d.getDate()-day+1);return d.toISOString().slice(0,10)}
-function addDays(s,n){const d=new Date(s+"T12:00:00");d.setDate(d.getDate()+n);return d.toISOString().slice(0,10)}
+function addDays(s,n){const d=new Date(s+"T12:00:00Z");d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10)}
 const dayNames=["Mo","Di","Mi","Do","Fr","Sa","So"];
-document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("active",x===b));["week","month","training","games"].forEach(v=>$(`view-${v}`).classList.toggle("hidden",b.dataset.view!==v));if(b.dataset.view==="training")loadTrainings();if(b.dataset.view==="week")loadWeek();if(b.dataset.view==="month")loadMonth()});
+
+document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{
+ document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("active",x===b));
+ ["dashboard","week","month","training","games"].forEach(v=>$(`view-${v}`).classList.toggle("hidden",b.dataset.view!==v));
+ if(b.dataset.view==="dashboard")loadDashboard();
+ if(b.dataset.view==="week")loadWeek();
+ if(b.dataset.view==="month")loadMonth();
+ if(b.dataset.view==="training")loadTrainings();
+});
+
+async function bootstrapToday(){
+ const t=await json("/api/v5/system/today");
+ serverToday=t.today;weekStart=t.weekStart;monthValue=t.month;$("trDate").value=t.today;
+}
 async function check(){try{await json("/health");$("health").textContent="ClubPlanner 5.0 online";$("health").classList.add("good")}catch{$("health").textContent="Systemfehler";$("health").classList.add("bad")}}
 async function loadTeams(){const j=await json("/api/v5/teams");$("trTeam").innerHTML=(j.items||[]).map(x=>`<option value="${esc(x.id)}">${esc(x.name)}</option>`).join("")}
 $("login").onclick=async()=>{const p=prompt("Bearbeitungs-PIN:");if(!p)return;try{await json("/api/v5/auth/check",{method:"POST",headers:{"content-type":"application/json","x-edit-pin":p}});pin=p;$("sync").disabled=false;$("saveTraining").disabled=false;$("login").textContent="Bearbeitungsmodus aktiv";loadTrainings()}catch(e){alert(e.message)}};
-async function loadWeek(){const j=await json("/api/v5/planner/week?start="+encodeURIComponent(weekStart));weekStart=j.start;$("weekTitle").textContent=`Woche ${fmtDate(j.start)} – ${fmtDate(j.end)}`;$("conflictCount").textContent=j.conflicts.length?`${j.conflicts.length} Konflikt(e)`:"Keine Konflikte";$("conflictCount").className="badge "+(j.conflicts.length?"bad":"good");
-$("weekDays").innerHTML=j.days.map((d,idx)=>`<div class="day"><div class="dayhead">${dayNames[idx]}, ${fmtDate(d.date)}</div>${d.groups.length?d.groups.map(g=>`<div class="pitch"><div class="pitchtitle">${esc(g.location)} · ${esc(g.baseName)}</div>${g.segments.map(s=>`<div class="seg ${s.conflict?"conflict":(s.items.length===2?"split":"")}"><div class="time">${s.start}–${s.end}</div>${s.items.map(i=>`<div>${esc(i.label)} · <span class="${i.section.startsWith("half")?"half":""}">${esc(i.sectionLabel)}</span></div>`).join("")}${s.conflict?`<div class="conflictText">${esc(s.reason)}</div>`:""}</div>`).join("")}</div>`).join(""):`<div class="empty">frei</div>`}</div>`).join("")}
-$("prevWeek").onclick=()=>{weekStart=addDays(weekStart,-7);loadWeek();loadTrainings()};$("nextWeek").onclick=()=>{weekStart=addDays(weekStart,7);loadWeek();loadTrainings()};$("todayWeek").onclick=()=>{weekStart=localMonday();loadWeek();loadTrainings()};
 
-function monthShift(ym,delta){
- const [y,m]=ym.split("-").map(Number);
- const d=new Date(Date.UTC(y,m-1+delta,1));
- return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,"0")}`;
+async function loadDashboard(){
+ try{
+  const j=await json("/api/v5/dashboard/week");
+  $("dashWeek").textContent=`${fmtDate(j.weekStart)} – ${fmtDate(j.weekEnd)}`;
+  $("dashGames").textContent=j.games;$("dashTrainings").textContent=j.trainings;$("dashConflicts").textContent=j.conflicts;
+  $("dashConflicts").className="big "+(j.conflicts?"bad":"good");
+  $("dashboardList").innerHTML=j.events.length?j.events.map(x=>`<div class="dashEvent ${x.conflict?"conflict":""}">
+   <div><b>${fmtDate(x.date)}</b></div><div><b>${x.start}</b></div>
+   <div><span class="${x.eventType==="home_match"?"typeGame":"typeTraining"}">${x.eventType==="home_match"?"SPIEL":"TRAINING"}</span><br>${esc(x.label)}${x.conflict?`<br><span class="conflictPill">Konflikt</span>`:""}</div>
+   <div>${esc(x.location)}<br>${esc(x.baseName)}</div><div>${esc(x.segments.map(s=>`${s.start}–${s.end} ${s.sectionLabel}`).join(" · "))}</div>
+  </div>`).join(""):`<div class="empty">Diese Woche stehen keine lokalen Spiele oder Trainings an.</div>`;
+ }catch(e){$("dashboardList").innerHTML=`<div class="errorBox">${esc(e.message)}</div>`}
 }
-function monthName(ym){
- const [y,m]=ym.split("-").map(Number);
- return new Intl.DateTimeFormat("de-DE",{month:"long",year:"numeric"}).format(new Date(Date.UTC(y,m-1,1)));
-}
-async function loadMonth(){
- if(!monthValue)monthValue=new Date().toISOString().slice(0,7);
- const j=await json("/api/v5/planner/month?month="+encodeURIComponent(monthValue));
- monthValue=j.month;
- $("monthTitle").textContent=monthName(j.month);
- $("monthConflictCount").textContent=j.conflictCount?`${j.conflictCount} Konflikt(e)`:"Keine Konflikte";
- $("monthConflictCount").className="badge "+(j.conflictCount?"bad":"good");
 
- const [yy,mm]=j.month.split("-").map(Number);
- const firstDow=(new Date(Date.UTC(yy,mm-1,1)).getUTCDay()+6)%7;
- const cells=[];
- for(let i=0;i<firstDow;i++)cells.push(`<div class="monthday emptyMonth"></div>`);
- for(const d of j.days){
-   const day=Number(d.date.slice(-2));
-   const items=[];
-   for(const g of d.groups){
-     for(const s of g.segments){
-       const labels=s.items.map(i=>`${i.eventType==="home_match"?"⚽":"●"} ${i.label}${i.sectionLabel&&i.sectionLabel!=="Gesamt"?` (${i.sectionLabel})`:""}`).join(" / ");
-       items.push(`<div class="monthitem ${s.conflict?"conflict":(s.items.length===2?"split":"")}"><b>${s.start}–${s.end}</b><br>${esc(g.location)} · ${esc(g.baseName)}<br>${esc(labels)}${s.conflict?`<br><b class="bad">Konflikt</b>`:""}</div>`);
-     }
+async function loadWeek(useServerCurrent=false){
+ try{
+  const url=useServerCurrent?"/api/v5/planner/week":"/api/v5/planner/week?start="+encodeURIComponent(weekStart);
+  const j=await json(url);weekStart=j.start;
+  $("weekTitle").textContent=`Woche ${fmtDate(j.start)} – ${fmtDate(j.end)}`;
+  $("conflictCount").textContent=j.conflicts.length?`${j.conflicts.length} Konflikt(e)`:"Keine Konflikte";
+  $("conflictCount").className="badge "+(j.conflicts.length?"bad":"good");
+  $("weekDays").innerHTML=j.days.map((d,idx)=>`<div class="day"><div class="dayhead">${dayNames[idx]}, ${fmtDate(d.date)}</div>${d.groups.length?d.groups.map(g=>`<div class="pitch"><div class="pitchtitle">${esc(g.location)} · ${esc(g.baseName)}</div>${g.segments.map(s=>`<div class="seg ${s.conflict?"conflict":(s.items.length===2?"split":"")}"><div class="time">${s.start}–${s.end}</div>${s.items.map(i=>`<div>${esc(i.label)} · <span class="${i.section.startsWith("half")?"half":""}">${esc(i.sectionLabel)}</span></div>`).join("")}${s.conflict?`<div class="conflictText">${esc(s.reason)}</div>`:""}</div>`).join("")}</div>`).join(""):`<div class="empty">frei</div>`}</div>`).join("");
+ }catch(e){$("weekDays").innerHTML=`<div class="errorBox">${esc(e.message)}</div>`}
+}
+$("prevWeek").onclick=()=>{weekStart=addDays(weekStart,-7);loadWeek();loadTrainings()};
+$("nextWeek").onclick=()=>{weekStart=addDays(weekStart,7);loadWeek();loadTrainings()};
+$("todayWeek").onclick=async()=>{const t=await json("/api/v5/system/today");weekStart=t.weekStart;await loadWeek(true);await loadTrainings()};
+
+function monthShift(ym,delta){const [y,m]=ym.split("-").map(Number),d=new Date(Date.UTC(y,m-1+delta,1));return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,"0")}`}
+function monthName(ym){const [y,m]=ym.split("-").map(Number);return new Intl.DateTimeFormat("de-DE",{month:"long",year:"numeric",timeZone:"UTC"}).format(new Date(Date.UTC(y,m-1,1)))}
+async function loadMonth(useServerCurrent=false){
+ $("monthError").innerHTML="";
+ try{
+  const url=useServerCurrent?"/api/v5/planner/month":"/api/v5/planner/month?month="+encodeURIComponent(monthValue);
+  const j=await json(url);monthValue=j.month;
+  $("monthTitle").textContent=monthName(j.month);
+  $("monthConflictCount").textContent=j.conflictCount?`${j.conflictCount} Konflikt(e)`:"Keine Konflikte";
+  $("monthConflictCount").className="badge "+(j.conflictCount?"bad":"good");
+  const [yy,mm]=j.month.split("-").map(Number),firstDow=(new Date(Date.UTC(yy,mm-1,1)).getUTCDay()+6)%7,cells=[];
+  for(let i=0;i<firstDow;i++)cells.push(`<div class="monthday blank"></div>`);
+  for(const d of j.days){
+   const entries=[];
+   for(const g of d.groups)for(const s of g.segments){
+    const labels=s.items.map(i=>`${i.eventType==="home_match"?"SPIEL":"Training"}: ${i.label}${i.sectionLabel!=="Gesamt"?` (${i.sectionLabel})`:""}`).join(" / ");
+    entries.push(`<div class="monthitem ${s.conflict?"conflict":(s.items.length===2?"split":"")}"><b>${s.start}–${s.end}</b><br>${esc(g.location)} · ${esc(g.baseName)}<br>${esc(labels)}${s.conflict?`<br><b class="bad">KONFLIKT</b>`:""}</div>`);
    }
-   cells.push(`<div class="monthday"><div class="monthnum">${day}</div>${items.join("")}</div>`);
- }
- $("monthGrid").innerHTML=`${["Mo","Di","Mi","Do","Fr","Sa","So"].map(x=>`<div class="monthdow">${x}</div>`).join("")}${cells.join("")}`;
+   cells.push(`<div class="monthday"><div class="monthnum">${Number(d.date.slice(-2))}</div>${entries.join("")}</div>`);
+  }
+  $("monthGrid").innerHTML=`${["Mo","Di","Mi","Do","Fr","Sa","So"].map(x=>`<div class="monthdow">${x}</div>`).join("")}${cells.join("")}`;
+ }catch(e){$("monthError").innerHTML=`<div class="errorBox">Monatsansicht konnte nicht geladen werden: ${esc(e.message)}</div>`;$("monthGrid").innerHTML=""}
 }
 $("prevMonth").onclick=()=>{monthValue=monthShift(monthValue,-1);loadMonth()};
 $("nextMonth").onclick=()=>{monthValue=monthShift(monthValue,1);loadMonth()};
-$("todayMonth").onclick=()=>{monthValue=new Date().toISOString().slice(0,7);loadMonth()};
+$("todayMonth").onclick=async()=>{const t=await json("/api/v5/system/today");monthValue=t.month;await loadMonth(true)};
 
-async function loadTrainings(){const to=addDays(weekStart,6),j=await json(`/api/v5/trainings?from=${weekStart}&to=${to}`),items=j.items||[];$("trainingList").innerHTML=items.length?`<table><thead><tr><th>Datum</th><th>Zeit</th><th>Mannschaft</th><th>Ort</th><th>Platz</th><th>Modus</th><th></th></tr></thead><tbody>${items.map(x=>`<tr><td>${fmtDate(x.event_date)}</td><td>${String(x.start_time).slice(0,5)}–${String(x.end_time).slice(0,5)}</td><td>${esc(x.team)}</td><td>${esc(x.location)}</td><td>${esc(x.base_name)}</td><td>${esc(({flexible:"flexibel",half_a:"Hälfte A",half_b:"Hälfte B",exclusive:"Gesamt exklusiv"}[x.allocation_mode]||x.allocation_mode))}</td><td><button class="delTr" data-id="${x.id}" ${pin?"":"disabled"}>Löschen</button></td></tr>`).join("")}</tbody></table>`:`<div class="empty">In dieser Woche sind noch keine Trainings eingetragen.</div>`;document.querySelectorAll(".delTr").forEach(b=>b.onclick=async()=>{if(!confirm("Training löschen?"))return;try{await json("/api/v5/trainings/"+b.dataset.id,{method:"DELETE",headers:{"x-edit-pin":pin}});await loadTrainings();await loadWeek();await loadMonth()}catch(e){alert(e.message)}})}
-$("saveTraining").onclick=async()=>{try{const body={teamId:$("trTeam").value,date:$("trDate").value,start:$("trStart").value,end:$("trEnd").value,locationId:$("trLocation").value,baseName:$("trBase").value,allocationMode:$("trMode").value,note:$("trNote").value};await json("/api/v5/trainings",{method:"POST",headers:{"content-type":"application/json","x-edit-pin":pin},body:JSON.stringify(body)});$("trainingMsg").textContent="Training gespeichert.";weekStart=localMonday(new Date(body.date+"T12:00:00"));await loadTrainings();await loadWeek();await loadMonth()}catch(e){$("trainingMsg").textContent=e.message}};
+async function loadTrainings(){
+ try{
+  const to=addDays(weekStart,6);
+  const [tj,wj]=await Promise.all([json(`/api/v5/trainings?from=${weekStart}&to=${to}`),json(`/api/v5/planner/week?start=${weekStart}`)]);
+  const items=tj.items||[],conflictById=new Map();
+  for(const c of wj.conflicts||[])for(const item of c.items||[]){
+   if(item.eventType!=="training")continue;
+   const others=(c.items||[]).filter(o=>o.id!==item.id).map(o=>`${o.eventType==="home_match"?"Spiel":"Training"} ${o.label}`).join(", ");
+   conflictById.set(item.id,`${c.start}–${c.end}: ${c.reason}${others?` – ${others}`:""}`);
+  }
+  $("trainingList").innerHTML=items.length?`<table><thead><tr><th>Datum</th><th>Zeit</th><th>Mannschaft</th><th>Ort</th><th>Platz</th><th>Modus</th><th>Konflikt</th><th></th></tr></thead><tbody>${items.map(x=>{
+   const conflict=conflictById.get(x.id)||"";
+   return `<tr class="${conflict?"conflictRow":""}"><td>${fmtDate(x.event_date)}</td><td>${String(x.start_time).slice(0,5)}–${String(x.end_time).slice(0,5)}</td><td>${esc(x.team)}</td><td>${esc(x.location)}</td><td>${esc(x.base_name)}</td><td>${esc(({flexible:"flexibel",half_a:"Hälfte A",half_b:"Hälfte B",exclusive:"Gesamt exklusiv"}[x.allocation_mode]||x.allocation_mode))}</td><td>${conflict?`<span class="conflictPill">Konflikt</span><br>${esc(conflict)}`:"–"}</td><td><button class="delTr" data-id="${x.id}" ${pin?"":"disabled"}>Löschen</button></td></tr>`;
+  }).join("")}</tbody></table>`:`<div class="empty">In dieser Woche sind noch keine Trainings eingetragen.</div>`;
+  document.querySelectorAll(".delTr").forEach(b=>b.onclick=async()=>{if(!confirm("Training löschen?"))return;try{await json("/api/v5/trainings/"+b.dataset.id,{method:"DELETE",headers:{"x-edit-pin":pin}});await loadTrainings();await loadWeek();await loadMonth();await loadDashboard()}catch(e){alert(e.message)}})
+ }catch(e){$("trainingList").innerHTML=`<div class="errorBox">${esc(e.message)}</div>`}
+}
+$("saveTraining").onclick=async()=>{try{
+ const body={teamId:$("trTeam").value,date:$("trDate").value,start:$("trStart").value,end:$("trEnd").value,locationId:$("trLocation").value,baseName:$("trBase").value,allocationMode:$("trMode").value,note:$("trNote").value};
+ await json("/api/v5/trainings",{method:"POST",headers:{"content-type":"application/json","x-edit-pin":pin},body:JSON.stringify(body)});
+ $("trainingMsg").textContent="Training gespeichert.";
+ const d=new Date(body.date+"T12:00:00Z"),day=d.getUTCDay()||7;d.setUTCDate(d.getUTCDate()-day+1);weekStart=d.toISOString().slice(0,10);monthValue=body.date.slice(0,7);
+ await loadTrainings();await loadWeek();await loadMonth();await loadDashboard()
+}catch(e){$("trainingMsg").textContent=e.message}};
+
 async function loadGames(){const j=await json("/api/v5/events"+(includePast?"?includePast=1":"")),e=j.events||[];$("count").textContent=e.length;$("times").textContent=e.filter(x=>x.kickoff_time).length;$("venues").textContent=e.filter(x=>x.location).length;$("cancelled").textContent=e.filter(x=>x.status==="cancelled").length;$("rows").innerHTML=e.map(x=>`<tr class="${x.status==="cancelled"?"cancelled":""}"><td>${fmtDate(x.event_date)}</td><td>${esc((x.kickoff_time||"").slice(0,5))}</td><td>${esc(x.team)}</td><td>${esc(x.opponent)}</td><td>${esc(x.competition)}</td><td>${esc(x.status==="cancelled"?"abgesetzt":x.location||"")}</td><td>${esc(x.resource||"")}</td><td>${esc(x.address)}</td><td>${esc(fmtStatus(x.status))}</td></tr>`).join("")}
-$("reload").onclick=loadGames;$("past").onclick=async()=>{includePast=!includePast;$("past").textContent=includePast?"Vergangene Spiele ausblenden":"Vergangene Spiele anzeigen";await loadGames()};$("sync").onclick=async()=>{if(!confirm("FUSSBALL.DE jetzt synchronisieren?"))return;try{await json("/api/v5/sync/fussballde",{method:"POST",headers:{"x-edit-pin":pin}});$("sync").disabled=true;poll()}catch(e){alert(e.message)}};
-async function poll(){try{const s=await json("/api/v5/sync/status");$("syncState").textContent=s.running?`${s.progress} (${s.processed}/${s.total||"?"})`:s.progress;if(s.running){clearTimeout(timer);timer=setTimeout(poll,1000)}else{$("sync").disabled=!pin;await loadGames();await loadWeek();await loadMonth()}}catch(e){$("syncState").textContent=e.message}}
-weekStart=localMonday();monthValue=new Date().toISOString().slice(0,7);$("trDate").value=new Date().toISOString().slice(0,10);check();loadTeams();loadGames();loadWeek();loadMonth();poll();
+$("reload").onclick=loadGames;$("past").onclick=async()=>{includePast=!includePast;$("past").textContent=includePast?"Vergangene Spiele ausblenden":"Vergangene Spiele anzeigen";await loadGames()};
+$("sync").onclick=async()=>{if(!confirm("FUSSBALL.DE jetzt synchronisieren?"))return;try{await json("/api/v5/sync/fussballde",{method:"POST",headers:{"x-edit-pin":pin}});$("sync").disabled=true;poll()}catch(e){alert(e.message)}};
+async function poll(){try{const s=await json("/api/v5/sync/status");$("syncState").textContent=s.running?`${s.progress} (${s.processed}/${s.total||"?"})`:s.progress;if(s.running){clearTimeout(timer);timer=setTimeout(poll,1000)}else{$("sync").disabled=!pin;await loadGames();await loadWeek();await loadMonth();await loadDashboard()}}catch(e){$("syncState").textContent=e.message}}
+
+(async()=>{try{await bootstrapToday();await Promise.all([check(),loadTeams(),loadGames()]);await loadDashboard();await loadWeek();await loadMonth();poll()}catch(e){console.error(e);alert("Startfehler: "+e.message)}})();
 </script></body></html>
