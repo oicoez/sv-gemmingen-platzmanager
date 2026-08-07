@@ -1,11 +1,24 @@
-# ClubPlanner 4.2
+# ClubPlanner 4.3
 
-## Neue Import-Architektur
-Der Vereinsspielplan wird nur noch verwendet, um alle eindeutigen FUSSBALL.DE-Spiel-Links einzusammeln.
+## Architektur
+4.3 verwendet erstmals einen echten Chromium-Browser über Playwright.
 
-Danach wird JEDE Detailseite einzeln gelesen.
+### Vereinsseite
+- JavaScript wird vollständig ausgeführt.
+- `Mehr laden` wird automatisch geklickt.
+- alle sichtbaren Spiel-Links werden gesammelt.
 
-Pro Spiel versucht ClubPlanner 4.2 zu ermitteln:
+### Einzelne Spiele
+Bis zu vier Detailseiten werden parallel geöffnet.
+ClubPlanner überwacht dabei:
+- `fetch`
+- XHR
+- JSON-Antworten
+- JSON-LD
+- eingebettete JSON-Daten
+- vollständig gerenderten DOM
+
+Aus diesen Quellen werden gesucht:
 - Datum
 - Anstoßzeit
 - Heimteam
@@ -14,26 +27,22 @@ Pro Spiel versucht ClubPlanner 4.2 zu ermitteln:
 - Status
 - Spielnummer
 - Spielstätte
-- Ort
 - Adresse
 
-## Datum/Anstoßzeit – mehrere Methoden
-1. `<time datetime="...">`
-2. JSON-LD / eingebettete JSON-Daten
-3. expliziter sichtbarer Datum-/Uhrzeittext auf der Detailseite
+## Render
+Der Docker-Build installiert Chromium automatisch:
+`npx playwright install --with-deps chromium`
 
-## Stabilität
-- jede Detailseite: 12 Sekunden Timeout
-- maximal 5 Seiten parallel
-- einzelne Fehler stoppen den Gesamtlauf nicht
-- ausführliche Render-Logs pro Spiel
+Der erste Build kann deshalb deutlich länger dauern als bisher.
 
-## Sicherer Test
-Der Button `4.2 Detailseiten-Test` schreibt noch NICHT in den Kalender.
+## Sicherheit
+Der Button `4.3 Browser-/Netzwerk-Test` verändert noch keine Kalenderdaten.
 
-Ziel:
-- möglichst alle Detailseiten parsed
-- Heimspiele mit echten Datum/Anstoßzeit
-- bekannte Heimspielstätten mit Ort/Adresse
+Render-Log:
+[FUSSBALL-4.3] TEST START
+[FUSSBALL-4.3] 1/95 | 2026-08-09 10:30 | ... | NET:3 | ...
+...
+[FUSSBALL-4.3] Test fertig: ...
 
-Erst nach einem erfolgreichen Test wird die produktive Supabase-Synchronisierung auf 4.2 umgestellt.
+Wichtigster Wert:
+`withNetworkData` zeigt, bei wie vielen Spielen JSON/XHR/Fetch-Daten abgefangen wurden.
