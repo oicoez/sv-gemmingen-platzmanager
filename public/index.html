@@ -29,7 +29,7 @@ th{background:#1f4e78;color:white;position:sticky;top:0;z-index:1}tr:nth-child(e
 </head>
 <body><div class="app">
 <header><div><h1>ClubPlanner – SV Gemmingen</h1><div class="sub">Spiele · Training · Plätze · Kabinen · Konflikte</div></div>
-<div class="topright"><span id="editState" class="muted">Lesemodus</span><button id="loginBtn">Bearbeiten</button></div></header>
+<div class="topright"><span id="dbState" class="muted">DB wird geprüft…</span><span id="editState" class="muted">Lesemodus</span><button id="loginBtn">Bearbeiten</button></div></header>
 
 <div class="notice"><b>Sprint 1:</b> Planung, Kalender, Plätze, Kabinen und Konflikte sind aktiv. Der automatische FUSSBALL.DE-Import folgt im nächsten Sprint.</div>
 
@@ -109,5 +109,6 @@ $("save").onclick=async()=>{const body={date:$("date").value,start:$("start").va
 window.delEvent=async id=>{if(confirm("Termin löschen?")){try{await api("/api/events/"+id,{method:"DELETE"});load()}catch(e){alert(e.message)}}};
 $("addTeam").onclick=async()=>{const name=$("newTeam").value.trim();if(!name)return;try{await api("/api/teams",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name})});$("newTeam").value="";load()}catch(e){alert(e.message)}};
 window.delTeam=async name=>{if(confirm("Mannschaft entfernen?")){try{await api("/api/teams/"+name,{method:"DELETE"});load()}catch(e){alert(e.message)}}};
-showEdit();load();
+async function checkDb(){try{const r=await fetch("/api/db-status",{cache:"no-store"});const j=await r.json();$("dbState").textContent=j.ok?`Cloud-DB aktiv · ${j.teams} Teams · ${j.events} Termine`:"DB-Fehler";$("dbState").className=j.ok?"good":"danger"}catch{$("dbState").textContent="DB nicht erreichbar";$("dbState").className="danger"}}
+showEdit();checkDb();load();
 </script></body></html>
