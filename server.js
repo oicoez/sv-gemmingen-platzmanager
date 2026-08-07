@@ -4,7 +4,7 @@ import ExcelJS from "exceljs";
 import path from "path";
 import crypto from "crypto";
 import pg from "pg";
-import { chromium } from "playwright";
+import * as cheerio from "cheerio";
 import { fileURLToPath } from "url";
 
 const { Pool } = pg;
@@ -40,7 +40,8 @@ const syncState = {
   skipped:0,
   error:null,
   startedAt:null,
-  finishedAt:null
+  finishedAt:null,
+  lastActivity:null
 };
 
 async function initDb(){
@@ -96,9 +97,11 @@ async function initDb(){
   for(const alter of [
     `alter table clubplanner_events add column if not exists series_id uuid`,
     `alter table clubplanner_events add column if not exists competition text default ''`,
-    `alter table clubplanner_events add column if not exists address text default ''`
+    `alter table clubplanner_events add column if not exists address text default ''`,
+    `alter table clubplanner_events add column if not exists kickoff_known boolean not null default true`
   ]) await db(alter);
 
+  await db(`update clubplanner_events set kickoff_known=false where source='fussball.de' and start_time='00:00:00'`);
   await db(`create index if not exists idx_cp_events_date on clubplanner_events(event_date)`);
   await db(`create unique index if not exists uq_cp_external on clubplanner_events(source,external_id) where external_id is not null`);
 
@@ -123,7 +126,7 @@ async function initDb(){
   for(const name of DEFAULT_TEAMS){
     await db(`insert into clubplanner_teams(id,name) values($1,$2) on conflict(name) do nothing`,[crypto.randomUUID(),name]);
   }
-  console.log("Sprint 3.2 Datenbankstruktur ist bereit.");
+  console.log("Sprint 3.3 Datenbankstruktur ist bereit.");
 }
 
 function requirePin(req,res,next){
@@ -160,7 +163,7 @@ function mapEvent(r){
     location:r.location,address:r.address||"",pitch:r.pitch||"",
     homeCabin:r.home_cabin||"",guestCabin:r.guest_cabin||"",status:r.status||"geplant",
     note:r.note||"",source:r.source||"manual",seriesId:r.series_id||null,
-    externalId:r.external_id||null,externalUrl:r.external_url||null
+    externalId:r.external_id||null,externalUrl:r.external_url||null,kickoffKnown:r.kickoff_known!==false
   };
 }
 async function allData(){
@@ -194,244 +197,266 @@ function inferPitch(text){
   return "";
 }
 
-async function collectGameLinks(page){
-  async function extractItems(){
-    return await page.evaluate(()=>{
-      const links=[...document.querySelectorAll('a[href*="/spiel/"]')];
-      const seen=new Set(), out=[];
-      const visible=el=>{
-        if(!el)return false;
-        const cs=getComputedStyle(el),r=el.getBoundingClientRect();
-        return cs.display!=="none"&&cs.visibility!=="hidden"&&r.width>=0&&r.height>=0;
-      };
-      const norm=x=>(x||"").replace(/[\u200b\u200c\u200d\u2060]/g," ").replace(/\s+/g," ").trim();
-      const candidates=[...document.querySelectorAll("td,th,span,time,strong,b,p,div")].filter(visible);
 
-      for(const a of links){
-        const url=(a.href||"").split("?")[0];
-        if(!url||seen.has(url))continue;
-        seen.add(url);
+function syncLog(message){
+  syncState.progress=message;
+  syncState.lastActivity=new Date().toISOString();
+  console.log(`[FUSSBALL-SYNC] ${message}`);
+}
 
-        const ar=a.getBoundingClientRect(), ay=ar.top+ar.height/2;
-        let time="",status="",dateText="",bestTime=9999,bestStatus=9999,bestDate=9999;
-
-        for(const el of candidates){
-          const raw=norm(el.textContent);
-          if(!raw || raw.length>80)continue;
-          const r=el.getBoundingClientRect(), ey=r.top+r.height/2;
-          const dy=Math.abs(ey-ay);
-          if(dy>72)continue;
-
-          const tm=raw.match(/^([0-2]?\d:[0-5]\d)(?:\s*Uhr)?$/i);
-          if(tm && dy<bestTime){
-            const h=Number(tm[1].split(":")[0]);
-            if(h<=23){time=tm[1].padStart(5,"0");bestTime=dy}
-          }
-
-          if(/^(?:ABSE\.?|Absetzung|Spielabsetzung)$/i.test(raw) && dy<bestStatus){
-            status="abgesetzt";bestStatus=dy;
-          }else if(/^(?:AUSF\.?|Ausfall|Spielausfall)$/i.test(raw) && dy<bestStatus){
-            status="ausfall";bestStatus=dy;
-          }else if(/^(?:ABBR\.?|Abbruch|Spielabbruch)$/i.test(raw) && dy<bestStatus){
-            status="abbruch";bestStatus=dy;
-          }else if(/^(?:VERL\.?|Verlegung|verlegt)$/i.test(raw) && dy<bestStatus){
-            status="verlegt";bestStatus=dy;
-          }
-
-          const dm=raw.match(/^(?:Mo|Di|Mi|Do|Fr|Sa|So)?[,]?\s*(\d{2}\.\d{2}\.(?:\d{2}|\d{4}))$/i);
-          if(dm && dy<bestDate){dateText=dm[1];bestDate=dy}
-        }
-
-        let rowText="",n=a;
-        for(let i=0;i<12&&n;i++,n=n.parentElement){
-          const txt=norm(n.innerText||n.textContent);
-          if(txt.length>0 && txt.length<2500){
-            if(!rowText)rowText=txt;
-            if(/\d{1,2}:\d{2}|ABSE\.?|Absetzung/i.test(txt)){rowText=txt;break}
-          }
-        }
-
-        if(!time){
-          const times=[...rowText.matchAll(/(?:^|[\s|,;-])([0-2]?\d:[0-5]\d)(?:\s*Uhr)?(?=$|[\s|,;-])/g)]
-            .map(m=>m[1].padStart(5,"0"))
-            .filter(x=>Number(x.slice(0,2))<=23);
-          if(times.length)time=times[0];
-        }
-        if(!status){
-          if(/\bABSE\.?\b|Absetzung|Spielabsetzung/i.test(rowText))status="abgesetzt";
-          else if(/\bAUSF\.?\b|Ausfall|Spielausfall/i.test(rowText))status="ausfall";
-          else if(/\bABBR\.?\b|Abbruch|Spielabbruch/i.test(rowText))status="abbruch";
-          else if(/\bVERL\.?\b|Verlegung|verlegt/i.test(rowText))status="verlegt";
-        }
-
-        out.push({url,overviewText:rowText,time,status,dateText});
+async function fetchText(url, timeoutMs=15000){
+  const ctrl=new AbortController();
+  const timer=setTimeout(()=>ctrl.abort(),timeoutMs);
+  try{
+    const r=await fetch(url,{
+      signal:ctrl.signal,
+      redirect:"follow",
+      headers:{
+        "user-agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131 Safari/537.36",
+        "accept-language":"de-DE,de;q=0.9,en;q=0.7",
+        "accept":"text/html,application/xhtml+xml"
       }
-      return out;
     });
+    if(!r.ok)throw new Error(`HTTP ${r.status}`);
+    return await r.text();
+  }finally{
+    clearTimeout(timer);
   }
-
-  const dynamic=`https://www.fussball.de/ajax.club.matchplan/-/id/${FUSSBALL_CLUB_ID}/mode/PAGE/show-filter/true`;
-  syncState.progress="Lade Vereinsspielplan und Anstoßzeiten …";
-  await page.goto(dynamic,{waitUntil:"domcontentloaded",timeout:60000});
-  await page.waitForTimeout(1100);
-
-  for(let round=0;round<50;round++){
-    const before=await page.locator('a[href*="/spiel/"]').count();
-    syncState.progress=`Lade Vereinsspielplan … ${before} Spiele`;
-    const clicked=await page.evaluate(()=>{
-      const els=[...document.querySelectorAll("button,a,div,span")];
-      const e=els.find(x=>{
-        const t=(x.innerText||x.textContent||"").trim();
-        const cs=getComputedStyle(x);
-        return t==="Mehr laden" && x.offsetParent!==null && cs.visibility!=="hidden";
-      });
-      if(!e)return false;
-      e.click(); return true;
-    });
-    if(!clicked)break;
-    await page.waitForTimeout(700);
-    const after=await page.locator('a[href*="/spiel/"]').count();
-    if(after<=before)break;
-  }
-
-  let items=await extractItems();
-
-  if(items.length<10){
-    const printUrl=`https://www.fussball.de/vereinsspielplan.druck/-/datum-bis/2027-06-30/datum-von/2026-08-07/id/${FUSSBALL_CLUB_ID}/match-type/-1/max/999/mode/PRINT/show-venues/true`;
-    await page.goto(printUrl,{waitUntil:"domcontentloaded",timeout:60000});
-    await page.waitForTimeout(1100);
-    const printItems=await extractItems();
-    if(printItems.length>items.length)items=printItems;
-  }
-  return items;
 }
 
-function overviewMeta(item){
-  return {time:item?.time||"",status:item?.status||""};
+function rowTextForAnchor($, a){
+  const $a=$(a);
+  let $row=$a.closest("tr");
+  let current="";
+  let nearby="";
+
+  if($row.length){
+    current=clean($row.text());
+    // Date/time is commonly placed in the immediately preceding table row(s).
+    const $p1=$row.prev("tr");
+    const $p2=$p1.prev("tr");
+    nearby=clean([$p2.text(),$p1.text(),current].join(" "));
+  }else{
+    // Generic fallback for div-based layouts: smallest useful ancestor only.
+    let n=$a;
+    for(let i=0;i<9;i++){
+      n=n.parent();
+      if(!n.length)break;
+      const txt=clean(n.text());
+      if(txt.length>0 && txt.length<1600){
+        current=txt;
+        if(/\d{1,2}:\d{2}|ABSE\.?|Absetzung/i.test(txt))break;
+      }
+    }
+    nearby=current;
+  }
+  return {current,nearby};
 }
 
-function externalIdFromUrl(url){
-  return (String(url||"").match(/\/spiel\/([A-Z0-9]+)(?:\/|$)/i)||[])[1] || String(url||"");
+function extractKickoff(text){
+  // First prefer explicit "... - 15:30 Uhr" / "15:30 Uhr".
+  let m=String(text||"").match(/(?:-|^|\s)([0-2]?\d:[0-5]\d)\s*Uhr\b/i);
+  if(m)return m[1].padStart(5,"0");
+
+  // FUSSBALL.DE compact row: "So, 09.08.26 | 15:30 | ..."
+  m=String(text||"").match(/(?:^|[|,\s])([0-2]?\d:[0-5]\d)(?=\s*(?:[|,]|$))/);
+  if(m)return m[1].padStart(5,"0");
+  return "";
+}
+
+function statusFromSameRow(text){
+  // Deliberately ONLY the same fixture row. Never inspect a neighbouring game.
+  const t=String(text||"");
+  if(/\bABSE\.?\b|\bAbsetzung\b|\bSpielabsetzung\b/i.test(t))return "abgesetzt";
+  if(/\bAUSF\.?\b|\bAusfall\b|\bSpielausfall\b/i.test(t))return "ausfall";
+  if(/\bABBR\.?\b|\bAbbruch\b|\bSpielabbruch\b/i.test(t))return "abbruch";
+  if(/\bVERL\.?\b|\bVerlegung\b|\bverlegt\b/i.test(t))return "verlegt";
+  return "geplant";
+}
+
+function dateFromOverview(text){
+  let m=String(text||"").match(/(\d{2})\.(\d{2})\.(\d{4})/);
+  if(m)return `${m[3]}-${m[2]}-${m[1]}`;
+  m=String(text||"").match(/(\d{2})\.(\d{2})\.(\d{2})(?!\d)/);
+  if(m)return `20${m[3]}-${m[2]}-${m[1]}`;
+  return "";
+}
+
+function inferHomeFromCurrentRow(text){
+  const t=clean(text).replace(/\s+Zum Spiel\s*$/i,"");
+  // Team row on FUSSBALL.DE uses "home : away".
+  const p=t.split(/\s+:\s+/);
+  if(p.length<2)return null;
+  const left=p[0], right=p.slice(1).join(" : ")
+    .replace(/\b(?:Absetzung|Spielabsetzung|Ausfall|Spielausfall|Abbruch|Spielabbruch)\b.*$/i,"")
+    .trim();
+  return {home:left,away:right,isHome:/Gemmingen/i.test(left)};
+}
+
+async function collectOverviewItems(){
+  const printUrl=`https://www.fussball.de/vereinsspielplan.druck/-/datum-bis/2027-06-30/datum-von/2026-08-07/id/${FUSSBALL_CLUB_ID}/match-type/-1/max/999/mode/PRINT/show-venues/true`;
+  const clubUrl=`https://www.fussball.de/verein/sv-gemmingen-baden/-/id/${FUSSBALL_CLUB_ID}`;
+
+  let html="";
+  try{
+    syncLog("Lade kompletten Vereinsspielplan …");
+    html=await fetchText(printUrl,15000);
+  }catch(e){
+    console.warn("[FUSSBALL-SYNC] Druckansicht fehlgeschlagen:",e.message);
+    syncLog("Druckansicht nicht erreichbar – nutze Vereinsseite …");
+    html=await fetchText(clubUrl,15000);
+  }
+
+  const $=cheerio.load(html);
+  const out=[],seen=new Set();
+
+  $('a[href*="/spiel/"]').each((_,a)=>{
+    let url=$(a).attr("href")||"";
+    if(!url)return;
+    try{url=new URL(url,"https://www.fussball.de").href.split("?")[0]}catch{return}
+    if(seen.has(url))return;
+    seen.add(url);
+
+    const {current,nearby}=rowTextForAnchor($,a);
+    const parsedTeams=inferHomeFromCurrentRow(current);
+
+    out.push({
+      url,
+      externalId:externalIdFromUrl(url),
+      kickoff:extractKickoff(nearby),
+      status:statusFromSameRow(current),
+      date:dateFromOverview(nearby),
+      currentText:current,
+      nearbyText:nearby,
+      homeLikely:parsedTeams?.isHome ?? null,
+      rowHome:parsedTeams?.home||"",
+      rowAway:parsedTeams?.away||""
+    });
+  });
+
+  syncLog(`Spielplan geladen: ${out.length} Begegnungen`);
+  return out;
 }
 
 async function fastUpdateExisting(items){
-  const rows=await db(`select id,external_id from clubplanner_events where source='fussball.de' and external_id is not null`);
-  const byExternal=new Map(rows.rows.map(r=>[r.external_id,r]));
+  const qr=await db(`select id,external_id,location,pitch,note from clubplanner_events where source='fussball.de' and external_id is not null`);
+  const byId=new Map(qr.rows.map(r=>[r.external_id,r]));
   const newItems=[];
+  let done=0;
 
   for(const item of items){
-    const ext=externalIdFromUrl(item.url);
-    const found=byExternal.get(ext);
-    if(!found){newItems.push(item);continue}
-
-    const ov=overviewMeta(item);
-    const cancelled=["abgesetzt","ausfall","abbruch"].includes(ov.status);
-    if(ov.time || ov.status){
-      const fields=[],params=[found.id];
-      let p=2;
-      if(ov.time){
-        fields.push(`start_time=$${p++}`,`end_time=$${p++}`);
-        params.push(ov.time,datePlusMinutes("2000-01-01",ov.time,120));
-      }
-      if(ov.status){
-        fields.push(`status=$${p++}`);
-        params.push(ov.status);
-        if(cancelled)fields.push(`home_cabin=''`,`guest_cabin=''`,`note='ABGESETZT'`);
-      }
-      fields.push(`updated_at=now()`);
-      await db(`update clubplanner_events set ${fields.join(",")} where id=$1`,params);
-      syncState.updated++;
+    const found=byId.get(item.externalId);
+    if(!found){
+      newItems.push(item);
+      continue;
     }
+
+    const cancelled=["abgesetzt","ausfall","abbruch"].includes(item.status);
+    const fields=[
+      `status=$2`,
+      `note=$3`,
+      `kickoff_known=$4`,
+      `updated_at=now()`
+    ];
+    const params=[
+      found.id,
+      item.status||"geplant",
+      cancelled?"ABGESETZT":(found.note==="ABGESETZT"?"":(found.note||"")),
+      Boolean(item.kickoff)
+    ];
+    let p=5;
+
+    if(item.kickoff){
+      fields.push(`start_time=$${p++}`,`end_time=$${p++}`);
+      params.push(item.kickoff,datePlusMinutes("2000-01-01",item.kickoff,120));
+    }
+
+    if(cancelled){
+      fields.push(`home_cabin=''`,`guest_cabin=''`);
+    }else if(["Gemmingen","Stebbach"].includes(found.location)){
+      // Restore cabins that an earlier buggy parser may have removed.
+      fields.push(`home_cabin='Heimkabine'`,`guest_cabin='Gastkabine'`);
+    }
+
+    await db(`update clubplanner_events set ${fields.join(",")} where id=$1`,params);
+    syncState.updated++;
+    done++;
+    if(done%10===0)syncLog(`Bekannte Spiele aktualisiert: ${done}`);
   }
   return newItems;
 }
 
-async function parseGame(context,item,index,total){
-  const url=item.url;
-  const ov=overviewMeta(item);
-  const page=await context.newPage();
+async function parseNewGame(item,index,total){
+  syncState.processed=index;
+  syncLog(`Neues Heimspiel ${index}/${total} wird ergänzt …`);
+
+  let html;
   try{
-    syncState.processed=index;
-    syncState.progress=`Prüfe Spiel ${index} von ${total} …`;
-    await page.goto(url,{waitUntil:"domcontentloaded",timeout:60000});
-    await page.waitForTimeout(500);
-    const title=clean(await page.title());
-    const body=clean(await page.locator("body").innerText().catch(()=>""));
-    const m=title.match(/^(.*?)\s+-\s+(.*?)\s+Ergebnis:\s+(.*?)\s+-\s+(.*?)\s+-\s+(\d{2}\.\d{2}\.\d{4})/);
-    if(!m)return null;
+    html=await fetchText(item.url,12000);
+  }catch(e){
+    throw new Error(`Detailseite Timeout/Fehler: ${e.message}`);
+  }
 
-    const home=clean(m[1]), away=clean(m[2]), competition=clean(m[3]), date=parseDeDate(m[5]);
-    if(!date || !/Gemmingen/i.test(home))return null;
+  const $=cheerio.load(html);
+  const title=clean($("title").first().text());
+  const body=clean($("body").text());
 
-    let status=ov.status||"geplant";
-    if(!ov.status){
-      if(/\bABSE\.?\b|Absetzung|Spielabsetzung/i.test(body))status="abgesetzt";
-      else if(/\bAUSF\.?\b|Ausfall|Spielausfall/i.test(body))status="ausfall";
-      else if(/\bABBR\.?\b|Abbruch|Spielabbruch/i.test(body))status="abbruch";
-      else if(/Verlegung|verlegt/i.test(body))status="verlegt";
-    }
+  const m=title.match(/^(.*?)\s+-\s+(.*?)\s+Ergebnis:\s+(.*?)\s+-\s+(.*?)\s+-\s+(\d{2}\.\d{2}\.\d{4})/);
+  let home=item.rowHome,away=item.rowAway,competition="",date=item.date;
 
-    let start=ov.time||"";
-    if(!start){
-      const tm=body.match(/\b([0-2]?\d:[0-5]\d)\s*Uhr\b/i);
-      if(tm)start=tm[1].padStart(5,"0");
-    }
+  if(m){
+    home=clean(m[1]);away=clean(m[2]);competition=clean(m[3]);date=parseDeDate(m[5])||date;
+  }
 
-    if(!start){
-      const html=await page.content().catch(()=>"");
-      const hm=html.match(/(?:startDate|kickoff|kick-off|datetime)[^0-9]{0,80}(?:\d{4}-\d{2}-\d{2}[T\s])?([0-2]\d:[0-5]\d)/i);
-      if(hm)start=hm[1];
-    }
+  if(!home || !/Gemmingen/i.test(home))return null;
+  if(!date)return null;
 
-    let venueText="";
-    const maps=page.locator('a[href*="google"],a[href*="maps"]');
-    for(let i=0,n=await maps.count();i<n;i++){
-      const txt=clean(await maps.nth(i).innerText().catch(()=>""));
-      if(/Gemmingen|Stebbach|Beim Sportplatz|Jahnweg/i.test(txt)){venueText=txt;break}
-    }
-    if(!venueText){
-      const vm=body.match(/(.{0,180}(?:Beim Sportplatz|Jahnweg).{0,180}75050\s+Gemmingen(?:-Stebbach)?)/i);
-      if(vm)venueText=clean(vm[1]);
-    }
+  let venueText="";
+  const venueMatch=body.match(/(.{0,160}(?:Beim Sportplatz|Jahnweg).{0,180}75050\s+Gemmingen(?:-Stebbach)?)/i);
+  if(venueMatch)venueText=clean(venueMatch[1]);
 
-    const loc=inferLocation(venueText), pitch=inferPitch(venueText);
-    const externalId=(url.match(/\/spiel\/([A-Z0-9]+)(?:\/|$)/i)||[])[1] || url;
+  const loc=inferLocation(venueText);
+  const pitch=inferPitch(venueText);
+  const cancelled=["abgesetzt","ausfall","abbruch"].includes(item.status);
 
-    const cancelled=["abgesetzt","ausfall","abbruch"].includes(status);
-    return {
-      date,
-      start:start||"00:00",
-      end:start?datePlusMinutes(date,start,120):(cancelled?"00:01":"23:59"),
-      type:"Heimspiel",team:home,opponent:away,competition,
-      location:loc.location||(cancelled?"—":"PRÜFEN"),
-      address:loc.address,
-      pitch:cancelled?(pitch||""):pitch,
-      homeCabin:(!cancelled&&loc.location)?"Heimkabine":"",
-      guestCabin:(!cancelled&&loc.location)?"Gastkabine":"",
-      status,
-      note:cancelled?"ABGESETZT":(loc.location?"":"SPIELORT PRÜFEN"),
-      source:"fussball.de",
-      externalId,externalUrl:url
-    };
-  }finally{await page.close().catch(()=>{})}
+  return {
+    date,
+    start:item.kickoff||"00:00",
+    end:item.kickoff?datePlusMinutes(date,item.kickoff,120):"00:01",
+    kickoffKnown:Boolean(item.kickoff),
+    type:"Heimspiel",
+    team:home,
+    opponent:away,
+    competition,
+    location:loc.location||(cancelled?"—":"PRÜFEN"),
+    address:loc.address,
+    pitch,
+    homeCabin:(!cancelled&&loc.location)?"Heimkabine":"",
+    guestCabin:(!cancelled&&loc.location)?"Gastkabine":"",
+    status:item.status||"geplant",
+    note:cancelled?"ABGESETZT":(loc.location?"":"SPIELORT PRÜFEN"),
+    source:"fussball.de",
+    externalId:item.externalId,
+    externalUrl:item.url
+  };
 }
 
 async function upsertImported(e){
   const found=await db(`select id from clubplanner_events where source='fussball.de' and external_id=$1`,[e.externalId]);
   if(found.rowCount){
     await db(`update clubplanner_events set
-      event_date=$2,start_time=$3,end_time=$4,event_type=$5,team=$6,opponent=$7,competition=$8,
-      location=$9,address=$10,pitch=$11,home_cabin=$12,guest_cabin=$13,status=$14,note=$15,
-      external_url=$16,updated_at=now() where id=$1`,
-      [found.rows[0].id,e.date,e.start||"00:00",e.end||"23:59",e.type,e.team,e.opponent,e.competition,
+      event_date=$2,start_time=$3,end_time=$4,kickoff_known=$5,event_type=$6,team=$7,opponent=$8,competition=$9,
+      location=$10,address=$11,pitch=$12,home_cabin=$13,guest_cabin=$14,status=$15,note=$16,
+      external_url=$17,updated_at=now() where id=$1`,
+      [found.rows[0].id,e.date,e.start,e.end,e.kickoffKnown!==false,e.type,e.team,e.opponent,e.competition,
        e.location,e.address,e.pitch,e.homeCabin,e.guestCabin,e.status,e.note,e.externalUrl]);
     syncState.updated++;
   }else{
     await db(`insert into clubplanner_events(
-      id,event_date,start_time,end_time,event_type,team,opponent,competition,location,address,pitch,
+      id,event_date,start_time,end_time,kickoff_known,event_type,team,opponent,competition,location,address,pitch,
       home_cabin,guest_cabin,status,note,source,external_id,external_url
-    ) values($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,'fussball.de',$16,$17)`,
-      [crypto.randomUUID(),e.date,e.start||"00:00",e.end||"23:59",e.type,e.team,e.opponent,e.competition,
+    ) values($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,'fussball.de',$17,$18)`,
+      [crypto.randomUUID(),e.date,e.start,e.end,e.kickoffKnown!==false,e.type,e.team,e.opponent,e.competition,
        e.location,e.address,e.pitch,e.homeCabin,e.guestCabin,e.status,e.note,e.externalId,e.externalUrl]);
     syncState.imported++;
   }
@@ -440,48 +465,64 @@ async function upsertImported(e){
 
 async function runSync(){
   if(syncState.running)return;
-  Object.assign(syncState,{running:true,progress:"Starte Browser …",total:0,processed:0,imported:0,updated:0,skipped:0,error:null,startedAt:new Date().toISOString(),finishedAt:null});
-  let browser;
-  try{
-    browser=await chromium.launch({headless:true,args:["--no-sandbox","--disable-dev-shm-usage"]});
-    const context=await browser.newContext({
-      locale:"de-DE",timezoneId:"Europe/Berlin",viewport:{width:1400,height:1000},
-      userAgent:"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131 Safari/537.36"
-    });
-    const page=await context.newPage();
-    const items=await collectGameLinks(page);
-    syncState.total=items.length;
-    if(items.length<3)throw new Error(`FUSSBALL.DE lieferte nur ${items.length} Spiel-Links.`);
 
-    syncState.progress="Aktualisiere vorhandene Anstoßzeiten …";
+  Object.assign(syncState,{
+    running:true,
+    progress:"Starte Synchronisierung …",
+    total:0,processed:0,imported:0,updated:0,skipped:0,error:null,
+    startedAt:new Date().toISOString(),finishedAt:null,lastActivity:new Date().toISOString()
+  });
+
+  const overallTimeout=setTimeout(()=>{
+    syncState.error="Sicherheits-Timeout nach 90 Sekunden";
+    syncLog("Sicherheits-Timeout erreicht – Synchronisierung wird beendet.");
+  },90000);
+
+  try{
+    const items=await collectOverviewItems();
+    syncState.total=items.length;
+    if(items.length<3)throw new Error(`FUSSBALL.DE lieferte nur ${items.length} Spielzeilen.`);
+
+    syncLog("Aktualisiere bekannte Spiele mit Anstoßzeit und Status …");
     const newItems=await fastUpdateExisting(items);
     syncState.processed=items.length-newItems.length;
 
-    const concurrency=4;
-    for(let offset=0;offset<newItems.length;offset+=concurrency){
-      const batch=newItems.slice(offset,offset+concurrency);
+    // Avoid opening detail pages for obvious away fixtures.
+    const homeCandidates=newItems.filter(i=>i.homeLikely!==false);
+    syncState.skipped += newItems.length-homeCandidates.length;
+
+    // Small bounded concurrency, each request itself has a 12s AbortController timeout.
+    const concurrency=5;
+    for(let offset=0;offset<homeCandidates.length;offset+=concurrency){
+      if(syncState.error?.startsWith("Sicherheits-Timeout"))break;
+
+      const batch=homeCandidates.slice(offset,offset+concurrency);
       await Promise.all(batch.map(async(item,k)=>{
-        const idx=(items.length-newItems.length)+offset+k+1;
+        const idx=(items.length-homeCandidates.length)+offset+k+1;
         try{
-          const game=await parseGame(context,item,idx,items.length);
+          const game=await parseNewGame(item,idx,items.length);
           if(!game){syncState.skipped++;return}
           await upsertImported(game);
         }catch(e){
-          console.error("Neues Spiel konnte nicht importiert werden:",item?.url,e.message);
+          console.error(`[FUSSBALL-SYNC] ${item.url}: ${e.message}`);
           syncState.skipped++;
         }finally{
-          syncState.processed=Math.min(items.length,idx);
+          syncState.processed=Math.min(items.length,Math.max(syncState.processed,idx));
         }
       }));
     }
-    syncState.progress=`Fertig: ${syncState.imported} neu · ${syncState.updated} aktualisiert · ${syncState.skipped} übersprungen`;
+
+    if(!syncState.error){
+      syncLog(`Fertig: ${syncState.imported} neu · ${syncState.updated} aktualisiert · ${syncState.skipped} übersprungen`);
+    }
     syncState.finishedAt=new Date().toISOString();
   }catch(e){
-    syncState.error=e.message;
-    syncState.progress="Synchronisierung fehlgeschlagen";
+    syncState.error=e.name==="AbortError"?"Netzwerk-Timeout bei FUSSBALL.DE":e.message;
+    syncLog(`Synchronisierung fehlgeschlagen: ${syncState.error}`);
   }finally{
-    if(browser)await browser.close().catch(()=>{});
+    clearTimeout(overallTimeout);
     syncState.running=false;
+    syncState.finishedAt=syncState.finishedAt||new Date().toISOString();
   }
 }
 
@@ -541,5 +582,5 @@ app.get("/api/export",async(req,res)=>{
   }catch(e){res.status(500).send(e.message)}
 });
 
-initDb().then(()=>app.listen(PORT,"0.0.0.0",()=>console.log(`ClubPlanner Sprint 3.2 läuft auf Port ${PORT}`)))
+initDb().then(()=>app.listen(PORT,"0.0.0.0",()=>console.log(`ClubPlanner Sprint 3.3 läuft auf Port ${PORT}`)))
 .catch(e=>{console.error("DB-Startfehler",e);process.exit(1)});
