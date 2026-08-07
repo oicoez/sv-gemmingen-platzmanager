@@ -5,6 +5,8 @@ import { resourcesRouter } from "./resources.js";
 import { authRouter } from "./auth.js";
 import { syncRouter } from "./sync.js";
 import { eventsRouter } from "./events.js";
+import { trainingsRouter } from "./trainings.js";
+import { plannerRouter } from "./planner.js";
 
 export const apiRouter=Router();
 apiRouter.use("/system",systemRouter);
@@ -14,3 +16,6 @@ apiRouter.use("/auth",authRouter);
 
 apiRouter.use("/sync",syncRouter);
 apiRouter.use("/events",eventsRouter);
+
+apiRouter.use("/trainings",trainingsRouter);
+apiRouter.use("/planner",plannerRouter);

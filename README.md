@@ -1,39 +1,34 @@
-# ClubPlanner 5.0 – Sprint 2.4
+# ClubPlanner 5.0 – Sprint 3
 
-## Fachlogik der Platzbelegung
+## Neue Trainings- und Platzlogik
+Jeder Haupt- und Trainingsplatz besitzt:
+- Gesamt
+- Hälfte A
+- Hälfte B
 
-ClubPlanner listet FUSSBALL.DE-Spiele nur dann in der Platzbelegung, wenn sie
-tatsächlich auf einem unserer beiden Standorte stattfinden:
+Standardmodus eines Trainings ist `flexibel`.
 
-- Gemmingen
-- Stebbach
+Beispiel:
+- B-Junioren 18:00–19:30 Hauptplatz Gemmingen
+- Herren 19:00–20:30 Hauptplatz Gemmingen
 
-Die Heim-/Gaststellung in FUSSBALL.DE reicht nicht aus.
+ClubPlanner zeigt:
+- 18:00–19:00 B-Junioren – Gesamt
+- 19:00–19:30 B-Junioren – Hälfte A / Herren – Hälfte B
+- 19:30–20:30 Herren – Gesamt
 
-### Beispiel TB Richen
-`SG Stebbach/Gemmingen 2 – SGM MassenbachHausen / SV Schluchtern II`
-am 07.08.2026 wird bei TB Richen in Eppingen gespielt.
-Dieses Spiel belegt weder Gemmingen noch Stebbach und wird daher aus der
-ClubPlanner-Belegung entfernt.
+Das ist ausdrücklich KEIN Konflikt.
 
-### Stebbach
-Spielstätten mit
-`Jahnweg 1, 75050 Gemmingen`
-oder
-`Jahnweg 1, 75050 Gemmingen-Stebbach`
-werden als lokaler Standort `Stebbach` erkannt.
+Konflikte entstehen u. a. bei:
+- mehr als zwei Mannschaften gleichzeitig auf demselben Platz
+- Spiel + Training gleichzeitig auf demselben Platz
+- Gesamtplatz exklusiv + weitere Belegung
+- zwei feste Buchungen derselben Hälfte
 
-Anzeige:
-- Ort: `Stebbach`
-- Platz: `Hauptplatz – Gesamt` (sofern FUSSBALL.DE keinen Trainingsplatz nennt)
-- Adresse: `Jahnweg 1, 75050 Gemmingen-Stebbach`
+## Oberfläche
+Neue Bereiche:
+- Wochenplan
+- Training eintragen
+- Spiele
 
-### ABSE.
-Abgesetzte Spiele bleiben als rote Information sichtbar:
-- Ort: `abgesetzt`
-- keine lokale Ressource
-- später kein Konflikt
-
-### Bereinigung
-Beim Sync werden bestätigte externe/neutrale Spielorte aus bereits importierten
-FUSSBALL.DE-Belegungsdaten entfernt.
+Neben `flexibel` können Trainings auch fest auf Hälfte A/B oder exklusiv auf Gesamt gebucht werden.

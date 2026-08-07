@@ -77,6 +77,8 @@ export async function initSchema() {
     location_id text references cp5_locations(id) on delete set null,
     venue_name text default '',
     resource_id uuid references cp5_resources(id) on delete set null,
+    allocation_mode text not null default 'flexible',
+    requested_section text not null default 'whole',
     home_cabin_id uuid references cp5_resources(id) on delete set null,
     guest_cabin_id uuid references cp5_resources(id) on delete set null,
     address text default '',
@@ -92,6 +94,8 @@ export async function initSchema() {
   )`);
 
   await db(`alter table cp5_events add column if not exists venue_name text default ''`);
+  await db(`alter table cp5_events add column if not exists allocation_mode text not null default 'flexible'`);
+  await db(`alter table cp5_events add column if not exists requested_section text not null default 'whole'`);
 
   await db(`create unique index if not exists uq_cp5_event_external
     on cp5_events(source,external_id) where external_id is not null`);
@@ -160,6 +164,6 @@ export async function initSchema() {
       [crypto.randomUUID(),clubId,name]);
   }
 
-  logger.info("ClubPlanner 5.0 Sprint 2.4 Datenbankschema bereit", { clubId });
+  logger.info("ClubPlanner 5.0 Sprint 3 Datenbankschema bereit", { clubId });
   return { clubId };
 }

@@ -26,7 +26,7 @@ export async function upsertImportedEvent(input){
     await db(`update cp5_events set
       club_id=$2,team_id=$3,event_type='home_match',event_date=$4,kickoff_time=$5,start_time=$5,end_time=$6,
       title=$7,opponent=$8,competition=$9,status=$10,location_id=$11,venue_name=$12,resource_id=$13,
-      home_cabin_id=null,guest_cabin_id=null,address=$14,note='',source='fussballde',external_url=$15,
+      home_cabin_id=null,guest_cabin_id=null,allocation_mode='exclusive',requested_section='whole',address=$14,note='',source='fussballde',external_url=$15,
       game_number=$16,source_hash=$17,last_synced_at=now(),updated_at=now()
       where id=$1`,[
         id,input.clubId,input.teamId,input.date,input.kickoff,input.endTime,input.title,input.opponent,
@@ -37,9 +37,9 @@ export async function upsertImportedEvent(input){
   }
   await db(`insert into cp5_events(
     id,club_id,team_id,event_type,event_date,kickoff_time,start_time,end_time,title,opponent,competition,status,
-    location_id,venue_name,resource_id,home_cabin_id,guest_cabin_id,address,note,source,external_id,external_url,
+    location_id,venue_name,resource_id,home_cabin_id,guest_cabin_id,allocation_mode,requested_section,address,note,source,external_id,external_url,
     game_number,source_hash,last_synced_at
-  ) values($1,$2,$3,'home_match',$4,$5,$5,$6,$7,$8,$9,$10,$11,$12,$13,null,null,$14,'','fussballde',$15,$16,$17,$18,now())`,
+  ) values($1,$2,$3,'home_match',$4,$5,$5,$6,$7,$8,$9,$10,$11,$12,$13,null,null,'exclusive','whole',$14,'','fussballde',$15,$16,$17,$18,now())`,
   [
     id,input.clubId,input.teamId,input.date,input.kickoff,input.endTime,input.title,input.opponent,input.competition,
     input.status,input.locationId,input.venueName||"",input.resourceId,input.address,input.externalId,input.externalUrl,
