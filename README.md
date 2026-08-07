@@ -1,26 +1,13 @@
-# ClubPlanner 5.0 – Sprint 2
+# ClubPlanner 5.0 – Sprint 2.1
 
-## Neu
-Sprint 2 enthält den ersten produktiven Baustein der neuen Architektur: den komplett neu integrierten FUSSBALL.DE-Importer.
+Korrekturen nach dem ersten produktiven V5-Import:
 
-### Ablauf
-1. Saisonspielplan wird direkt über `ajax.club.matchplan` geladen.
-2. Datum, Anstoßzeit, Heim/Gast, Wettbewerb, Spielnummer und Status werden aus dem Spielplan gelesen.
-3. Nur Heimspiele von SV Gemmingen / SG Stebbach-Gemmingen / JSG Gemmingen-Stebbach werden übernommen.
-4. Die Spiel-Detailseite wird nur für Spielort/Adresse geöffnet.
-5. Mannschaften werden über `external_name` sauber auf `cp5_teams` gemappt bzw. ergänzt.
-6. Spiele werden per Delta-Upsert in `cp5_events` gespeichert.
-7. Bereits unveränderte Spiele werden nur als synchronisiert markiert – keine Dubletten.
+- Datum wird in der Oberfläche als `TT.MM.JJJJ` dargestellt.
+- Mannschaften werden nicht mehr nur über den externen Namen erkannt.
+- Altersklasse + Mannschaftsname bilden gemeinsam die Zuordnung.
+- Damit werden gleichnamige JSG-Mannschaften aus B- und C-Junioren nicht mehr verwechselt.
+- Beim nächsten FUSSBALL.DE-Sync werden bereits importierte Events per `external_id` automatisch auf die korrekte Mannschaft aktualisiert.
+- Status wird in der UI deutsch dargestellt (`geplant`, `abgesetzt`, `verlegt`).
 
-## Statuswerte
-- `planned` = geplant
-- `cancelled` = abgesetzt / ausgefallen / abgebrochen
-- `rescheduled` = verlegt
-
-## API
-- `GET /api/v5/sync/status`
-- `POST /api/v5/sync/fussballde` (Bearbeitungs-PIN erforderlich)
-- `GET /api/v5/events`
-
-## Sicherheit
-Version 4.x wird nicht angefasst. Sprint 2 arbeitet ausschließlich mit `cp5_*`-Tabellen.
+## Testfall
+Das Spiel vom 08.09.2026 mit `JSG Richen / Eppingen 3` muss nach erneutem Sync als **C-Junioren** erscheinen.

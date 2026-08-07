@@ -7,7 +7,7 @@ async function start(){
   await initSchema();
   const app=createApp();
   app.listen(config.port,"0.0.0.0",()=>{
-    logger.info(`ClubPlanner 5.0 Sprint 2 läuft auf Port ${config.port}`);
+    logger.info(`ClubPlanner 5.0 Sprint 2.1 läuft auf Port ${config.port}`);
   });
 }
 
