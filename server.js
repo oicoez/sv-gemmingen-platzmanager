@@ -123,7 +123,7 @@ async function initDb(){
   for(const name of DEFAULT_TEAMS){
     await db(`insert into clubplanner_teams(id,name) values($1,$2) on conflict(name) do nothing`,[crypto.randomUUID(),name]);
   }
-  console.log("Sprint 3 Datenbankstruktur ist bereit.");
+  console.log("Sprint 3.1 Datenbankstruktur ist bereit.");
 }
 
 function requirePin(req,res,next){
@@ -195,32 +195,90 @@ function inferPitch(text){
 }
 
 async function collectGameLinks(page){
+  async function extractItems(){
+    return await page.locator('a[href*="/spiel/"]').evaluateAll(as=>{
+      const out=[],seen=new Set();
+      for(const a of as){
+        const url=(a.href||"").split("?")[0];
+        if(!url||seen.has(url))continue;
+        seen.add(url);
+
+        let best="";
+        let n=a;
+        for(let i=0;i<10 && n;i++,n=n.parentElement){
+          const txt=(n.innerText||"")
+            .replace(/[\u200b\u200c\u200d\u2060]/g," ")
+            .replace(/\s+/g," ").trim();
+
+          if(
+            txt.length>0 && txt.length<1800 &&
+            /\d{2}\.\d{2}\.(?:20)?\d{2}/.test(txt) &&
+            (
+              /\b\d{1,2}:\d{2}\b/.test(txt) ||
+              /\bABSE\.?\b|Absetzung|Spielabsetzung|Ausfall|Abbruch/i.test(txt)
+            )
+          ){
+            best=txt;
+            break;
+          }
+        }
+        out.push({url,overviewText:best});
+      }
+      return out;
+    });
+  }
+
   const printUrl=`https://www.fussball.de/vereinsspielplan.druck/-/datum-bis/2027-06-30/datum-von/2026-08-07/id/${FUSSBALL_CLUB_ID}/match-type/-1/max/999/mode/PRINT/show-venues/true`;
   syncState.progress="Lade kompletten Vereinsspielplan …";
   await page.goto(printUrl,{waitUntil:"domcontentloaded",timeout:60000});
-  await page.waitForTimeout(1200);
-  let links=await page.locator('a[href*="/spiel/"]').evaluateAll(as=>[...new Set(as.map(a=>(a.href||"").split("?")[0]).filter(Boolean))]);
-  if(links.length>=3)return links;
+  await page.waitForTimeout(1500);
+
+  let items=await extractItems();
+  if(items.length>=3)return items;
 
   const dynamic=`https://www.fussball.de/ajax.club.matchplan/-/id/${FUSSBALL_CLUB_ID}/mode/PAGE/show-filter/true`;
   await page.goto(dynamic,{waitUntil:"domcontentloaded",timeout:60000});
   await page.waitForTimeout(1200);
+
   for(let round=0;round<40;round++){
     const before=await page.locator('a[href*="/spiel/"]').count();
     const clicked=await page.evaluate(()=>{
-      const e=[...document.querySelectorAll("button,a,div,span")].find(x=>(x.innerText||x.textContent||"").trim()==="Mehr laden"&&x.offsetParent!==null);
-      if(!e)return false; e.click(); return true;
+      const e=[...document.querySelectorAll("button,a,div,span")]
+        .find(x=>(x.innerText||x.textContent||"").trim()==="Mehr laden"&&x.offsetParent!==null);
+      if(!e)return false;
+      e.click();
+      return true;
     });
     if(!clicked)break;
     await page.waitForTimeout(1000);
     const after=await page.locator('a[href*="/spiel/"]').count();
     if(after<=before)break;
   }
-  links=await page.locator('a[href*="/spiel/"]').evaluateAll(as=>[...new Set(as.map(a=>(a.href||"").split("?")[0]).filter(Boolean))]);
-  return links;
+
+  items=await extractItems();
+  return items;
 }
 
-async function parseGame(context,url,index,total){
+function overviewMeta(text){
+  const t=clean(text);
+  let status="";
+  if(/\bABSE\.?\b|Absetzung|Spielabsetzung/i.test(t)) status="abgesetzt";
+  else if(/\bAUSF\.?\b|Spielausfall|\bAusfall\b/i.test(t)) status="ausfall";
+  else if(/\bABBR\.?\b|Spielabbruch|\bAbbruch\b/i.test(t)) status="abbruch";
+  else if(/\bVERL\.?\b|\bVerlegung\b|\bverlegt\b/i.test(t)) status="verlegt";
+
+  const times=[...t.matchAll(/(?:^|[\s|,-])([0-2]?\d:[0-5]\d)(?:\s*Uhr)?(?=$|[\s|,-])/g)]
+    .map(m=>m[1].padStart(5,"0"))
+    .filter(x=>{
+      const h=Number(x.slice(0,2));
+      return h>=0 && h<=23;
+    });
+  return {time:times[0]||"",status};
+}
+
+async function parseGame(context,item,index,total){
+  const url=item.url;
+  const ov=overviewMeta(item.overviewText||"");
   const page=await context.newPage();
   try{
     syncState.processed=index;
@@ -235,15 +293,25 @@ async function parseGame(context,url,index,total){
     const home=clean(m[1]), away=clean(m[2]), competition=clean(m[3]), date=parseDeDate(m[5]);
     if(!date || !/Gemmingen/i.test(home))return null;
 
-    let status="geplant";
-    if(/Absetzung|Spielabsetzung/i.test(body))status="abgesetzt";
-    else if(/Ausfall|Spielausfall/i.test(body))status="ausfall";
-    else if(/Abbruch|Spielabbruch/i.test(body))status="abbruch";
-    else if(/Verlegung|verlegt/i.test(body))status="verlegt";
+    let status=ov.status||"geplant";
+    if(!ov.status){
+      if(/\bABSE\.?\b|Absetzung|Spielabsetzung/i.test(body))status="abgesetzt";
+      else if(/\bAUSF\.?\b|Ausfall|Spielausfall/i.test(body))status="ausfall";
+      else if(/\bABBR\.?\b|Abbruch|Spielabbruch/i.test(body))status="abbruch";
+      else if(/Verlegung|verlegt/i.test(body))status="verlegt";
+    }
 
-    let start="";
-    const tm=body.match(/\b(\d{2}:\d{2})\s*Uhr\b/i);
-    if(tm)start=tm[1];
+    let start=ov.time||"";
+    if(!start){
+      const tm=body.match(/\b([0-2]?\d:[0-5]\d)\s*Uhr\b/i);
+      if(tm)start=tm[1].padStart(5,"0");
+    }
+
+    if(!start){
+      const html=await page.content().catch(()=>"");
+      const hm=html.match(/(?:startDate|kickoff|kick-off|datetime)[^0-9]{0,80}(?:\d{4}-\d{2}-\d{2}[T\s])?([0-2]\d:[0-5]\d)/i);
+      if(hm)start=hm[1];
+    }
 
     let venueText="";
     const maps=page.locator('a[href*="google"],a[href*="maps"]');
@@ -259,12 +327,20 @@ async function parseGame(context,url,index,total){
     const loc=inferLocation(venueText), pitch=inferPitch(venueText);
     const externalId=(url.match(/\/spiel\/([A-Z0-9]+)(?:\/|$)/i)||[])[1] || url;
 
+    const cancelled=["abgesetzt","ausfall","abbruch"].includes(status);
     return {
-      date,start,end:start?datePlusMinutes(date,start,120):"23:59",
+      date,
+      start:start||"00:00",
+      end:start?datePlusMinutes(date,start,120):(cancelled?"00:01":"23:59"),
       type:"Heimspiel",team:home,opponent:away,competition,
-      location:loc.location||"PRÜFEN",address:loc.address,pitch,
-      homeCabin:loc.location?"Heimkabine":"",guestCabin:loc.location?"Gastkabine":"",
-      status,note:loc.location?"":"SPIELORT PRÜFEN",source:"fussball.de",
+      location:loc.location||(cancelled?"—":"PRÜFEN"),
+      address:loc.address,
+      pitch:cancelled?(pitch||""):pitch,
+      homeCabin:(!cancelled&&loc.location)?"Heimkabine":"",
+      guestCabin:(!cancelled&&loc.location)?"Gastkabine":"",
+      status,
+      note:cancelled?"ABGESETZT":(loc.location?"":"SPIELORT PRÜFEN"),
+      source:"fussball.de",
       externalId,externalUrl:url
     };
   }finally{await page.close().catch(()=>{})}
@@ -303,17 +379,17 @@ async function runSync(){
       userAgent:"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131 Safari/537.36"
     });
     const page=await context.newPage();
-    const links=await collectGameLinks(page);
-    syncState.total=links.length;
-    if(links.length<3)throw new Error(`FUSSBALL.DE lieferte nur ${links.length} Spiel-Links.`);
+    const items=await collectGameLinks(page);
+    syncState.total=items.length;
+    if(items.length<3)throw new Error(`FUSSBALL.DE lieferte nur ${items.length} Spiel-Links.`);
 
-    for(let i=0;i<links.length;i++){
+    for(let i=0;i<items.length;i++){
       try{
-        const game=await parseGame(context,links[i],i+1,links.length);
+        const game=await parseGame(context,items[i],i+1,items.length);
         if(!game){syncState.skipped++;continue}
         await upsertImported(game);
       }catch(e){
-        console.error("Spiel konnte nicht importiert werden:",links[i],e.message);
+        console.error("Spiel konnte nicht importiert werden:",items[i]?.url,e.message);
         syncState.skipped++;
       }
     }
@@ -384,5 +460,5 @@ app.get("/api/export",async(req,res)=>{
   }catch(e){res.status(500).send(e.message)}
 });
 
-initDb().then(()=>app.listen(PORT,"0.0.0.0",()=>console.log(`ClubPlanner Sprint 3 läuft auf Port ${PORT}`)))
+initDb().then(()=>app.listen(PORT,"0.0.0.0",()=>console.log(`ClubPlanner Sprint 3.1 läuft auf Port ${PORT}`)))
 .catch(e=>{console.error("DB-Startfehler",e);process.exit(1)});
