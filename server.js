@@ -6,6 +6,7 @@ import crypto from "crypto";
 import { db } from "./database/db.js";
 import { syncState } from "./services/sync-state.js";
 import { runFussballSync, OFFICIAL_TEAM_NAMES } from "./services/fussballde-importer.js";
+import { previewClubSchedule } from "./services/fussballde-v41-engine.js";
 import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -117,7 +118,7 @@ async function initDb(){
   const obsolete=["Herren I","Herren II","Frauen","A-Junioren","B-Junioren","C1-Junioren","C2-Junioren","D-Junioren"];
   await db(`update clubplanner_teams set active=false where name = any($1::text[])`,[obsolete]);
 
-  console.log("ClubPlanner 4.0 Phase 1.1 Datenbankstruktur ist bereit.");
+  console.log("ClubPlanner 4.1 Phase 1 Datenbankstruktur ist bereit.");
 }
 
 function requirePin(req,res,next){
@@ -198,6 +199,17 @@ app.get("/api/db-status",async(req,res)=>{try{const q=await db(`select now() now
 app.post("/api/login",(req,res)=>res.json({ok:req.body?.pin===EDIT_PIN}));
 app.get("/api/data",async(req,res)=>{try{res.json(await allData())}catch(e){res.status(500).json({error:e.message})}});
 
+app.get("/api/v41/preview",requirePin,async(req,res)=>{
+  try{
+    const result=await previewClubSchedule();
+    console.log(`[FUSSBALL-4.1] Preview: ${result.validation.total} Spiele · ${result.validation.withKickoff} Zeiten · ${result.validation.withTeams} Paarungen · ${result.validation.issues.length} Auffälligkeiten`);
+    res.json(result);
+  }catch(e){
+    console.error("[FUSSBALL-4.1] Preview fehlgeschlagen:",e);
+    res.status(500).json({error:e.name==="AbortError"?"FUSSBALL.DE Timeout":e.message});
+  }
+});
+
 app.get("/api/sync/status",(req,res)=>res.json(syncState));
 app.get("/api/sync/report",requirePin,(req,res)=>res.json({
   running:syncState.running, phase:syncState.phase, total:syncState.total, processed:syncState.processed,
@@ -275,5 +287,5 @@ app.get("/api/export",async(req,res)=>{
   }catch(e){res.status(500).send(e.message)}
 });
 
-initDb().then(()=>app.listen(PORT,"0.0.0.0",()=>console.log(`ClubPlanner 4.0 Phase 1.1 läuft auf Port ${PORT}`)))
+initDb().then(()=>app.listen(PORT,"0.0.0.0",()=>console.log(`ClubPlanner 4.1 Phase 1 läuft auf Port ${PORT}`)))
 .catch(e=>{console.error("DB-Startfehler",e);process.exit(1)});
