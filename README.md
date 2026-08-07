@@ -1,24 +1,39 @@
-# ClubPlanner 4.1 – Modul 1 / Phase 3
+# ClubPlanner 4.2
 
-Phase 3 behebt ausschließlich die fehlende Zuordnung von Datum und Anstoßzeit.
+## Neue Import-Architektur
+Der Vereinsspielplan wird nur noch verwendet, um alle eindeutigen FUSSBALL.DE-Spiel-Links einzusammeln.
 
-## Drei unabhängige Methoden
-1. Nächstliegender vorheriger Datum-/Uhrzeit-Block in echter DOM-Reihenfolge.
-2. Zuordnung Spiel-Link ↔ Datum-/Uhrzeit-Block nach Dokumentreihenfolge.
-3. Roh-HTML-Rückwärtssuche direkt vor der exakten FUSSBALL.DE-Spiel-ID.
+Danach wird JEDE Detailseite einzeln gelesen.
 
-Die Detailseiten bleiben für Spielort und Adresse zuständig.
+Pro Spiel versucht ClubPlanner 4.2 zu ermitteln:
+- Datum
+- Anstoßzeit
+- Heimteam
+- Gastteam
+- Wettbewerb
+- Status
+- Spielnummer
+- Spielstätte
+- Ort
+- Adresse
 
-## Test
-Der Button heißt `4.1 Phase-3 Testlauf`.
-Der Kalender wird weiterhin NICHT verändert.
+## Datum/Anstoßzeit – mehrere Methoden
+1. `<time datetime="...">`
+2. JSON-LD / eingebettete JSON-Daten
+3. expliziter sichtbarer Datum-/Uhrzeittext auf der Detailseite
 
-Render zeigt z.B.:
-[FUSSBALL-4.1-P3] Übersicht: 111 Spiele · 111 Zeiten · 111 Paarungen
-[FUSSBALL-4.1-P3] Zeitquellen: {"nearest-previous-dom":85,"document-sequence":26}
-[FUSSBALL-4.1-P3] 1/52 | 2026-08-09 10:30 [nearest-previous-dom] | ... | Gemmingen | Beim Sportplatz 3, 75050 Gemmingen
+## Stabilität
+- jede Detailseite: 12 Sekunden Timeout
+- maximal 5 Seiten parallel
+- einzelne Fehler stoppen den Gesamtlauf nicht
+- ausführliche Render-Logs pro Spiel
 
-Ziel vor Phase 4:
-- withKickoff muss nahe/gleich total sein
-- erkannte Heimspiele müssen eine echte Anstoßzeit besitzen
-- Spielort/Adresse aus Phase 2 bleiben erhalten
+## Sicherer Test
+Der Button `4.2 Detailseiten-Test` schreibt noch NICHT in den Kalender.
+
+Ziel:
+- möglichst alle Detailseiten parsed
+- Heimspiele mit echten Datum/Anstoßzeit
+- bekannte Heimspielstätten mit Ort/Adresse
+
+Erst nach einem erfolgreichen Test wird die produktive Supabase-Synchronisierung auf 4.2 umgestellt.
