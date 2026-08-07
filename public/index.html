@@ -40,7 +40,7 @@ th{background:#1f4e78;color:white;position:sticky;top:0;z-index:1}tr:nth-child(e
 <div class="topright"><span id="dbState" class="muted">Cloud-DB…</span><span id="editState" class="muted">Lesemodus</span><button id="loginBtn">Bearbeiten</button></div>
 </header>
 
-<div class="notice"><b>Sprint 3.5 aktiv:</b> echte FUSSBALL.DE-Anstoßzeiten · Detail-Spielstätten/Adressen · 8 offizielle Teams · geteilte Plätze A/B/Gesamt · intelligente Konfliktprüfung.</div>
+<div class="notice"><b>ClubPlanner 4.0 · Phase 1:</b> FUSSBALL.DE-Importer komplett neu aufgebaut. Jede Spielseite wird einzeln geprüft; Anstoßzeit, Mannschaft, Gegner, Wettbewerb, Status, Spielort und Adresse werden synchronisiert.</div>
 
 <nav>
 <button class="tab active" data-tab="dashboard">Dashboard</button>
@@ -207,7 +207,7 @@ let syncTimer=null;
 async function pollSync(){
   try{
     const s=await (await fetch("/api/sync/status",{cache:"no-store"})).json();
-    $("syncState").textContent=s.running?`${s.progress} (${s.processed}/${s.total||"?"})`:(s.error?`Fehler: ${s.error}`:s.progress);
+    $("syncState").textContent=s.running?`${s.progress} (${s.processed}/${s.total||"?"})`:(s.error?`Fehler: ${s.error}`:`${s.progress}${s.errors?.length?` · ${s.errors.length} Hinweise`:""}`);
     $("syncState").className=s.error?"danger":(s.running?"muted":"good");
     if(s.running){
       $("syncBtn").disabled=true;
