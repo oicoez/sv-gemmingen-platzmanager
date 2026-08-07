@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: clubplanner-sv-gemmingen
+    name: sv-gemmingen-platzmanager
     runtime: docker
     plan: free
     healthCheckPath: /health

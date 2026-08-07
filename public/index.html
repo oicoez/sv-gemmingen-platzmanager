@@ -5,108 +5,109 @@
 <title>ClubPlanner – SV Gemmingen</title>
 <style>
 :root{font-family:Segoe UI,Arial,sans-serif;color:#17212b;background:#f4f6f8}
-body{margin:0}.app{max-width:1500px;margin:auto;padding:24px}
-h1{margin:0}.sub{color:#697481;margin:5px 0 20px}
-nav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
-button,a.btn{border:1px solid #ccd3dc;background:#fff;border-radius:7px;padding:10px 14px;cursor:pointer;text-decoration:none;color:#17212b}
-button.active,.primary{background:#1f4e78;color:white;border-color:#1f4e78}
-.panel{background:white;border:1px solid #d8dee6;border-radius:9px;padding:16px;margin-bottom:14px}
-.grid{display:grid;grid-template-columns:repeat(4,minmax(160px,1fr));gap:10px}
-input,select{padding:9px;border:1px solid #cbd3dc;border-radius:6px;width:100%;box-sizing:border-box}
-table{border-collapse:collapse;width:100%;font-size:14px}th,td{padding:9px;border-bottom:1px solid #e8ebef;text-align:left;white-space:nowrap}
-th{background:#1f4e78;color:white;position:sticky;top:0}.scroll{overflow:auto;max-height:56vh}
-.warn{background:#ffe1c4!important}.pill{padding:5px 9px;border-radius:14px;background:#edf2f7;font-weight:600}
-.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.card{background:white;border:1px solid #d8dee6;border-radius:9px;padding:14px}
-.big{font-size:26px;font-weight:700}.muted{color:#6d7782}.hidden{display:none}
-@media(max-width:900px){.grid,.cards{grid-template-columns:1fr 1fr}}
+*{box-sizing:border-box}body{margin:0}.app{max-width:1550px;margin:auto;padding:22px}
+header{display:flex;justify-content:space-between;gap:16px;align-items:center;flex-wrap:wrap}
+h1{margin:0;font-size:30px}.sub{color:#697481;margin-top:4px}.topright{display:flex;gap:8px;align-items:center}
+button,a.btn{border:1px solid #ccd3dc;background:#fff;border-radius:8px;padding:10px 14px;cursor:pointer;text-decoration:none;color:#17212b;font-weight:600}
+button.primary,.active{background:#1f4e78!important;color:white!important;border-color:#1f4e78!important}
+nav{display:flex;gap:8px;flex-wrap:wrap;margin:20px 0 14px}
+.panel,.card{background:white;border:1px solid #d8dee6;border-radius:10px}.panel{padding:16px;margin-bottom:14px}
+.cards{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}.card{padding:14px}.big{font-size:27px;font-weight:750}
+.muted{color:#6c7682}.danger{color:#b42318}.hidden{display:none!important}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:10px}label{font-size:13px;color:#53606d}
+input,select{display:block;width:100%;padding:9px;margin-top:4px;border:1px solid #cbd3dc;border-radius:7px;background:#fff}
+.scroll{overflow:auto;max-height:58vh}table{border-collapse:collapse;width:100%;font-size:14px}th,td{padding:9px;border-bottom:1px solid #e6eaf0;text-align:left;white-space:nowrap}
+th{background:#1f4e78;color:white;position:sticky;top:0;z-index:1}tr:nth-child(even){background:#fafbfc}tr.warn{background:#ffe0c2!important}
+.calhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.month{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.dayname{text-align:center;font-weight:700;color:#64707c;padding:6px}.day{min-height:115px;background:white;border:1px solid #dde3ea;border-radius:8px;padding:7px}
+.day.other{opacity:.38}.dateNo{font-weight:700;margin-bottom:5px}.ev{font-size:12px;padding:4px 6px;border-radius:5px;background:#e8f0f8;margin:3px 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ev.training{background:#e7f5e9}.ev.heimspiel{background:#e5eef9}.ev.warn{background:#ffd4c0}
+.teamrow{display:flex;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid #eef1f4}.teamrow span{flex:1}
+.notice{background:#fff8db;border:1px solid #efd77d;padding:12px;border-radius:8px;margin-bottom:14px}
+@media(max-width:900px){.cards{grid-template-columns:1fr 1fr}.grid{grid-template-columns:1fr 1fr}.month{grid-template-columns:repeat(2,1fr)}.dayname{display:none}}
 </style>
 </head>
 <body><div class="app">
-<h1>ClubPlanner – SV Gemmingen</h1>
-<div class="sub">Spiele · Training · Plätze · Kabinen · Konflikte</div>
+<header><div><h1>ClubPlanner – SV Gemmingen</h1><div class="sub">Spiele · Training · Plätze · Kabinen · Konflikte</div></div>
+<div class="topright"><span id="editState" class="muted">Lesemodus</span><button id="loginBtn">Bearbeiten</button></div></header>
+
+<div class="notice"><b>Sprint 1:</b> Planung, Kalender, Plätze, Kabinen und Konflikte sind aktiv. Der automatische FUSSBALL.DE-Import folgt im nächsten Sprint.</div>
 
 <nav>
 <button class="tab active" data-tab="dashboard">Dashboard</button>
-<button class="tab" data-tab="calendar">Belegungsplan</button>
-<button class="tab" data-tab="new">Termin eintragen</button>
-<a class="btn" href="/api/export">Excel exportieren</a>
+<button class="tab" data-tab="calendar">Kalender</button>
+<button class="tab" data-tab="occupancy">Belegungsplan</button>
+<button class="tab editOnly hidden" data-tab="new">Termin eintragen</button>
+<button class="tab editOnly hidden" data-tab="teams">Mannschaften</button>
+<a class="btn" href="/api/export">Excel</a><a class="btn" href="/api/backup">Backup</a>
 </nav>
 
 <section id="dashboard">
 <div class="cards">
-<div class="card"><div class="muted">Termine gesamt</div><div id="countEvents" class="big">0</div></div>
-<div class="card"><div class="muted">Konflikte</div><div id="countConflicts" class="big">0</div></div>
-<div class="card"><div class="muted">Gemmingen</div><div id="countGem" class="big">0</div></div>
-<div class="card"><div class="muted">Stebbach</div><div id="countSte" class="big">0</div></div>
+<div class="card"><div class="muted">Termine</div><div id="cEvents" class="big">0</div></div>
+<div class="card"><div class="muted">Konflikte</div><div id="cConf" class="big">0</div></div>
+<div class="card"><div class="muted">Heute</div><div id="cToday" class="big">0</div></div>
+<div class="card"><div class="muted">Gemmingen</div><div id="cGem" class="big">0</div></div>
+<div class="card"><div class="muted">Stebbach</div><div id="cSte" class="big">0</div></div>
 </div>
-<div class="panel">
-<b>Ressourcen</b><p>Gemmingen: Hauptplatz / Trainingsplatz · Heimkabine / Gastkabine<br>
-Stebbach: Hauptplatz / Trainingsplatz · Heimkabine / Gastkabine</p>
-</div>
+<div class="panel"><h3>Nächste Termine</h3><div id="nextEvents"></div></div>
+<div class="panel"><h3>Ressourcen</h3>
+<p><b>Gemmingen:</b> Hauptplatz · Trainingsplatz · Heimkabine · Gastkabine<br>
+<b>Stebbach:</b> Hauptplatz · Trainingsplatz · Heimkabine · Gastkabine</p></div>
 </section>
 
 <section id="calendar" class="hidden">
-<div class="panel">
-<div class="scroll"><table><thead><tr>
-<th>Datum</th><th>Von</th><th>Bis</th><th>Art</th><th>Mannschaft</th><th>Gegner/Info</th>
-<th>Ort</th><th>Platz</th><th>Heimkabine</th><th>Gastkabine</th><th>Status</th><th>Aktion</th>
-</tr></thead><tbody id="rows"></tbody></table></div>
-</div>
+<div class="panel"><div class="calhead"><button id="prevMonth">‹</button><h2 id="monthTitle"></h2><button id="nextMonth">›</button></div>
+<div class="month" id="dayNames"></div><div class="month" id="monthGrid"></div></div>
+</section>
+
+<section id="occupancy" class="hidden">
+<div class="panel"><div class="scroll"><table><thead><tr>
+<th>Datum</th><th>Von</th><th>Bis</th><th>Art</th><th>Mannschaft</th><th>Gegner/Info</th><th>Ort</th><th>Platz</th>
+<th>Heimkabine</th><th>Gastkabine</th><th>Status</th><th>Konflikt</th><th class="editOnly hidden">Aktion</th>
+</tr></thead><tbody id="rows"></tbody></table></div></div>
 </section>
 
 <section id="new" class="hidden">
-<div class="panel">
-<h3>Termin eintragen</h3>
-<div class="grid">
-<label>Datum<input id="date" type="date"></label>
-<label>Von<input id="start" type="time"></label>
-<label>Bis<input id="end" type="time"></label>
+<div class="panel"><h3>Termin eintragen</h3><div class="grid">
+<label>Datum<input id="date" type="date"></label><label>Von<input id="start" type="time"></label><label>Bis<input id="end" type="time"></label>
 <label>Art<select id="type"><option>Training</option><option>Heimspiel</option><option>Turnier</option><option>Platzsperre</option><option>Sonstiges</option></select></label>
-<label>Mannschaft<input id="team" placeholder="z. B. B-Junioren"></label>
-<label>Gegner / Info<input id="opponent" placeholder="z. B. VfB Eppingen"></label>
+<label>Mannschaft<select id="team"></select></label><label>Gegner / Info<input id="opponent"></label>
 <label>Ort<select id="location"><option>Gemmingen</option><option>Stebbach</option></select></label>
 <label>Platz<select id="pitch"><option>Hauptplatz</option><option>Trainingsplatz</option></select></label>
 <label>Heimkabine<select id="homeCabin"><option value=""></option><option>Heimkabine</option><option>Gastkabine</option></select></label>
 <label>Gastkabine<select id="guestCabin"><option value=""></option><option>Gastkabine</option><option>Heimkabine</option></select></label>
-<label>Status<select id="status"><option>geplant</option><option>bestätigt</option><option>abgesetzt</option></select></label>
-<label>Bemerkung<input id="note"></label>
-</div>
-<p><button id="save" class="primary">Termin speichern</button></p>
-</div>
+<label>Status<select id="status"><option>geplant</option><option>bestätigt</option><option>abgesetzt</option><option>ausfall</option></select></label>
+<label>Bemerkung<input id="note"></label></div>
+<p><button id="save" class="primary">Termin speichern</button></p></div>
+</section>
+
+<section id="teams" class="hidden">
+<div class="panel"><h3>Mannschaften</h3><div id="teamList"></div>
+<div style="display:flex;gap:8px;margin-top:14px"><input id="newTeam" placeholder="Neue Mannschaft" style="max-width:350px"><button id="addTeam" class="primary">Hinzufügen</button></div></div>
 </section>
 </div>
 <script>
-let data={events:[],conflicts:[]};
-const $=id=>document.getElementById(id);
-document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{
- document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));b.classList.add("active");
- ["dashboard","calendar","new"].forEach(id=>$(id).classList.toggle("hidden",id!==b.dataset.tab));
-});
-function conflictIds(){const s=new Set();data.conflicts.forEach(c=>{s.add(c.a);s.add(c.b)});return s}
-async function load(){
- data=await (await fetch("/api/data",{cache:"no-store"})).json();
- $("countEvents").textContent=data.events.length;
- $("countConflicts").textContent=data.conflicts.length;
- $("countGem").textContent=data.events.filter(x=>x.location==="Gemmingen").length;
- $("countSte").textContent=data.events.filter(x=>x.location==="Stebbach").length;
- const ids=conflictIds();
- $("rows").innerHTML=[...data.events].sort((a,b)=>(a.date+a.start).localeCompare(b.date+b.start)).map(e=>
- `<tr class="${ids.has(e.id)?"warn":""}">
- <td>${e.date||""}</td><td>${e.start||""}</td><td>${e.end||""}</td><td>${e.type||""}</td>
- <td>${e.team||""}</td><td>${e.opponent||e.info||""}</td><td>${e.location||""}</td><td>${e.pitch||""}</td>
- <td>${e.homeCabin||""}</td><td>${e.guestCabin||""}</td><td>${e.status||""}</td>
- <td><button onclick="del('${e.id}')">Löschen</button></td></tr>`).join("");
-}
-async function del(id){if(confirm("Termin wirklich löschen?")){await fetch("/api/events/"+id,{method:"DELETE"});load()}}
-$("save").onclick=async()=>{
- const body={
-  date:$("date").value,start:$("start").value,end:$("end").value,type:$("type").value,
-  team:$("team").value,opponent:$("opponent").value,location:$("location").value,pitch:$("pitch").value,
-  homeCabin:$("homeCabin").value,guestCabin:$("guestCabin").value,status:$("status").value,note:$("note").value
- };
- if(!body.date||!body.start||!body.end||!body.team){alert("Bitte Datum, Uhrzeit und Mannschaft ausfüllen.");return}
- await fetch("/api/events",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
- alert("Termin gespeichert.");load()
-}
-load();
+let data={events:[],conflicts:[],teams:[]}, pin=sessionStorage.getItem("clubPin")||"", edit=!!pin;
+let viewMonth=new Date(); viewMonth.setDate(1);
+const $=id=>document.getElementById(id), iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+function esc(s){return String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+function showEdit(){document.querySelectorAll(".editOnly").forEach(x=>x.classList.toggle("hidden",!edit));$("editState").textContent=edit?"Bearbeitungsmodus":"Lesemodus";$("loginBtn").textContent=edit?"Abmelden":"Bearbeiten"}
+$("loginBtn").onclick=async()=>{if(edit){pin="";edit=false;sessionStorage.removeItem("clubPin");showEdit();return}const p=prompt("Bearbeitungs-PIN eingeben:");if(!p)return;const r=await fetch("/api/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({pin:p})});const j=await r.json();if(j.ok){pin=p;edit=true;sessionStorage.setItem("clubPin",p);showEdit()}else alert("PIN falsch")};
+document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));b.classList.add("active");["dashboard","calendar","occupancy","new","teams"].forEach(id=>$(id).classList.toggle("hidden",id!==b.dataset.tab));if(b.dataset.tab==="calendar")renderCalendar()});
+function conflictMap(){const m=new Map();for(const c of data.conflicts){for(const id of [c.a,c.b]){const a=m.get(id)||[];a.push(...c.reasons);m.set(id,a)}}return m}
+async function load(){data=await (await fetch("/api/data",{cache:"no-store"})).json();const today=iso(new Date());$("cEvents").textContent=data.events.length;$("cConf").textContent=data.conflicts.length;$("cToday").textContent=data.events.filter(e=>e.date===today).length;$("cGem").textContent=data.events.filter(e=>e.location==="Gemmingen").length;$("cSte").textContent=data.events.filter(e=>e.location==="Stebbach").length;renderTable();renderNext();renderTeams();renderCalendar();fillTeams()}
+function sorted(){return [...data.events].sort((a,b)=>(a.date+a.start).localeCompare(b.date+b.start))}
+function renderNext(){const today=iso(new Date()),arr=sorted().filter(e=>e.date>=today).slice(0,8),cm=conflictMap();$("nextEvents").innerHTML=arr.length?arr.map(e=>`<div class="teamrow"><span><b>${esc(e.date)} ${esc(e.start)}</b> · ${esc(e.team)} · ${esc(e.type)} · ${esc(e.location)} / ${esc(e.pitch)}</span>${cm.has(e.id)?'<b class="danger">Konflikt</b>':''}</div>`).join(""):"Keine zukünftigen Termine."}
+function renderTable(){const cm=conflictMap();$("rows").innerHTML=sorted().map(e=>`<tr class="${cm.has(e.id)?"warn":""}"><td>${esc(e.date)}</td><td>${esc(e.start)}</td><td>${esc(e.end)}</td><td>${esc(e.type)}</td><td>${esc(e.team)}</td><td>${esc(e.opponent)}</td><td>${esc(e.location)}</td><td>${esc(e.pitch)}</td><td>${esc(e.homeCabin)}</td><td>${esc(e.guestCabin)}</td><td>${esc(e.status)}</td><td>${cm.has(e.id)?esc([...new Set(cm.get(e.id))].join(", ")):""}</td><td class="editOnly ${edit?"":"hidden"}"><button onclick="delEvent('${e.id}')">Löschen</button></td></tr>`).join("")}
+function renderCalendar(){const y=viewMonth.getFullYear(),m=viewMonth.getMonth();$("monthTitle").textContent=new Intl.DateTimeFormat("de-DE",{month:"long",year:"numeric"}).format(viewMonth);$("dayNames").innerHTML=["Mo","Di","Mi","Do","Fr","Sa","So"].map(x=>`<div class="dayname">${x}</div>`).join("");const first=new Date(y,m,1),offset=(first.getDay()+6)%7,start=new Date(y,m,1-offset),cm=conflictMap();let html="";for(let i=0;i<42;i++){const d=new Date(start);d.setDate(start.getDate()+i);const key=iso(d),ev=data.events.filter(e=>e.date===key);html+=`<div class="day ${d.getMonth()!==m?"other":""}"><div class="dateNo">${d.getDate()}</div>${ev.map(e=>`<div class="ev ${String(e.type).toLowerCase()} ${cm.has(e.id)?"warn":""}">${esc(e.start)} ${esc(e.team)}</div>`).join("")}</div>`}$("monthGrid").innerHTML=html}
+$("prevMonth").onclick=()=>{viewMonth.setMonth(viewMonth.getMonth()-1);renderCalendar()};$("nextMonth").onclick=()=>{viewMonth.setMonth(viewMonth.getMonth()+1);renderCalendar()};
+function fillTeams(){$("team").innerHTML=data.teams.map(t=>`<option>${esc(t)}</option>`).join("")}
+function renderTeams(){$("teamList").innerHTML=data.teams.map(t=>`<div class="teamrow"><span>${esc(t)}</span>${edit?`<button onclick="delTeam('${encodeURIComponent(t)}')">Entfernen</button>`:""}</div>`).join("")}
+async function api(url,opt={}){opt.headers={...(opt.headers||{}),"x-edit-pin":pin};const r=await fetch(url,opt);const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||"Fehler");return j}
+$("save").onclick=async()=>{const body={date:$("date").value,start:$("start").value,end:$("end").value,type:$("type").value,team:$("team").value,opponent:$("opponent").value,location:$("location").value,pitch:$("pitch").value,homeCabin:$("homeCabin").value,guestCabin:$("guestCabin").value,status:$("status").value,note:$("note").value};if(!body.date||!body.start||!body.end||!body.team)return alert("Datum, Von, Bis und Mannschaft sind Pflicht.");try{await api("/api/events",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});await load();alert("Termin gespeichert.")}catch(e){alert(e.message)}};
+window.delEvent=async id=>{if(confirm("Termin löschen?")){try{await api("/api/events/"+id,{method:"DELETE"});load()}catch(e){alert(e.message)}}};
+$("addTeam").onclick=async()=>{const name=$("newTeam").value.trim();if(!name)return;try{await api("/api/teams",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name})});$("newTeam").value="";load()}catch(e){alert(e.message)}};
+window.delTeam=async name=>{if(confirm("Mannschaft entfernen?")){try{await api("/api/teams/"+name,{method:"DELETE"});load()}catch(e){alert(e.message)}}};
+showEdit();load();
 </script></body></html>
