@@ -58,7 +58,21 @@ export async function listImportedEvents({includePast=false}={}){
     left join cp5_teams t on t.id=e.team_id
     left join cp5_locations l on l.id=e.location_id
     left join cp5_resources r on r.id=e.resource_id
-    where e.source='fussballde' ${pastFilter}
+    where e.source='fussballde'
+      and (e.location_id in ('gemmingen','stebbach') or e.status='cancelled')
+      ${pastFilter}
     order by e.event_date,e.kickoff_time nulls last`);
   return r.rows;
+}
+
+
+export async function deleteConfirmedExternalEvents(externalIds=[]){
+  const ids=externalIds.filter(Boolean);
+  if(!ids.length)return 0;
+  const res=await db(`delete from cp5_events
+    where source='fussballde'
+      and event_type='home_match'
+      and external_id = any($1::text[])
+    returning id`,[ids]);
+  return res.rowCount||0;
 }

@@ -6,7 +6,7 @@ import { parseSeasonMatchplan,isClubHomeTeam } from "./matchplan-parser.js";
 import { parseVenue } from "./detail-parser.js";
 import { ensureImportedTeam,getClub } from "../../repositories/team-repository.js";
 import { findWholePitch } from "../../repositories/resource-repository.js";
-import { upsertImportedEvent } from "../../repositories/event-repository.js";
+import { upsertImportedEvent, deleteConfirmedExternalEvents } from "../../repositories/event-repository.js";
 
 const state={running:false,phase:"idle",progress:"Noch nicht synchronisiert",total:0,processed:0,inserted:0,updated:0,unchanged:0,skipped:0,errors:[],startedAt:null,finishedAt:null};
 export function getSyncState(){return {...state,errors:[...state.errors]}}
@@ -66,9 +66,38 @@ export async function startFussballSync(){
 
       state.phase="venues";
       state.progress="Spielorte/Adressen werden aus den offiziellen Spielseiten geprüft …";
-      const rows=await enrichVenues(homeAll);
+      const enrichedRows=await enrichVenues(homeAll);
 
+      // Für den Platzmanager sind nur Spiele relevant, die tatsächlich
+      // in Gemmingen oder Stebbach stattfinden. FUSSBALL.DE kann unsere
+      // Mannschaft trotzdem als "Heim" führen, obwohl auf neutralem Platz gespielt wird.
+      const confirmedExternal=enrichedRows.filter(row=>
+        row.status!=="cancelled" &&
+        !row.venueError &&
+        !row.venue?.locationId &&
+        Boolean(row.venue?.venueName)
+      );
+      const rows=enrichedRows.filter(row=>
+        row.status==="cancelled" ||
+        row.venue?.locationId==="gemmingen" ||
+        row.venue?.locationId==="stebbach"
+      );
+
+      const removedExternal=await deleteConfirmedExternalEvents(
+        confirmedExternal.map(row=>row.externalId)
+      );
+
+      state.total=rows.length;
       state.phase="database";
+      state.progress=`${rows.length} lokale/abgesetzte Spiele · ${confirmedExternal.length} externe Spielorte ausgeschlossen`;
+      logger.info("Externe Spielorte ausgeschlossen",{
+        external:confirmedExternal.length,
+        removedExisting:removedExternal,
+        examples:confirmedExternal.slice(0,5).map(r=>({
+          date:r.date,team:r.home,opponent:r.away,venue:r.venue?.venueName,address:r.venue?.address
+        }))
+      });
+
       for(const row of rows){
         state.processed++;
         if(!row.date||!row.kickoff||!row.home||!row.away){state.skipped++;state.errors.push(`${row.externalId}: Pflichtdaten fehlen`);continue}
@@ -87,8 +116,8 @@ export async function startFussballSync(){
         }catch(e){state.skipped++;state.errors.push(`${row.externalId}: ${e.message}`);logger.error("FUSSBALL.DE Spiel fehlgeschlagen",{externalId:row.externalId,message:e.message})}
       }
       state.phase="done";
-      state.progress=`Fertig: ${state.inserted} neu · ${state.updated} aktualisiert · ${state.unchanged} unverändert · ${state.skipped} übersprungen`;
-      await db(`update cp5_sync_runs set status='success',finished_at=now(),found_count=$2,inserted_count=$3,updated_count=$4,unchanged_count=$5,skipped_count=$6,error_count=$7,details=$8 where id=$1`,[runId,state.total,state.inserted,state.updated,state.unchanged,state.skipped,state.errors.length,JSON.stringify({errors:state.errors})]);
+      state.progress=`Fertig: ${state.inserted} neu · ${state.updated} aktualisiert · ${state.unchanged} unverändert · ${state.skipped} übersprungen · ${confirmedExternal.length} externe Spielorte ausgeblendet`;
+      await db(`update cp5_sync_runs set status='success',finished_at=now(),found_count=$2,inserted_count=$3,updated_count=$4,unchanged_count=$5,skipped_count=$6,error_count=$7,details=$8 where id=$1`,[runId,state.total,state.inserted,state.updated,state.unchanged,state.skipped,state.errors.length,JSON.stringify({errors:state.errors,externalExcluded:confirmedExternal.length,removedExternal})]);
     }catch(e){
       state.phase="error";state.progress=`Fehler: ${e.message}`;state.errors.push(e.message);
       await db(`update cp5_sync_runs set status='error',finished_at=now(),error_count=$2,details=$3 where id=$1`,[runId,state.errors.length,JSON.stringify({errors:state.errors})]).catch(()=>{});

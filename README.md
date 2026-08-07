@@ -1,28 +1,39 @@
-# ClubPlanner 5.0 – Sprint 2.3
+# ClubPlanner 5.0 – Sprint 2.4
 
-Korrektur der Spielort-Erkennung.
+## Fachlogik der Platzbelegung
 
-## Kritischer Fix
-Ein externer Platz wie
+ClubPlanner listet FUSSBALL.DE-Spiele nur dann in der Platzbelegung, wenn sie
+tatsächlich auf einem unserer beiden Standorte stattfinden:
 
-`Rasenplatz, TB Richen, Stebbacher Straße, 75031 Eppingen`
+- Gemmingen
+- Stebbach
 
-darf nicht wegen des Wortteils `Stebbach` in `Stebbacher Straße` dem lokalen
-Standort Stebbach zugeordnet werden.
+Die Heim-/Gaststellung in FUSSBALL.DE reicht nicht aus.
 
-Lokale Standorte werden ab jetzt ausschließlich an den exakten Adressen erkannt:
+### Beispiel TB Richen
+`SG Stebbach/Gemmingen 2 – SGM MassenbachHausen / SV Schluchtern II`
+am 07.08.2026 wird bei TB Richen in Eppingen gespielt.
+Dieses Spiel belegt weder Gemmingen noch Stebbach und wird daher aus der
+ClubPlanner-Belegung entfernt.
 
-- Gemmingen: `Beim Sportplatz 3, 75050 Gemmingen`
-- Stebbach: `Jahnweg 1, 75050 Gemmingen-Stebbach`
+### Stebbach
+Spielstätten mit
+`Jahnweg 1, 75050 Gemmingen`
+oder
+`Jahnweg 1, 75050 Gemmingen-Stebbach`
+werden als lokaler Standort `Stebbach` erkannt.
 
-Alle anderen Plätze bleiben externe/neutrale Spielorte und werden mit dem
-echten Namen und der echten Adresse aus FUSSBALL.DE gespeichert. Sie bekommen
-keine lokale Platz-Ressource und erzeugen später daher keinen lokalen
-Platzkonflikt.
+Anzeige:
+- Ort: `Stebbach`
+- Platz: `Hauptplatz – Gesamt` (sofern FUSSBALL.DE keinen Trainingsplatz nennt)
+- Adresse: `Jahnweg 1, 75050 Gemmingen-Stebbach`
 
-## Weiterhin gültig
-- ABSE./Absetzung => Status `cancelled`, Anzeige `abgesetzt`
-- vergangene Spiele sind standardmäßig ausgeblendet
-- über `Vergangene Spiele anzeigen` bleiben sie bei Bedarf abrufbar
-- der Sync verarbeitet diesmal auch bestehende vergangene Importdaten, damit
-  alte falsche Spielorte einmalig sauber korrigiert werden.
+### ABSE.
+Abgesetzte Spiele bleiben als rote Information sichtbar:
+- Ort: `abgesetzt`
+- keine lokale Ressource
+- später kein Konflikt
+
+### Bereinigung
+Beim Sync werden bestätigte externe/neutrale Spielorte aus bereits importierten
+FUSSBALL.DE-Belegungsdaten entfernt.

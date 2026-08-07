@@ -72,7 +72,7 @@ export function parseVenue(html){
   // "Stebbacher Straße, 75031 Eppingen" must NEVER become "Stebbach".
   const localText=normalizeCommaText(venueText);
 
-  if(/\bJahnweg\s*1\b/i.test(localText) && /\b75050\s+Gemmingen-Stebbach\b/i.test(localText)){
+  if(/\bJahnweg\s*1\b/i.test(localText) && /\b75050\s+Gemmingen(?:-Stebbach)?\b/i.test(localText)){
     return {
       locationId:"stebbach",
       venueName:"Stebbach",
