@@ -123,7 +123,7 @@ async function initDb(){
   for(const name of DEFAULT_TEAMS){
     await db(`insert into clubplanner_teams(id,name) values($1,$2) on conflict(name) do nothing`,[crypto.randomUUID(),name]);
   }
-  console.log("Sprint 3.1 Datenbankstruktur ist bereit.");
+  console.log("Sprint 3.2 Datenbankstruktur ist bereit.");
 }
 
 function requirePin(req,res,next){
@@ -196,89 +196,159 @@ function inferPitch(text){
 
 async function collectGameLinks(page){
   async function extractItems(){
-    return await page.locator('a[href*="/spiel/"]').evaluateAll(as=>{
-      const out=[],seen=new Set();
-      for(const a of as){
+    return await page.evaluate(()=>{
+      const links=[...document.querySelectorAll('a[href*="/spiel/"]')];
+      const seen=new Set(), out=[];
+      const visible=el=>{
+        if(!el)return false;
+        const cs=getComputedStyle(el),r=el.getBoundingClientRect();
+        return cs.display!=="none"&&cs.visibility!=="hidden"&&r.width>=0&&r.height>=0;
+      };
+      const norm=x=>(x||"").replace(/[\u200b\u200c\u200d\u2060]/g," ").replace(/\s+/g," ").trim();
+      const candidates=[...document.querySelectorAll("td,th,span,time,strong,b,p,div")].filter(visible);
+
+      for(const a of links){
         const url=(a.href||"").split("?")[0];
         if(!url||seen.has(url))continue;
         seen.add(url);
 
-        let best="";
-        let n=a;
-        for(let i=0;i<10 && n;i++,n=n.parentElement){
-          const txt=(n.innerText||"")
-            .replace(/[\u200b\u200c\u200d\u2060]/g," ")
-            .replace(/\s+/g," ").trim();
+        const ar=a.getBoundingClientRect(), ay=ar.top+ar.height/2;
+        let time="",status="",dateText="",bestTime=9999,bestStatus=9999,bestDate=9999;
 
-          if(
-            txt.length>0 && txt.length<1800 &&
-            /\d{2}\.\d{2}\.(?:20)?\d{2}/.test(txt) &&
-            (
-              /\b\d{1,2}:\d{2}\b/.test(txt) ||
-              /\bABSE\.?\b|Absetzung|Spielabsetzung|Ausfall|Abbruch/i.test(txt)
-            )
-          ){
-            best=txt;
-            break;
+        for(const el of candidates){
+          const raw=norm(el.textContent);
+          if(!raw || raw.length>80)continue;
+          const r=el.getBoundingClientRect(), ey=r.top+r.height/2;
+          const dy=Math.abs(ey-ay);
+          if(dy>72)continue;
+
+          const tm=raw.match(/^([0-2]?\d:[0-5]\d)(?:\s*Uhr)?$/i);
+          if(tm && dy<bestTime){
+            const h=Number(tm[1].split(":")[0]);
+            if(h<=23){time=tm[1].padStart(5,"0");bestTime=dy}
+          }
+
+          if(/^(?:ABSE\.?|Absetzung|Spielabsetzung)$/i.test(raw) && dy<bestStatus){
+            status="abgesetzt";bestStatus=dy;
+          }else if(/^(?:AUSF\.?|Ausfall|Spielausfall)$/i.test(raw) && dy<bestStatus){
+            status="ausfall";bestStatus=dy;
+          }else if(/^(?:ABBR\.?|Abbruch|Spielabbruch)$/i.test(raw) && dy<bestStatus){
+            status="abbruch";bestStatus=dy;
+          }else if(/^(?:VERL\.?|Verlegung|verlegt)$/i.test(raw) && dy<bestStatus){
+            status="verlegt";bestStatus=dy;
+          }
+
+          const dm=raw.match(/^(?:Mo|Di|Mi|Do|Fr|Sa|So)?[,]?\s*(\d{2}\.\d{2}\.(?:\d{2}|\d{4}))$/i);
+          if(dm && dy<bestDate){dateText=dm[1];bestDate=dy}
+        }
+
+        let rowText="",n=a;
+        for(let i=0;i<12&&n;i++,n=n.parentElement){
+          const txt=norm(n.innerText||n.textContent);
+          if(txt.length>0 && txt.length<2500){
+            if(!rowText)rowText=txt;
+            if(/\d{1,2}:\d{2}|ABSE\.?|Absetzung/i.test(txt)){rowText=txt;break}
           }
         }
-        out.push({url,overviewText:best});
+
+        if(!time){
+          const times=[...rowText.matchAll(/(?:^|[\s|,;-])([0-2]?\d:[0-5]\d)(?:\s*Uhr)?(?=$|[\s|,;-])/g)]
+            .map(m=>m[1].padStart(5,"0"))
+            .filter(x=>Number(x.slice(0,2))<=23);
+          if(times.length)time=times[0];
+        }
+        if(!status){
+          if(/\bABSE\.?\b|Absetzung|Spielabsetzung/i.test(rowText))status="abgesetzt";
+          else if(/\bAUSF\.?\b|Ausfall|Spielausfall/i.test(rowText))status="ausfall";
+          else if(/\bABBR\.?\b|Abbruch|Spielabbruch/i.test(rowText))status="abbruch";
+          else if(/\bVERL\.?\b|Verlegung|verlegt/i.test(rowText))status="verlegt";
+        }
+
+        out.push({url,overviewText:rowText,time,status,dateText});
       }
       return out;
     });
   }
 
-  const printUrl=`https://www.fussball.de/vereinsspielplan.druck/-/datum-bis/2027-06-30/datum-von/2026-08-07/id/${FUSSBALL_CLUB_ID}/match-type/-1/max/999/mode/PRINT/show-venues/true`;
-  syncState.progress="Lade kompletten Vereinsspielplan …";
-  await page.goto(printUrl,{waitUntil:"domcontentloaded",timeout:60000});
-  await page.waitForTimeout(1500);
-
-  let items=await extractItems();
-  if(items.length>=3)return items;
-
   const dynamic=`https://www.fussball.de/ajax.club.matchplan/-/id/${FUSSBALL_CLUB_ID}/mode/PAGE/show-filter/true`;
+  syncState.progress="Lade Vereinsspielplan und Anstoßzeiten …";
   await page.goto(dynamic,{waitUntil:"domcontentloaded",timeout:60000});
-  await page.waitForTimeout(1200);
+  await page.waitForTimeout(1100);
 
-  for(let round=0;round<40;round++){
+  for(let round=0;round<50;round++){
     const before=await page.locator('a[href*="/spiel/"]').count();
+    syncState.progress=`Lade Vereinsspielplan … ${before} Spiele`;
     const clicked=await page.evaluate(()=>{
-      const e=[...document.querySelectorAll("button,a,div,span")]
-        .find(x=>(x.innerText||x.textContent||"").trim()==="Mehr laden"&&x.offsetParent!==null);
+      const els=[...document.querySelectorAll("button,a,div,span")];
+      const e=els.find(x=>{
+        const t=(x.innerText||x.textContent||"").trim();
+        const cs=getComputedStyle(x);
+        return t==="Mehr laden" && x.offsetParent!==null && cs.visibility!=="hidden";
+      });
       if(!e)return false;
-      e.click();
-      return true;
+      e.click(); return true;
     });
     if(!clicked)break;
-    await page.waitForTimeout(1000);
+    await page.waitForTimeout(700);
     const after=await page.locator('a[href*="/spiel/"]').count();
     if(after<=before)break;
   }
 
-  items=await extractItems();
+  let items=await extractItems();
+
+  if(items.length<10){
+    const printUrl=`https://www.fussball.de/vereinsspielplan.druck/-/datum-bis/2027-06-30/datum-von/2026-08-07/id/${FUSSBALL_CLUB_ID}/match-type/-1/max/999/mode/PRINT/show-venues/true`;
+    await page.goto(printUrl,{waitUntil:"domcontentloaded",timeout:60000});
+    await page.waitForTimeout(1100);
+    const printItems=await extractItems();
+    if(printItems.length>items.length)items=printItems;
+  }
   return items;
 }
 
-function overviewMeta(text){
-  const t=clean(text);
-  let status="";
-  if(/\bABSE\.?\b|Absetzung|Spielabsetzung/i.test(t)) status="abgesetzt";
-  else if(/\bAUSF\.?\b|Spielausfall|\bAusfall\b/i.test(t)) status="ausfall";
-  else if(/\bABBR\.?\b|Spielabbruch|\bAbbruch\b/i.test(t)) status="abbruch";
-  else if(/\bVERL\.?\b|\bVerlegung\b|\bverlegt\b/i.test(t)) status="verlegt";
+function overviewMeta(item){
+  return {time:item?.time||"",status:item?.status||""};
+}
 
-  const times=[...t.matchAll(/(?:^|[\s|,-])([0-2]?\d:[0-5]\d)(?:\s*Uhr)?(?=$|[\s|,-])/g)]
-    .map(m=>m[1].padStart(5,"0"))
-    .filter(x=>{
-      const h=Number(x.slice(0,2));
-      return h>=0 && h<=23;
-    });
-  return {time:times[0]||"",status};
+function externalIdFromUrl(url){
+  return (String(url||"").match(/\/spiel\/([A-Z0-9]+)(?:\/|$)/i)||[])[1] || String(url||"");
+}
+
+async function fastUpdateExisting(items){
+  const rows=await db(`select id,external_id from clubplanner_events where source='fussball.de' and external_id is not null`);
+  const byExternal=new Map(rows.rows.map(r=>[r.external_id,r]));
+  const newItems=[];
+
+  for(const item of items){
+    const ext=externalIdFromUrl(item.url);
+    const found=byExternal.get(ext);
+    if(!found){newItems.push(item);continue}
+
+    const ov=overviewMeta(item);
+    const cancelled=["abgesetzt","ausfall","abbruch"].includes(ov.status);
+    if(ov.time || ov.status){
+      const fields=[],params=[found.id];
+      let p=2;
+      if(ov.time){
+        fields.push(`start_time=$${p++}`,`end_time=$${p++}`);
+        params.push(ov.time,datePlusMinutes("2000-01-01",ov.time,120));
+      }
+      if(ov.status){
+        fields.push(`status=$${p++}`);
+        params.push(ov.status);
+        if(cancelled)fields.push(`home_cabin=''`,`guest_cabin=''`,`note='ABGESETZT'`);
+      }
+      fields.push(`updated_at=now()`);
+      await db(`update clubplanner_events set ${fields.join(",")} where id=$1`,params);
+      syncState.updated++;
+    }
+  }
+  return newItems;
 }
 
 async function parseGame(context,item,index,total){
   const url=item.url;
-  const ov=overviewMeta(item.overviewText||"");
+  const ov=overviewMeta(item);
   const page=await context.newPage();
   try{
     syncState.processed=index;
@@ -383,15 +453,26 @@ async function runSync(){
     syncState.total=items.length;
     if(items.length<3)throw new Error(`FUSSBALL.DE lieferte nur ${items.length} Spiel-Links.`);
 
-    for(let i=0;i<items.length;i++){
-      try{
-        const game=await parseGame(context,items[i],i+1,items.length);
-        if(!game){syncState.skipped++;continue}
-        await upsertImported(game);
-      }catch(e){
-        console.error("Spiel konnte nicht importiert werden:",items[i]?.url,e.message);
-        syncState.skipped++;
-      }
+    syncState.progress="Aktualisiere vorhandene Anstoßzeiten …";
+    const newItems=await fastUpdateExisting(items);
+    syncState.processed=items.length-newItems.length;
+
+    const concurrency=4;
+    for(let offset=0;offset<newItems.length;offset+=concurrency){
+      const batch=newItems.slice(offset,offset+concurrency);
+      await Promise.all(batch.map(async(item,k)=>{
+        const idx=(items.length-newItems.length)+offset+k+1;
+        try{
+          const game=await parseGame(context,item,idx,items.length);
+          if(!game){syncState.skipped++;return}
+          await upsertImported(game);
+        }catch(e){
+          console.error("Neues Spiel konnte nicht importiert werden:",item?.url,e.message);
+          syncState.skipped++;
+        }finally{
+          syncState.processed=Math.min(items.length,idx);
+        }
+      }));
     }
     syncState.progress=`Fertig: ${syncState.imported} neu · ${syncState.updated} aktualisiert · ${syncState.skipped} übersprungen`;
     syncState.finishedAt=new Date().toISOString();
@@ -460,5 +541,5 @@ app.get("/api/export",async(req,res)=>{
   }catch(e){res.status(500).send(e.message)}
 });
 
-initDb().then(()=>app.listen(PORT,"0.0.0.0",()=>console.log(`ClubPlanner Sprint 3.1 läuft auf Port ${PORT}`)))
+initDb().then(()=>app.listen(PORT,"0.0.0.0",()=>console.log(`ClubPlanner Sprint 3.2 läuft auf Port ${PORT}`)))
 .catch(e=>{console.error("DB-Startfehler",e);process.exit(1)});

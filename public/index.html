@@ -40,7 +40,7 @@ th{background:#1f4e78;color:white;position:sticky;top:0;z-index:1}tr:nth-child(e
 <div class="topright"><span id="dbState" class="muted">Cloud-DB…</span><span id="editState" class="muted">Lesemodus</span><button id="loginBtn">Bearbeiten</button></div>
 </header>
 
-<div class="notice"><b>Sprint 3.1 aktiv:</b> echte Anstoßzeiten · ABSE. = ABGESETZT · keine Konflikte für abgesetzte Spiele · FUSSBALL.DE-Synchronisierung.</div>
+<div class="notice"><b>Sprint 3.2 aktiv:</b> schnelle Anstoßzeit-Synchronisierung · Wochenplan-Fix · ABSE. = ABGESETZT · Detailseiten nur noch für neue Spiele.</div>
 
 <nav>
 <button class="tab active" data-tab="dashboard">Dashboard</button>
@@ -86,7 +86,7 @@ th{background:#1f4e78;color:white;position:sticky;top:0;z-index:1}tr:nth-child(e
 <label>Ab Datum<input id="fDate" type="date"></label><button id="clearFilter">Filter löschen</button>
 </div>
 <div class="scroll"><table><thead><tr>
-<th>Datum</th><th>Von</th><th>Bis</th><th>Art</th><th>Mannschaft</th><th>Gegner/Info</th><th>Wettbewerb</th><th>Ort</th><th>Adresse</th><th>Platz</th>
+<th>Datum</th><th>Anstoßzeit</th><th>Art</th><th>Mannschaft</th><th>Gegner/Info</th><th>Wettbewerb</th><th>Ort</th><th>Adresse</th><th>Platz</th>
 <th>Heimkabine</th><th>Gastkabine</th><th>Status</th><th>Konflikt</th><th class="editOnly hidden">Aktion</th>
 </tr></thead><tbody id="rows"></tbody></table></div>
 </div>
@@ -145,7 +145,7 @@ async function load(){
 async function checkDb(){try{const j=await (await fetch("/api/db-status")).json();$("dbState").textContent=j.ok?`Cloud-DB aktiv · ${j.events} Termine · ${j.resources} Ressourcen`:"DB-Fehler";$("dbState").className=j.ok?"good":"danger"}catch{$("dbState").textContent="DB nicht erreichbar";$("dbState").className="danger"}}
 function renderDashboard(){const today=iso(new Date()),map=cm(),arr=sorted().filter(e=>e.date>=today).slice(0,10);$("nextEvents").innerHTML=arr.length?arr.map(e=>`<div class="teamrow"><span><b>${esc(e.date)} ${["abgesetzt","ausfall","abbruch"].includes(String(e.status).toLowerCase())?"ABGESETZT":esc(e.start)}</b> · ${esc(e.team)} · ${esc(e.type)} · ${esc(e.location)} / ${esc(e.pitch)}</span>${map.has(e.id)?'<b class="danger">Konflikt</b>':''}</div>`).join(""):"Keine zukünftigen Termine."}
 function filtered(){return sorted().filter(e=>(!$("fLocation").value||e.location===$("fLocation").value)&&(!$("fTeam").value||e.team===$("fTeam").value)&&(!$("fType").value||e.type===$("fType").value)&&(!$("fDate").value||e.date>=$("fDate").value))}
-function renderTable(){const map=cm();$("rows").innerHTML=filtered().map(e=>`<tr class="${map.has(e.id)?"warn":""}"><td>${esc(e.date)}</td><td>${["abgesetzt","ausfall","abbruch"].includes(String(e.status).toLowerCase())?"—":esc(e.start)}</td><td>${["abgesetzt","ausfall","abbruch"].includes(String(e.status).toLowerCase())?"—":esc(e.end)}</td><td>${esc(e.type)}</td><td>${esc(e.team)}</td><td>${esc(e.opponent)}</td><td>${esc(e.competition||"")}</td><td>${esc(e.location)}</td><td>${esc(e.address||"")}</td><td>${esc(e.pitch)}</td><td>${esc(e.homeCabin)}</td><td>${esc(e.guestCabin)}</td><td>${esc(e.status)}</td><td>${map.has(e.id)?esc([...new Set(map.get(e.id))].join(", ")):""}</td><td class="editOnly ${edit?"":"hidden"}"><button onclick="delEvent('${e.id}')">Löschen</button>${e.seriesId?` <button onclick="delSeries('${e.seriesId}')">Serie</button>`:""}</td></tr>`).join("")}
+function renderTable(){const map=cm();$("rows").innerHTML=filtered().map(e=>`<tr class="${map.has(e.id)?"warn":""}"><td>${esc(e.date)}</td><td>${["abgesetzt","ausfall","abbruch"].includes(String(e.status).toLowerCase())?"ABGESETZT":esc(e.start)}</td><td>${esc(e.type)}</td><td>${esc(e.team)}</td><td>${esc(e.opponent)}</td><td>${esc(e.competition||"")}</td><td>${esc(e.location)}</td><td>${esc(e.address||"")}</td><td>${esc(e.pitch)}</td><td>${esc(e.homeCabin)}</td><td>${esc(e.guestCabin)}</td><td>${esc(e.status)}</td><td>${map.has(e.id)?esc([...new Set(map.get(e.id))].join(", ")):""}</td><td class="editOnly ${edit?"":"hidden"}"><button onclick="delEvent('${e.id}')">Löschen</button>${e.seriesId?` <button onclick="delSeries('${e.seriesId}')">Serie</button>`:""}</td></tr>`).join("")}
 ["fLocation","fTeam","fType","fDate"].forEach(id=>$(id).onchange=renderTable);$("clearFilter").onclick=()=>{["fLocation","fTeam","fType","fDate"].forEach(id=>$(id).value="");renderTable()};
 function monday(d){const x=new Date(d),day=(x.getDay()+6)%7;x.setDate(x.getDate()-day);x.setHours(12,0,0,0);return x}
 function renderCalendar(){
@@ -153,7 +153,29 @@ function renderCalendar(){
  if(calView==="month")renderMonth();else if(calView==="week")renderWeek();else renderDay();
 }
 function renderMonth(){const y=calDate.getFullYear(),m=calDate.getMonth(),first=new Date(y,m,1),offset=(first.getDay()+6)%7,start=new Date(y,m,1-offset),map=cm();$("calTitle").textContent=new Intl.DateTimeFormat("de-DE",{month:"long",year:"numeric"}).format(new Date(y,m,1));$("dayNames").innerHTML=["Mo","Di","Mi","Do","Fr","Sa","So"].map(x=>`<div class="dayname">${x}</div>`).join("");let h="";for(let i=0;i<42;i++){const d=new Date(start);d.setDate(start.getDate()+i);const key=iso(d),ev=data.events.filter(e=>e.date===key);h+=`<div class="day ${d.getMonth()!==m?"other":""}"><div class="dateNo">${d.getDate()}</div>${ev.map(e=>`<div class="ev ${e.type.toLowerCase()} ${map.has(e.id)?"warn":""}">${["abgesetzt","ausfall","abbruch"].includes(String(e.status).toLowerCase())?"ABGESETZT":esc(e.start)} ${esc(e.team)}</div>`).join("")}</div>`}$("monthGrid").innerHTML=h}
-function renderWeek(){const start=monday(calDate),days=[...Array(7)].map((_,i)=>{const d=new Date(start);d.setDate(start.getDate()+i);return d}),hours=[...Array(15)].map((_,i)=>8+i),map=cm();$("calTitle").textContent=`Woche ${days[0].toLocaleDateString("de-DE")} – ${days[6].toLocaleDateString("de-DE")}`;let h=`<div class="week"><div class="hdr"></div>${days.map(d=>`<div class="hdr">${d.toLocaleDateString("de-DE",{weekday:"short",day:"2-digit",month:"2-digit"})}</div>`).join("")}`;for(const hr of hours){h+=`<div class="time">${String(hr).padStart(2,"0")}:00</div>`;for(const d of days){const key=iso(d),ev=data.events.filter(e=>e.date===key&&parseInt(e.start,10)===hr);h+=`<div>${ev.map(e=>`<div class="ev ${map.has(e.id)?"warn":""}">${["abgesetzt","ausfall","abbruch"].includes(String(e.status).toLowerCase())?"ABGESETZT":esc(e.start)} ${esc(e.team)}<br>${esc(e.pitch)}</div>`).join("")}</div>`}}h+="</div>";$("weekView").innerHTML=h}
+function renderWeek(){
+  const start=monday(calDate),days=[...Array(7)].map((_,i)=>{const d=new Date(start);d.setDate(start.getDate()+i);return d}),map=cm();
+  const weekEvents=data.events.filter(e=>days.some(d=>iso(d)===e.date)&&!["abgesetzt","ausfall","abbruch"].includes(String(e.status).toLowerCase()));
+  const validHours=weekEvents.map(e=>parseInt(String(e.start||"").slice(0,2),10)).filter(Number.isFinite);
+  const minHour=Math.min(8,...validHours),maxHour=Math.max(22,...validHours);
+  const hours=[];for(let hr=Math.max(0,minHour);hr<=Math.min(23,maxHour);hr++)hours.push(hr);
+
+  $("calTitle").textContent=`Woche ${days[0].toLocaleDateString("de-DE")} – ${days[6].toLocaleDateString("de-DE")}`;
+  let h=`<div class="week"><div class="hdr"></div>${days.map(d=>`<div class="hdr">${d.toLocaleDateString("de-DE",{weekday:"short",day:"2-digit",month:"2-digit"})}</div>`).join("")}`;
+
+  for(const hr of hours){
+    h+=`<div class="time">${String(hr).padStart(2,"0")}:00</div>`;
+    for(const d of days){
+      const key=iso(d);
+      const ev=data.events
+        .filter(e=>e.date===key && !["abgesetzt","ausfall","abbruch"].includes(String(e.status).toLowerCase()) && parseInt(String(e.start||"").slice(0,2),10)===hr)
+        .sort((a,b)=>String(a.start).localeCompare(String(b.start)));
+      h+=`<div>${ev.map(e=>`<div class="ev ${map.has(e.id)?"warn":""}" title="${esc(e.opponent||"")}">${esc(e.start)} <b>${esc(e.team)}</b><br>${esc(e.location)}${e.pitch?` / ${esc(e.pitch)}`:""}</div>`).join("")}</div>`;
+    }
+  }
+  h+="</div>";
+  $("weekView").innerHTML=h;
+}
 function renderDay(){const key=iso(calDate),ev=sorted().filter(e=>e.date===key),map=cm();$("calTitle").textContent=calDate.toLocaleDateString("de-DE",{weekday:"long",day:"2-digit",month:"long",year:"numeric"});$("dayView").innerHTML=ev.length?ev.map(e=>`<div class="slot ${map.has(e.id)?"warn":""}"><div class="clock">${["abgesetzt","ausfall","abbruch"].includes(String(e.status).toLowerCase())?"ABGESETZT":esc(e.start)}</div><div><b>${esc(e.team)}</b> · ${esc(e.type)}<br>${esc(e.location)} / ${esc(e.pitch)} · ${esc(e.opponent)}</div></div>`).join(""):"<p>Keine Termine.</p>"}
 $("prev").onclick=()=>{if(calView==="month")calDate.setMonth(calDate.getMonth()-1);else if(calView==="week")calDate.setDate(calDate.getDate()-7);else calDate.setDate(calDate.getDate()-1);renderCalendar()};
 $("next").onclick=()=>{if(calView==="month")calDate.setMonth(calDate.getMonth()+1);else if(calView==="week")calDate.setDate(calDate.getDate()+7);else calDate.setDate(calDate.getDate()+1);renderCalendar()};

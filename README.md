@@ -1,14 +1,15 @@
-# ClubPlanner – Sprint 3.1
+# ClubPlanner – Sprint 3.2
 
-Korrekturen:
-- Anstoßzeit wird primär aus dem FUSSBALL.DE-Vereinsspielplan gelesen.
-- Bestehende importierte Spiele werden beim erneuten Sync mit der echten Uhrzeit aktualisiert.
-- `ABSE.` / Absetzung / Spielabsetzung wird als `abgesetzt` gespeichert.
-- Abgesetzte Spiele blockieren weder Platz noch Kabinen.
-- Abgesetzte Spiele werden im Kalender und Belegungsplan als `ABGESETZT` angezeigt.
-- Bei einem abgesetzten Spiel ohne Spielort erscheint nicht mehr irreführend `PRÜFEN`.
-- Wochenansicht funktioniert nach dem erneuten Sync mit den echten Anstoßzeiten.
-- Cloud-DB-Zähler wird nach einer Synchronisierung aktualisiert.
+- Belegungsplan: nur noch Spalte **Anstoßzeit**, keine Von/Bis-Anzeige für Spiele.
+- Wochenansicht zeigt Anstoßzeiten wie 12:30, 13:15, 15:30 korrekt im passenden Stundenblock.
+- Anstoßzeit und ABSE.-Status werden aus der FUSSBALL.DE-Vereinsspielplan-Übersicht gelesen.
+- ABSE. wird als ABGESETZT dargestellt und erzeugt keinen Platz-/Kabinenkonflikt.
 
-Nach dem Deploy einmal `FUSSBALL.DE synchronisieren` drücken.
-Die vorhandenen importierten Spiele werden anhand ihrer FUSSBALL.DE-ID aktualisiert und nicht doppelt angelegt.
+## Speed
+Bei erneuter Synchronisierung werden bekannte Spiele nicht mehr über 95 Detailseiten geprüft:
+1. Vereinsspielplan einmal laden.
+2. Bekannte Spiele anhand ihrer FUSSBALL.DE-ID direkt mit Anstoßzeit/Status aktualisieren.
+3. Nur wirklich neue Spiele öffnen Detailseiten.
+4. Neue Detailseiten werden bis zu 4-fach parallel verarbeitet.
+
+Deployment wie bisher über GitHub und Render.
