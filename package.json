@@ -1,11 +1,11 @@
 {
   "name": "clubplanner-5",
-  "version": "5.0.0",
+  "version": "5.0.0-sprint2",
   "private": true,
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "check": "node --check server.js && node --check src/app.js && node --check src/database/schema.js"
+    "check": "node --check server.js && node --check src/app.js && node --check src/database/schema.js && node --check src/services/fussballde/sync-service.js && node --check src/services/fussballde/matchplan-parser.js"
   },
   "dependencies": {
     "express": "^5.1.0",
