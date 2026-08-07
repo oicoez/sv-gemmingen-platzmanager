@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: clubplanner-sv-gemmingen
+    runtime: docker
+    plan: free
+    healthCheckPath: /health
+    autoDeploy: true
