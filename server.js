@@ -117,7 +117,7 @@ async function initDb(){
   const obsolete=["Herren I","Herren II","Frauen","A-Junioren","B-Junioren","C1-Junioren","C2-Junioren","D-Junioren"];
   await db(`update clubplanner_teams set active=false where name = any($1::text[])`,[obsolete]);
 
-  console.log("ClubPlanner 4.0 Phase 1 Datenbankstruktur ist bereit.");
+  console.log("ClubPlanner 4.0 Phase 1.1 Datenbankstruktur ist bereit.");
 }
 
 function requirePin(req,res,next){
@@ -275,5 +275,5 @@ app.get("/api/export",async(req,res)=>{
   }catch(e){res.status(500).send(e.message)}
 });
 
-initDb().then(()=>app.listen(PORT,"0.0.0.0",()=>console.log(`ClubPlanner 4.0 Phase 1 läuft auf Port ${PORT}`)))
+initDb().then(()=>app.listen(PORT,"0.0.0.0",()=>console.log(`ClubPlanner 4.0 Phase 1.1 läuft auf Port ${PORT}`)))
 .catch(e=>{console.error("DB-Startfehler",e);process.exit(1)});

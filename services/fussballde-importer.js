@@ -104,62 +104,70 @@ function extractKickoff(...texts) {
   return "";
 }
 
-function extractOverviewContext($, anchor) {
-  const a = $(anchor);
-  const tr = a.closest("tr");
-  if (tr.length) {
-    const current = clean(tr.text());
-    const before = [tr.prev("tr"), tr.prev("tr").prev("tr"), tr.prev("tr").prev("tr").prev("tr")]
-      .map(x => clean(x.text()))
-      .filter(Boolean)
-      .join(" ");
-    return { rowText: current, contextText: clean(`${before} ${current}`) };
-  }
+function parseHeaderMeta(text) {
+  const t = clean(text);
+  let date = "";
+  let kickoff = "";
 
-  let node = a;
-  let rowText = "";
-  let contextText = "";
-  for (let i = 0; i < 10; i++) {
-    node = node.parent();
-    if (!node.length) break;
-    const t = clean(node.text());
-    if (t && t.length < 2200) {
-      contextText = t;
-      if (!rowText) rowText = t;
-      if (/\d{1,2}:\d{2}|ABSE\.?|Absetzung/i.test(t)) break;
+  // Full FUSSBALL.DE heading:
+  // Sonntag, 09.08.2026 - 10:30 Uhr | Frauen | Landesfreundschaftsspiele
+  let m = t.match(/(\d{2})\.(\d{2})\.(\d{4})\s*-\s*([0-2]?\d:[0-5]\d)\s*Uhr/i);
+  if (m) {
+    date = `${m[3]}-${m[2]}-${m[1]}`;
+    kickoff = m[4].padStart(5, "0");
+  } else {
+    // Compact line: So, 09.08.26 | 10:30 | Frauen | ...
+    m = t.match(/(\d{2})\.(\d{2})\.(\d{2}).{0,35}?([0-2]?\d:[0-5]\d)/i);
+    if (m) {
+      date = `20${m[3]}-${m[2]}-${m[1]}`;
+      kickoff = m[4].padStart(5, "0");
     }
   }
-  return { rowText, contextText };
+
+  const category = (t.match(/\b(Herren|Frauen|A-Junioren|B-Junioren|C-Junioren|D-Junioren)\b/i) || [])[1] || "";
+
+  // Competition sits after category on FUSSBALL.DE.
+  let competition = "";
+  if (category) {
+    const idx = t.toLowerCase().indexOf(category.toLowerCase());
+    if (idx >= 0) {
+      let tail = clean(t.slice(idx + category.length));
+      // Remove technical suffix: FS | 520007093 etc.
+      tail = tail.replace(/\s+\b(?:FS|ME|PO|TU)\b\s*(?:\|?\s*\d{6,12})?.*$/i, "");
+      competition = clean(tail.replace(/^[|,\-–]\s*/, ""));
+    }
+  }
+
+  const gameNumber =
+    (t.match(/\b(?:FS|ME|PO|TU)\s*(?:\|\s*)?(\d{6,12})\b/i) || [])[1] ||
+    "";
+
+  return { date, kickoff, category, competition, gameNumber };
 }
 
-function extractOverviewDateTime(contextText) {
-  const full = clean(contextText);
-  let m = full.match(/(\d{2}\.\d{2}\.\d{4})\s*-\s*([0-2]?\d:[0-5]\d)\s*Uhr/i);
-  if (m) return { date: parseIsoFromGermanDate(m[1]), kickoff: m[2].padStart(5, "0") };
-
-  m = full.match(/(\d{2})\.(\d{2})\.(\d{2}).{0,40}?([0-2]?\d:[0-5]\d)/i);
-  if (m) return { date: `20${m[3]}-${m[2]}-${m[1]}`, kickoff: m[4].padStart(5, "0") };
-  return { date: "", kickoff: extractKickoff(full) };
-}
-
-function extractOverviewTeams($, anchor) {
-  const a = $(anchor);
-  const tr = a.closest("tr");
-  const container = tr.length ? tr : a.parent();
-  const names = container
+function extractTeamsFromFixtureRow($, row) {
+  const links = $(row)
     .find("a")
     .map((_, el) => clean($(el).text()))
     .get()
-    .filter(t => t && !/Zum Spiel|Absetzung|Ausfall|Abbruch|Spielbericht/i.test(t));
+    .filter(t =>
+      t &&
+      !/Zum Spiel|Absetzung|Ausfall|Abbruch|Spielbericht/i.test(t) &&
+      !/^[\d:\-–]+$/.test(t)
+    );
 
-  if (names.length >= 2) return { home: names[0], away: names[1] };
+  // In a fixture row the two team links occur before the "Zum Spiel" link.
+  if (links.length >= 2) {
+    return { home: links[0], away: links[1] };
+  }
 
-  const text = clean(container.text());
-  const colon = text.split(/\s+:\s+/);
-  if (colon.length >= 2) {
+  const text = clean($(row).text());
+  const parts = text.split(/\s+:\s+/);
+  if (parts.length >= 2) {
     return {
-      home: clean(colon[0]).replace(/^.*?\b(?:FS|ME|PO|TU)\b\s*\d*\s*/i, ""),
-      away: clean(colon.slice(1).join(" : ")).replace(/\b(?:Absetzung|Ausfall|Abbruch|Zum Spiel).*$/i, "")
+      home: clean(parts[0]).replace(/^.*?\b(?:FS|ME|PO|TU)\b(?:\s*\|?\s*\d{6,12})?\s*/i, ""),
+      away: clean(parts.slice(1).join(" : "))
+        .replace(/\b(?:Absetzung|Ausfall|Abbruch|Zum Spiel).*$/i, "")
     };
   }
   return { home: "", away: "" };
@@ -170,30 +178,105 @@ export function parseOverviewHtml(html) {
   const fixtures = [];
   const seen = new Set();
 
+  // Stateful parsing is important: FUSSBALL.DE renders the date/time/meta
+  // in the row directly before the home/away fixture row.
+  let current = {
+    date: "",
+    kickoff: "",
+    category: "",
+    competition: "",
+    gameNumber: ""
+  };
+
+  const rows = $("tr").toArray();
+
+  if (rows.length) {
+    for (const row of rows) {
+      const text = clean($(row).text());
+
+      // Update current fixture metadata whenever the row contains a date/time
+      // or compact metadata.
+      const meta = parseHeaderMeta(text);
+      if (meta.date) current.date = meta.date;
+      if (meta.kickoff) current.kickoff = meta.kickoff;
+      if (meta.category) current.category = meta.category;
+      if (meta.competition) current.competition = meta.competition;
+      if (meta.gameNumber) current.gameNumber = meta.gameNumber;
+
+      const anchors = $(row).find('a[href*="/spiel/"]').toArray();
+      if (!anchors.length) continue;
+
+      const teams = extractTeamsFromFixtureRow($, row);
+      const rowStatus = statusFromText(text);
+
+      for (const anchor of anchors) {
+        const url = absoluteUrl($(anchor).attr("href"));
+        const externalId = externalIdFromUrl(url);
+        if (!url || !externalId || seen.has(externalId)) continue;
+        seen.add(externalId);
+
+        fixtures.push({
+          externalId,
+          url,
+          overviewDate: current.date,
+          overviewKickoff: current.kickoff,
+          overviewStatus: rowStatus,
+          overviewHome: teams.home,
+          overviewAway: teams.away,
+          overviewCategory: current.category,
+          overviewCompetition: current.competition,
+          gameNumber: current.gameNumber,
+          rowText: text,
+          contextText: clean(`${current.date} ${current.kickoff} ${current.category} ${current.competition} ${current.gameNumber} ${text}`)
+        });
+      }
+
+      // Prevent metadata bleed if the next block is malformed.
+      // Date/category persist only until the next fixture has consumed them.
+      if (anchors.length) {
+        current = { date:"", kickoff:"", category:"", competition:"", gameNumber:"" };
+      }
+    }
+
+    if (fixtures.length) return fixtures;
+  }
+
+  // Fallback for non-table layouts: find every game link and use the smallest
+  // ancestor only. This path is secondary; the print view should hit the table parser.
   $('a[href*="/spiel/"]').each((_, anchor) => {
     const url = absoluteUrl($(anchor).attr("href"));
     const externalId = externalIdFromUrl(url);
     if (!url || !externalId || seen.has(externalId)) return;
     seen.add(externalId);
 
-    const { rowText, contextText } = extractOverviewContext($, anchor);
-    const meta = extractOverviewDateTime(contextText);
-    const teams = extractOverviewTeams($, anchor);
-    const category = (contextText.match(/\b(Herren|Frauen|A-Junioren|B-Junioren|C-Junioren|D-Junioren)\b/i) || [])[1] || "";
-    const gameNumber = (contextText.match(/\b(?:FS|ME|PO|TU)\s*\|?\s*(\d{6,12})\b/i) || [])[1] || "";
+    let node = $(anchor);
+    let text = "";
+    for (let i=0;i<10;i++) {
+      node = node.parent();
+      if (!node.length) break;
+      const candidate = clean(node.text());
+      if (candidate && candidate.length < 2200) {
+        text = candidate;
+        if (/\d{1,2}:\d{2}|ABSE\.?|Absetzung/i.test(candidate)) break;
+      }
+    }
+
+    const meta = parseHeaderMeta(text);
+    const teams = extractTeamsFromFixtureRow($, node);
 
     fixtures.push({
       externalId,
       url,
       overviewDate: meta.date,
       overviewKickoff: meta.kickoff,
-      overviewStatus: statusFromText(rowText),
+      overviewStatus: statusFromText(text),
       overviewHome: teams.home,
       overviewAway: teams.away,
-      overviewCategory: category,
-      gameNumber,
-      rowText,
-      contextText
+      overviewCategory: meta.category,
+      overviewCompetition: meta.competition,
+      gameNumber: meta.gameNumber,
+      rowText: text,
+      contextText: text
     });
   });
 
@@ -215,13 +298,18 @@ function parseTitle(title) {
 
 function extractVenue($, bodyText) {
   let venueText = "";
-  $('a[href*="google"],a[href*="maps"]').each((_, el) => {
+
+  // Prefer the exact Google Maps / map link on the individual match page.
+  $('a[href*="google"],a[href*="maps"],a[href*="geo:"]').each((_, el) => {
     const text = clean($(el).text());
-    if (!venueText && /75050\s+Gemmingen|Beim Sportplatz|Jahnweg/i.test(text)) venueText = text;
+    if (!venueText && text.length >= 8) venueText = text;
   });
 
   if (!venueText) {
-    const m = bodyText.match(/((?:Rasenplatz|Kunstrasenplatz|Kunstrasen|Hartplatz|Sportplatz).{0,140}(?:Beim Sportplatz|Jahnweg).{0,140}75050\s+Gemmingen(?:-Stebbach)?)/i);
+    // Local venue fallback from visible detail text.
+    const m = bodyText.match(
+      /((?:Rasenplatz|Kunstrasenplatz|Kunstrasen|Hartplatz|Sportplatz)[^|]{0,180}(?:Beim Sportplatz|Jahnweg)[^|]{0,180}75050\s+Gemmingen(?:-Stebbach)?)/i
+    );
     if (m) venueText = clean(m[1]);
   }
 
@@ -274,15 +362,17 @@ export function parseDetailHtml(html, overview) {
   const away = titleData?.away || overview.overviewAway || "";
   const category = titleData?.category || overview.overviewCategory || "";
   const date = titleData?.date || overview.overviewDate || "";
-  const competition = titleData?.competition || "";
+  const competition = titleData?.competition || overview.overviewCompetition || "";
 
-  const kickoff = extractKickoff(
-    bodyText,
-    rawHtml,
-    overview.contextText,
-    overview.rowText,
-    overview.overviewKickoff
-  ) || overview.overviewKickoff || "";
+  // Detail page first: only explicit machine-readable / "Uhr" values.
+  // Never scan arbitrary page times because menus/news can contain unrelated clocks.
+  const detailKickoff = extractKickoff(
+    rawHtml.match(/<(?:time|meta)[^>]+(?:datetime|content)=["'][^"']+["'][^>]*>/gi)?.join(" ") || "",
+    bodyText.match(/(?:Anstoß|Anstoss|Spielbeginn|Beginn).{0,80}[0-2]?\d:[0-5]\d(?:\s*Uhr)?/gi)?.join(" ") || ""
+  );
+
+  // The overview table is authoritative and always contains the scheduled kickoff.
+  const kickoff = detailKickoff || overview.overviewKickoff || "";
 
   // The fixture row is authoritative. Do NOT scan the complete detail body for status:
   // FUSSBALL.DE pages contain a global legend with words such as "Absetzung",
@@ -431,6 +521,7 @@ async function processFixture(overview, index, total) {
   try {
     const html = await fetchText(overview.url, DETAIL_TIMEOUT_MS);
     const detail = parseDetailHtml(html, overview);
+    console.log(`[FUSSBALL-4.0] ${overview.externalId} | ${detail.date || "kein Datum"} | ${detail.kickoff || "keine Zeit"} | ${detail.home || "kein Heim"} : ${detail.away || "kein Gast"} | ${detail.location || "kein Ort"}`);
 
     if (!detail.home || !detail.away || !detail.date) {
       throw new Error("Pflichtdaten auf Detailseite fehlen");
