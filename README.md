@@ -1,17 +1,17 @@
-# ClubPlanner 5.0 – Sprint 4.2
+# ClubPlanner 5.0 – Sprint 4.3
 
-## Neu
-- Effektive Platzbelegung sichtbar: Gesamt / Hälfte A / Hälfte B
-- Wochenplan zeigt Spiele und Trainings gemeinsam
-- Konflikte direkt im Wochenplan
-- Kabinenkonflikte zusätzlich im Wochenplan
-- Heimspiele bleiben feste Gesamtplatz-Belegungen
+Wiederkehrende Trainings:
+- wöchentlich
+- alle 2 Wochen
+- monatlich
+- monatlich 1./2./3./4./letzter gewählter Wochentag
 
-## Unverändert
-- FUSSBALL.DE-Import
-- ABSE.-Logik
-- lokale Heimspiel-Filterung
+Jede Serie erzeugt normale Trainingstermine. Dadurch funktionieren automatisch weiterhin:
+- Wochenplan
 - Monatsansicht
 - Dashboard
-- Training bearbeiten/löschen
-- Plätze & Kabinen
+- Gesamt/Hälfte A/Hälfte B
+- Spiel-vs-Training-Konflikte
+- Kabinenkonflikte
+
+Serien können angelegt, angezeigt und komplett gelöscht werden.

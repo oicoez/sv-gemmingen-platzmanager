@@ -6,6 +6,7 @@ import { authRouter } from "./auth.js";
 import { syncRouter } from "./sync.js";
 import { eventsRouter } from "./events.js";
 import { trainingsRouter } from "./trainings.js";
+import { trainingSeriesRouter } from "./training-series.js";
 import { plannerRouter } from "./planner.js";
 import { dashboardRouter } from "./dashboard.js";
 
@@ -22,3 +23,5 @@ apiRouter.use("/trainings",trainingsRouter);
 apiRouter.use("/planner",plannerRouter);
 
 apiRouter.use("/dashboard",dashboardRouter);
+
+apiRouter.use("/training-series",trainingSeriesRouter);

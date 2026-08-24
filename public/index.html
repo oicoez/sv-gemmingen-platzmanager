@@ -28,7 +28,7 @@ table{border-collapse:collapse;width:100%;font-size:14px}th,td{padding:10px;bord
 .errorBox{color:#b42318;background:#fff0f0;border:1px solid #efb0b0;padding:12px;border-radius:8px}
 @media(max-width:1000px){.cards{grid-template-columns:1fr 1fr}.formgrid{grid-template-columns:1fr 1fr}.days{grid-template-columns:repeat(7,220px)}.monthgrid{grid-template-columns:repeat(7,180px);overflow-x:auto}.dashEvent{grid-template-columns:1fr}}
 </style></head><body><div class="app">
-<header><div><h1>ClubPlanner 5.0</h1><div class="sub">SV Gemmingen · Sprint 4.2 · Ressourcen-Wochenplan & sichtbare A/B-Belegung</div></div><div class="toolbar"><span id="health" class="badge">System wird geprüft …</span><button id="login">Bearbeiten</button></div></header>
+<header><div><h1>ClubPlanner 5.0</h1><div class="sub">SV Gemmingen · Sprint 4.3 · Wiederkehrende Trainings & Serien</div></div><div class="toolbar"><span id="health" class="badge">System wird geprüft …</span><button id="login">Bearbeiten</button></div></header>
 
 <div class="tabs">
 <button class="tab active" data-view="dashboard">Dashboard</button>
@@ -62,7 +62,18 @@ table{border-collapse:collapse;width:100%;font-size:14px}th,td{padding:10px;bord
 <div id="monthError"></div><div id="monthGrid" class="monthgrid"></div></div></section>
 
 <section id="view-training" class="hidden">
-<div class="panel"><h2>Training eintragen</h2><div class="formgrid">
+<div class="panel"><h2>Training eintragen</h2>
+<div class="toolbar" style="margin-bottom:14px">
+<label><input type="radio" name="trainingMode" value="single" checked> Einzeltermin</label>
+<label><input type="radio" name="trainingMode" value="series"> Wiederkehrendes Training</label>
+</div>
+<div id="seriesFields" class="formgrid hidden" style="margin-bottom:14px">
+<div class="field"><label>Rhythmus</label><select id="seriesRecurrence"><option value="weekly">wöchentlich</option><option value="biweekly">alle 2 Wochen</option><option value="monthly">monatlich</option></select></div>
+<div class="field"><label>Wochentag</label><select id="seriesWeekday"><option value="1">Montag</option><option value="2">Dienstag</option><option value="3">Mittwoch</option><option value="4">Donnerstag</option><option value="5">Freitag</option><option value="6">Samstag</option><option value="7">Sonntag</option></select></div>
+<div class="field hidden" id="monthOrdinalField"><label>Monatliche Regel</label><select id="seriesMonthOrdinal"><option value="1">1. Wochentag im Monat</option><option value="2">2. Wochentag im Monat</option><option value="3">3. Wochentag im Monat</option><option value="4">4. Wochentag im Monat</option><option value="last">letzter Wochentag im Monat</option></select></div>
+<div class="field"><label>Startdatum</label><input id="seriesStartDate" type="date"></div>
+<div class="field"><label>Enddatum</label><input id="seriesEndDate" type="date"></div>
+</div><div class="formgrid">
 <div class="field span2"><label>Mannschaft</label><select id="trTeam"></select></div><div class="field"><label>Datum</label><input id="trDate" type="date"></div><div class="field"><label>Ort</label><select id="trLocation"><option value="gemmingen">Gemmingen</option><option value="stebbach">Stebbach</option></select></div>
 <div class="field"><label>Von</label><input id="trStart" type="time" value="18:00"></div><div class="field"><label>Bis</label><input id="trEnd" type="time" value="19:30"></div><div class="field"><label>Platz</label><select id="trBase"><option>Hauptplatz</option><option>Trainingsplatz</option></select></div>
 <div class="field"><label>Belegung</label><select id="trMode"><option value="flexible">Flexibel – automatisch Gesamt/A/B</option><option value="half_a">Fest Hälfte A</option><option value="half_b">Fest Hälfte B</option><option value="exclusive">Gesamtplatz exklusiv</option></select></div><div class="field"><label>Kabine 1</label><select id="trCabin1"><option value="">keine</option></select></div>
@@ -81,6 +92,7 @@ table{border-collapse:collapse;width:100%;font-size:14px}th,td{padding:10px;bord
 </div>
 </section>
 
+<div class="panel"><h2>Trainingsserien</h2><div class="help">Jeder erzeugte Termin wird automatisch in Woche, Monat und Dashboard eingetragen und durch die vorhandene Platz-, Spiel- und Kabinen-Konfliktprüfung geprüft.</div><div id="seriesList"></div></div>
 <section id="view-games" class="hidden">
 <div class="cards"><div class="card"><div class="muted">Lokale Spiele</div><div id="count" class="big">0</div></div><div class="card"><div class="muted">Mit Anstoßzeit</div><div id="times" class="big">0</div></div><div class="card"><div class="muted">Mit Spielort</div><div id="venues" class="big">0</div></div><div class="card"><div class="muted">Abgesetzt</div><div id="cancelled" class="big">0</div></div></div>
 <div class="panel"><div class="toolbar"><button id="sync" class="primary" disabled>FUSSBALL.DE synchronisieren</button><button id="reload">Aktualisieren</button><button id="past">Vergangene Spiele anzeigen</button></div><div id="syncState" class="progress">Noch nicht synchronisiert.</div></div>
@@ -88,7 +100,7 @@ table{border-collapse:collapse;width:100%;font-size:14px}th,td{padding:10px;bord
 </section>
 </div>
 <script>
-const $=id=>document.getElementById(id);let pin="",timer=null,includePast=false,weekStart="",monthValue="",serverToday="",editingTrainingId="",resourceCache=[];
+const $=id=>document.getElementById(id);let pin="",timer=null,includePast=false,weekStart="",monthValue="",serverToday="",editingTrainingId="",resourceCache=[],trainingMode="single";
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const fmtDate=v=>{const s=String(v||"").slice(0,10),m=s.match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?`${m[3]}.${m[2]}.${m[1]}`:s};
 const fmtStatus=v=>({planned:"geplant",cancelled:"abgesetzt",rescheduled:"verlegt"}[v]||v||"");
@@ -102,13 +114,13 @@ document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{
  if(b.dataset.view==="dashboard")loadDashboard();
  if(b.dataset.view==="week")loadWeek();
  if(b.dataset.view==="month")loadMonth();
- if(b.dataset.view==="training"){loadTrainings();loadCabins();}
+ if(b.dataset.view==="training"){loadTrainings();loadCabins();loadSeries();}
  if(b.dataset.view==="resources")loadResources();
 });
 
 async function bootstrapToday(){
  const t=await json("/api/v5/system/today");
- serverToday=t.today;weekStart=t.weekStart;monthValue=t.month;$("trDate").value=t.today;
+ serverToday=t.today;weekStart=t.weekStart;monthValue=t.month;$("trDate").value=t.today;$("seriesStartDate").value=t.today;$("seriesEndDate").value=addDays(t.today,180);
 }
 async function check(){try{await json("/health");$("health").textContent="ClubPlanner 5.0 online";$("health").classList.add("good")}catch{$("health").textContent="Systemfehler";$("health").classList.add("bad")}}
 async function loadTeams(){const j=await json("/api/v5/teams");$("trTeam").innerHTML=(j.items||[]).map(x=>`<option value="${esc(x.id)}">${esc(x.name)}</option>`).join("")}
@@ -230,6 +242,21 @@ async function editTrainingForm(id){
 }
 function fmtDateInput(v){return String(v||"").slice(0,10)}
 
+
+document.querySelectorAll('input[name="trainingMode"]').forEach(r=>r.addEventListener("change",()=>{
+ trainingMode=document.querySelector('input[name="trainingMode"]:checked').value;
+ $("seriesFields").classList.toggle("hidden",trainingMode!=="series");
+ $("saveTraining").textContent=trainingMode==="series"?"Trainingsserie speichern":"Training speichern";
+}));
+$("seriesRecurrence").addEventListener("change",()=>$("monthOrdinalField").classList.toggle("hidden",$("seriesRecurrence").value!=="monthly"));
+async function loadSeries(){
+ try{
+  const j=await json("/api/v5/training-series"),names={weekly:"wöchentlich",biweekly:"alle 2 Wochen",monthly:"monatlich"},days={1:"Mo",2:"Di",3:"Mi",4:"Do",5:"Fr",6:"Sa",7:"So"};
+  $("seriesList").innerHTML=(j.items||[]).length?`<table><thead><tr><th>Mannschaft</th><th>Rhythmus</th><th>Tag</th><th>Zeitraum</th><th>Zeit</th><th>Ort</th><th>Platz</th><th></th></tr></thead><tbody>${j.items.map(x=>`<tr><td>${esc(x.team)}</td><td>${esc(names[x.recurrence_type])}</td><td>${days[x.weekday]}</td><td>${fmtDate(x.start_date)} – ${x.end_date?fmtDate(x.end_date):"offen"}</td><td>${String(x.start_time).slice(0,5)}–${String(x.end_time).slice(0,5)}</td><td>${esc(x.location)}</td><td>${esc(x.base_name)}</td><td><button class="delSeries" data-id="${x.id}" ${pin?"":"disabled"}>Serie löschen</button></td></tr>`).join("")}</tbody></table>`:`<div class="empty">Noch keine Trainingsserien angelegt.</div>`;
+  document.querySelectorAll(".delSeries").forEach(b=>b.onclick=async()=>{if(!confirm("Komplette Serie und alle erzeugten Termine löschen?"))return;await json("/api/v5/training-series/"+b.dataset.id,{method:"DELETE",headers:{"x-edit-pin":pin}});await Promise.all([loadSeries(),loadTrainings(),loadWeek(),loadMonth(),loadDashboard()])});
+ }catch(e){$("seriesList").innerHTML=`<div class="errorBox">${esc(e.message)}</div>`}
+}
+
 async function loadTrainings(){
  try{
   const to=addDays(weekStart,6);
@@ -276,5 +303,5 @@ $("reload").onclick=loadGames;$("past").onclick=async()=>{includePast=!includePa
 $("sync").onclick=async()=>{if(!confirm("FUSSBALL.DE jetzt synchronisieren?"))return;try{await json("/api/v5/sync/fussballde",{method:"POST",headers:{"x-edit-pin":pin}});$("sync").disabled=true;poll()}catch(e){alert(e.message)}};
 async function poll(){try{const s=await json("/api/v5/sync/status");$("syncState").textContent=s.running?`${s.progress} (${s.processed}/${s.total||"?"})`:s.progress;if(s.running){clearTimeout(timer);timer=setTimeout(poll,1000)}else{$("sync").disabled=!pin;await loadGames();await loadWeek();await loadMonth();await loadDashboard()}}catch(e){$("syncState").textContent=e.message}}
 
-(async()=>{try{await bootstrapToday();await Promise.all([check(),loadTeams(),loadGames(),loadResources()]);await loadCabins();await loadDashboard();await loadWeek();await loadMonth();poll()}catch(e){console.error(e);alert("Startfehler: "+e.message)}})();
+(async()=>{try{await bootstrapToday();await Promise.all([check(),loadTeams(),loadGames(),loadResources()]);await loadCabins();await loadSeries();await loadDashboard();await loadWeek();await loadMonth();poll()}catch(e){console.error(e);alert("Startfehler: "+e.message)}})();
 </script></body></html>

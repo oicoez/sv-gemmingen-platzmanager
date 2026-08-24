@@ -1,0 +1,5 @@
+import test from "node:test";import assert from "node:assert/strict";import {generateOccurrences} from "../src/domain/recurrence.js";
+test("weekly",()=>assert.deepEqual(generateOccurrences({recurrenceType:"weekly",weekday:1,startDate:"2026-08-24",endDate:"2026-09-14"}),["2026-08-24","2026-08-31","2026-09-07","2026-09-14"]));
+test("biweekly",()=>assert.deepEqual(generateOccurrences({recurrenceType:"biweekly",weekday:3,startDate:"2026-08-24",endDate:"2026-09-30"}),["2026-08-26","2026-09-09","2026-09-23"]));
+test("monthly first friday",()=>assert.deepEqual(generateOccurrences({recurrenceType:"monthly",weekday:5,monthOrdinal:"1",startDate:"2026-08-01",endDate:"2026-10-31"}),["2026-08-07","2026-09-04","2026-10-02"]));
+test("monthly last friday",()=>assert.deepEqual(generateOccurrences({recurrenceType:"monthly",weekday:5,monthOrdinal:"last",startDate:"2026-08-01",endDate:"2026-10-31"}),["2026-08-28","2026-09-25","2026-10-30"]));
