@@ -1,40 +1,48 @@
-# ClubPlanner 4.4 – direkter FUSSBALL.DE-Spielplan
+# ClubPlanner 5.0 – Sprint 4.1
 
-4.4 entfernt Playwright wieder vollständig.
+## Plätze & Kabinen
+Neue zentrale Ressourcenansicht für:
 
-## Datenquelle
-Verwendet wird der FUSSBALL.DE-Endpunkt:
-`/ajax.club.matchplan/...`
+### Gemmingen
+- Hauptplatz – Gesamt / Hälfte A / Hälfte B
+- Trainingsplatz – Gesamt / Hälfte A / Hälfte B
+- Kabine 1 (Heim)
+- Kabine 2 (Gast)
 
-Dieser Spielplan enthält bereits:
-- Datum
-- Anstoßzeit
-- Mannschaftsart
-- Wettbewerb
-- Spielnummer
-- Heimteam
-- Gastteam
-- Status / Absetzung
-- Link zum Spiel
+### Stebbach
+- Hauptplatz – Gesamt / Hälfte A / Hälfte B
+- Trainingsplatz – Gesamt / Hälfte A / Hälfte B
+- Kabine 1 (Heim)
+- Kabine 2 (Gast)
 
-ClubPlanner testet mehrere URL-Varianten:
-- ajax-default
-- ajax-max-a
-- ajax-max-b
-- ajax-season
-- print-season
+## Spiele
+Bei lokalen Heimspielen reserviert ClubPlanner intern automatisch beide Kabinen
+des Standortes. Die Spieleliste wird dadurch nicht unnötig mit Kabinenfeldern
+überladen.
 
-Die Ergebnisse werden über Spiel-ID bzw. Spielnummer zusammengeführt.
+Abgesetzte Spiele reservieren keine Ressourcen.
 
-## Test
-Button: `4.4 Direkt-Spielplan-Test`
+## Trainings
+Trainings können jetzt:
+- Kabine 1 optional nutzen
+- Kabine 2 optional nutzen
+- bearbeitet werden
+- weiterhin gelöscht werden
 
-Der Kalender wird noch nicht verändert.
+Die Kabine muss zum ausgewählten Standort gehören.
 
-Render zeigt pro Quelle:
-`[FUSSBALL-4.4] QUELLE ajax-default | 10 Spiele | 10 Datum | 10 Zeiten | ...`
+## Kabinenkonflikte
+Wenn zwei gleichzeitig laufende Termine dieselbe Kabine belegen, meldet die
+Planner-Engine zusätzlich zum Platzkonflikt einen Kabinenkonflikt.
 
-Danach:
-`[FUSSBALL-4.4] Test fertig: ...`
+Damit verwendet Dashboard / Wochenplan / Monatsplan dieselbe kombinierte
+Konfliktbasis.
 
-Das wichtigste Ziel ist zunächst, mindestens eine Quelle mit echten Datum-/Anstoßzeitwerten auf Render zu bestätigen.
+## Unverändert
+- FUSSBALL.DE Import
+- lokale Heimspiel-Filterung
+- ABSE. = abgesetzt
+- dynamische Gesamt/A/B-Platzteilung
+- Dashboard
+- Woche
+- Monat
