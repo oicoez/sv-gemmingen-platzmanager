@@ -14,16 +14,18 @@ button,select,input{font:inherit}button{border:1px solid #cad2dc;background:#fff
 .formgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.field label{display:block;font-size:13px;color:#667085;margin-bottom:5px}.field input,.field select{width:100%;padding:9px;border:1px solid #cbd3dc;border-radius:7px;background:#fff}.field.span2{grid-column:span 2}
 table{border-collapse:collapse;width:100%;font-size:14px}th,td{padding:10px;border-bottom:1px solid #e6eaf0;text-align:left;vertical-align:top}th{background:#1f4e78;color:#fff;position:sticky;top:0}.scroll{overflow:auto;max-height:62vh}.cancelled{background:#f8eeee}.conflictRow{background:#fff0f0}.conflictPill{display:inline-block;color:#b42318;background:#ffe7e7;border:1px solid #efb0b0;padding:4px 7px;border-radius:999px;font-weight:700;font-size:12px}.empty{padding:18px;color:#7a8490;text-align:center}
 .monthgrid{display:grid;grid-template-columns:repeat(7,minmax(160px,1fr));gap:8px;margin-top:14px}.monthday{min-height:135px;background:#fff;border:1px solid #d8dee6;border-radius:8px;padding:7px}.monthday.blank{background:#f7f8fa}.monthnum{font-weight:750;margin-bottom:6px}.monthitem{font-size:11px;padding:5px;margin:4px 0;border-left:3px solid #5c7994;background:#f5f7f9;border-radius:4px}.monthitem.split{border-left-color:#247d52;background:#eef8f2}.monthitem.conflict{border-left-color:#c62828;background:#fff0f0}.monthdow{font-weight:750;text-align:center;padding:5px;color:#5f6b78}
-.dashboardList{display:grid;gap:8px}.dashEvent{display:grid;grid-template-columns:120px 110px 1fr 160px 180px;gap:10px;padding:10px;border-bottom:1px solid #edf0f3;align-items:start}.dashEvent.conflict{background:#fff0f0}.typeGame{font-weight:700}.typeTraining{font-weight:700;color:#225f87}.errorBox{color:#b42318;background:#fff0f0;border:1px solid #efb0b0;padding:12px;border-radius:8px}
+.dashboardList{display:grid;gap:8px}.dashEvent{display:grid;grid-template-columns:120px 110px 1fr 160px 180px;gap:10px;padding:10px;border-bottom:1px solid #edf0f3;align-items:start}.dashEvent.conflict{background:#fff0f0}.typeGame{font-weight:700}.typeTraining{font-weight:700;color:#225f87}.resourceGrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.resourceLocation{border:1px solid #d8dee6;border-radius:9px;padding:14px;background:#fff}.resourceLocation h3{margin:0 0 4px}.resourcePitch{padding:9px 0;border-top:1px solid #edf0f3}.resourceTags{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px}.resourceTag{font-size:12px;background:#eef3f7;border:1px solid #d4dde5;padding:4px 7px;border-radius:999px}.resourceCabins{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.resourceCabin{padding:7px 9px;background:#f7f4ec;border:1px solid #dfd3b8;border-radius:7px;font-size:13px}
+.errorBox{color:#b42318;background:#fff0f0;border:1px solid #efb0b0;padding:12px;border-radius:8px}
 @media(max-width:1000px){.cards{grid-template-columns:1fr 1fr}.formgrid{grid-template-columns:1fr 1fr}.days{grid-template-columns:repeat(7,220px)}.monthgrid{grid-template-columns:repeat(7,180px);overflow-x:auto}.dashEvent{grid-template-columns:1fr}}
 </style></head><body><div class="app">
-<header><div><h1>ClubPlanner 5.0</h1><div class="sub">SV Gemmingen · Sprint 3.2 · Dashboard, Woche, Monat & Konflikte</div></div><div class="toolbar"><span id="health" class="badge">System wird geprüft …</span><button id="login">Bearbeiten</button></div></header>
+<header><div><h1>ClubPlanner 5.0</h1><div class="sub">SV Gemmingen · Sprint 4.1 · Plätze, Kabinen & Training bearbeiten</div></div><div class="toolbar"><span id="health" class="badge">System wird geprüft …</span><button id="login">Bearbeiten</button></div></header>
 
 <div class="tabs">
 <button class="tab active" data-view="dashboard">Dashboard</button>
 <button class="tab" data-view="week">Wochenplan</button>
 <button class="tab" data-view="month">Monat</button>
 <button class="tab" data-view="training">Training eintragen</button>
+<button class="tab" data-view="resources">Plätze & Kabinen</button>
 <button class="tab" data-view="games">Spiele</button>
 </div>
 
@@ -53,9 +55,20 @@ table{border-collapse:collapse;width:100%;font-size:14px}th,td{padding:10px;bord
 <div class="panel"><h2>Training eintragen</h2><div class="formgrid">
 <div class="field span2"><label>Mannschaft</label><select id="trTeam"></select></div><div class="field"><label>Datum</label><input id="trDate" type="date"></div><div class="field"><label>Ort</label><select id="trLocation"><option value="gemmingen">Gemmingen</option><option value="stebbach">Stebbach</option></select></div>
 <div class="field"><label>Von</label><input id="trStart" type="time" value="18:00"></div><div class="field"><label>Bis</label><input id="trEnd" type="time" value="19:30"></div><div class="field"><label>Platz</label><select id="trBase"><option>Hauptplatz</option><option>Trainingsplatz</option></select></div>
-<div class="field"><label>Belegung</label><select id="trMode"><option value="flexible">Flexibel – automatisch Gesamt/A/B</option><option value="half_a">Fest Hälfte A</option><option value="half_b">Fest Hälfte B</option><option value="exclusive">Gesamtplatz exklusiv</option></select></div><div class="field span2"><label>Bemerkung</label><input id="trNote" placeholder="optional"></div>
-</div><div class="toolbar" style="margin-top:15px"><button id="saveTraining" class="primary" disabled>Training speichern</button><span id="trainingMsg" class="muted"></span></div></div>
+<div class="field"><label>Belegung</label><select id="trMode"><option value="flexible">Flexibel – automatisch Gesamt/A/B</option><option value="half_a">Fest Hälfte A</option><option value="half_b">Fest Hälfte B</option><option value="exclusive">Gesamtplatz exklusiv</option></select></div><div class="field"><label>Kabine 1</label><select id="trCabin1"><option value="">keine</option></select></div>
+<div class="field"><label>Kabine 2</label><select id="trCabin2"><option value="">keine</option></select></div>
+<div class="field span2"><label>Bemerkung</label><input id="trNote" placeholder="optional"></div>
+</div><div class="toolbar" style="margin-top:15px"><button id="saveTraining" class="primary" disabled>Training speichern</button><button id="cancelEdit" class="hidden">Bearbeiten abbrechen</button><span id="trainingMsg" class="muted"></span></div></div>
 <div class="panel"><h2>Trainings der angezeigten Woche</h2><div class="help">Wenn ein Training mit einem Spiel oder einer anderen Belegung kollidiert, wird der Konflikt direkt in dieser Tabelle angezeigt.</div><div id="trainingList"></div></div>
+</section>
+
+
+<section id="view-resources" class="hidden">
+<div class="panel">
+  <h2>Plätze & Kabinen</h2>
+  <div class="help">Jeder Standort besitzt Hauptplatz und Trainingsplatz mit Gesamt / Hälfte A / Hälfte B sowie zwei Kabinen. Bei Spielen reserviert ClubPlanner beide Kabinen intern automatisch. Bei Trainings kannst du Kabinen optional auswählen.</div>
+  <div id="resourceOverview" class="resourceGrid"></div>
+</div>
 </section>
 
 <section id="view-games" class="hidden">
@@ -65,7 +78,7 @@ table{border-collapse:collapse;width:100%;font-size:14px}th,td{padding:10px;bord
 </section>
 </div>
 <script>
-const $=id=>document.getElementById(id);let pin="",timer=null,includePast=false,weekStart="",monthValue="",serverToday="";
+const $=id=>document.getElementById(id);let pin="",timer=null,includePast=false,weekStart="",monthValue="",serverToday="",editingTrainingId="",resourceCache=[];
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const fmtDate=v=>{const s=String(v||"").slice(0,10),m=s.match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?`${m[3]}.${m[2]}.${m[1]}`:s};
 const fmtStatus=v=>({planned:"geplant",cancelled:"abgesetzt",rescheduled:"verlegt"}[v]||v||"");
@@ -75,11 +88,12 @@ const dayNames=["Mo","Di","Mi","Do","Fr","Sa","So"];
 
 document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{
  document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("active",x===b));
- ["dashboard","week","month","training","games"].forEach(v=>$(`view-${v}`).classList.toggle("hidden",b.dataset.view!==v));
+ ["dashboard","week","month","training","resources","games"].forEach(v=>$(`view-${v}`).classList.toggle("hidden",b.dataset.view!==v));
  if(b.dataset.view==="dashboard")loadDashboard();
  if(b.dataset.view==="week")loadWeek();
  if(b.dataset.view==="month")loadMonth();
- if(b.dataset.view==="training")loadTrainings();
+ if(b.dataset.view==="training"){loadTrainings();loadCabins();}
+ if(b.dataset.view==="resources")loadResources();
 });
 
 async function bootstrapToday(){
@@ -145,6 +159,67 @@ $("prevMonth").onclick=()=>{monthValue=monthShift(monthValue,-1);loadMonth()};
 $("nextMonth").onclick=()=>{monthValue=monthShift(monthValue,1);loadMonth()};
 $("todayMonth").onclick=async()=>{const t=await json("/api/v5/system/today");monthValue=t.month;await loadMonth(true)};
 
+
+async function loadResources(){
+ try{
+  const j=await json("/api/v5/resources/overview");
+  $("resourceOverview").innerHTML=(j.locations||[]).map(loc=>`<div class="resourceLocation">
+    <h3>${esc(loc.name)}</h3><div class="muted">${esc(loc.address)}</div>
+    ${loc.pitches.map(p=>`<div class="resourcePitch"><b>${esc(p.baseName)}</b>
+      <div class="resourceTags"><span class="resourceTag">Gesamt</span><span class="resourceTag">Hälfte A</span><span class="resourceTag">Hälfte B</span></div>
+    </div>`).join("")}
+    <div><b>Kabinen</b><div class="resourceCabins">${loc.cabins.map(c=>`<span class="resourceCabin">${esc(c.name)}</span>`).join("")}</div></div>
+  </div>`).join("");
+ }catch(e){$("resourceOverview").innerHTML=`<div class="errorBox">${esc(e.message)}</div>`}
+}
+async function loadCabins(){
+ try{
+  const j=await json("/api/v5/resources");
+  resourceCache=j.items||[];
+  const location=$("trLocation").value;
+  const cabins=resourceCache.filter(x=>x.location_id===location&&x.resource_type==="cabin");
+  const opts=`<option value="">keine</option>`+cabins.map(x=>`<option value="${x.id}">${esc(x.ui_name||x.display_name)}</option>`).join("");
+  const old1=$("trCabin1").value,old2=$("trCabin2").value;
+  $("trCabin1").innerHTML=opts;$("trCabin2").innerHTML=opts;
+  if(cabins.some(x=>x.id===old1))$("trCabin1").value=old1;
+  if(cabins.some(x=>x.id===old2))$("trCabin2").value=old2;
+ }catch(e){console.error(e)}
+}
+$("trLocation").addEventListener("change",()=>{ $("trCabin1").value="";$("trCabin2").value="";loadCabins() });
+
+function clearTrainingForm(){
+ editingTrainingId="";
+ $("saveTraining").textContent="Training speichern";
+ $("cancelEdit").classList.add("hidden");
+ $("trainingMsg").textContent="";
+ $("trNote").value="";
+ $("trCabin1").value="";
+ $("trCabin2").value="";
+}
+$("cancelEdit").onclick=clearTrainingForm;
+
+async function editTrainingForm(id){
+ try{
+  const j=await json("/api/v5/trainings/"+id),x=j.item;
+  editingTrainingId=id;
+  $("trTeam").value=x.team_id;
+  $("trDate").value=fmtDateInput(x.event_date);
+  $("trStart").value=String(x.start_time||"").slice(0,5);
+  $("trEnd").value=String(x.end_time||"").slice(0,5);
+  $("trLocation").value=x.location_id;
+  $("trBase").value=x.pitch_base||"Hauptplatz";
+  $("trMode").value=x.allocation_mode||"flexible";
+  $("trNote").value=x.note||"";
+  await loadCabins();
+  $("trCabin1").value=x.home_cabin_id||"";
+  $("trCabin2").value=x.guest_cabin_id||"";
+  $("saveTraining").textContent="Änderungen speichern";
+  $("cancelEdit").classList.remove("hidden");
+  window.scrollTo({top:0,behavior:"smooth"});
+ }catch(e){alert(e.message)}
+}
+function fmtDateInput(v){return String(v||"").slice(0,10)}
+
 async function loadTrainings(){
  try{
   const to=addDays(weekStart,6);
@@ -155,17 +230,21 @@ async function loadTrainings(){
    const others=(c.items||[]).filter(o=>o.id!==item.id).map(o=>`${o.eventType==="home_match"?"Spiel":"Training"} ${o.label}`).join(", ");
    conflictById.set(item.id,`${c.start}–${c.end}: ${c.reason}${others?` – ${others}`:""}`);
   }
-  $("trainingList").innerHTML=items.length?`<table><thead><tr><th>Datum</th><th>Zeit</th><th>Mannschaft</th><th>Ort</th><th>Platz</th><th>Modus</th><th>Konflikt</th><th></th></tr></thead><tbody>${items.map(x=>{
+  $("trainingList").innerHTML=items.length?`<table><thead><tr><th>Datum</th><th>Zeit</th><th>Mannschaft</th><th>Ort</th><th>Platz</th><th>Modus</th><th>Kabinen</th><th>Konflikt</th><th></th></tr></thead><tbody>${items.map(x=>{
    const conflict=conflictById.get(x.id)||"";
-   return `<tr class="${conflict?"conflictRow":""}"><td>${fmtDate(x.event_date)}</td><td>${String(x.start_time).slice(0,5)}–${String(x.end_time).slice(0,5)}</td><td>${esc(x.team)}</td><td>${esc(x.location)}</td><td>${esc(x.base_name)}</td><td>${esc(({flexible:"flexibel",half_a:"Hälfte A",half_b:"Hälfte B",exclusive:"Gesamt exklusiv"}[x.allocation_mode]||x.allocation_mode))}</td><td>${conflict?`<span class="conflictPill">Konflikt</span><br>${esc(conflict)}`:"–"}</td><td><button class="delTr" data-id="${x.id}" ${pin?"":"disabled"}>Löschen</button></td></tr>`;
+   return `<tr class="${conflict?"conflictRow":""}"><td>${fmtDate(x.event_date)}</td><td>${String(x.start_time).slice(0,5)}–${String(x.end_time).slice(0,5)}</td><td>${esc(x.team)}</td><td>${esc(x.location)}</td><td>${esc(x.base_name)}</td><td>${esc(({flexible:"flexibel",half_a:"Hälfte A",half_b:"Hälfte B",exclusive:"Gesamt exklusiv"}[x.allocation_mode]||x.allocation_mode))}</td><td>${esc([x.cabin1_label,x.cabin2_label].filter(Boolean).join(" + ")||"–")}</td><td>${conflict?`<span class="conflictPill">Konflikt</span><br>${esc(conflict)}`:"–"}</td><td><div class="toolbar"><button class="editTr" data-id="${x.id}" ${pin?"":"disabled"}>Bearbeiten</button><button class="delTr" data-id="${x.id}" ${pin?"":"disabled"}>Löschen</button></div></td></tr>`;
   }).join("")}</tbody></table>`:`<div class="empty">In dieser Woche sind noch keine Trainings eingetragen.</div>`;
+  document.querySelectorAll(".editTr").forEach(b=>b.onclick=()=>editTrainingForm(b.dataset.id));
   document.querySelectorAll(".delTr").forEach(b=>b.onclick=async()=>{if(!confirm("Training löschen?"))return;try{await json("/api/v5/trainings/"+b.dataset.id,{method:"DELETE",headers:{"x-edit-pin":pin}});await loadTrainings();await loadWeek();await loadMonth();await loadDashboard()}catch(e){alert(e.message)}})
  }catch(e){$("trainingList").innerHTML=`<div class="errorBox">${esc(e.message)}</div>`}
 }
 $("saveTraining").onclick=async()=>{try{
- const body={teamId:$("trTeam").value,date:$("trDate").value,start:$("trStart").value,end:$("trEnd").value,locationId:$("trLocation").value,baseName:$("trBase").value,allocationMode:$("trMode").value,note:$("trNote").value};
- await json("/api/v5/trainings",{method:"POST",headers:{"content-type":"application/json","x-edit-pin":pin},body:JSON.stringify(body)});
- $("trainingMsg").textContent="Training gespeichert.";
+ const body={teamId:$("trTeam").value,date:$("trDate").value,start:$("trStart").value,end:$("trEnd").value,locationId:$("trLocation").value,baseName:$("trBase").value,allocationMode:$("trMode").value,cabin1Id:$("trCabin1").value||null,cabin2Id:$("trCabin2").value||null,note:$("trNote").value};
+ const url=editingTrainingId?"/api/v5/trainings/"+editingTrainingId:"/api/v5/trainings";
+ const method=editingTrainingId?"PUT":"POST";
+ await json(url,{method,headers:{"content-type":"application/json","x-edit-pin":pin},body:JSON.stringify(body)});
+ $("trainingMsg").textContent=editingTrainingId?"Training aktualisiert.":"Training gespeichert.";
+ clearTrainingForm();
  const d=new Date(body.date+"T12:00:00Z"),day=d.getUTCDay()||7;d.setUTCDate(d.getUTCDate()-day+1);weekStart=d.toISOString().slice(0,10);monthValue=body.date.slice(0,7);
  await loadTrainings();await loadWeek();await loadMonth();await loadDashboard()
 }catch(e){$("trainingMsg").textContent=e.message}};
@@ -175,5 +254,5 @@ $("reload").onclick=loadGames;$("past").onclick=async()=>{includePast=!includePa
 $("sync").onclick=async()=>{if(!confirm("FUSSBALL.DE jetzt synchronisieren?"))return;try{await json("/api/v5/sync/fussballde",{method:"POST",headers:{"x-edit-pin":pin}});$("sync").disabled=true;poll()}catch(e){alert(e.message)}};
 async function poll(){try{const s=await json("/api/v5/sync/status");$("syncState").textContent=s.running?`${s.progress} (${s.processed}/${s.total||"?"})`:s.progress;if(s.running){clearTimeout(timer);timer=setTimeout(poll,1000)}else{$("sync").disabled=!pin;await loadGames();await loadWeek();await loadMonth();await loadDashboard()}}catch(e){$("syncState").textContent=e.message}}
 
-(async()=>{try{await bootstrapToday();await Promise.all([check(),loadTeams(),loadGames()]);await loadDashboard();await loadWeek();await loadMonth();poll()}catch(e){console.error(e);alert("Startfehler: "+e.message)}})();
+(async()=>{try{await bootstrapToday();await Promise.all([check(),loadTeams(),loadGames(),loadResources()]);await loadCabins();await loadDashboard();await loadWeek();await loadMonth();poll()}catch(e){console.error(e);alert("Startfehler: "+e.message)}})();
 </script></body></html>

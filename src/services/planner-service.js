@@ -1,5 +1,6 @@
 import { listOccupancyEvents } from "../repositories/planner-repository.js";
 import { buildSegments } from "../domain/allocation-engine.js";
+import { findCabinConflicts } from "./cabin-conflict-service.js";
 import { mondayOf,addDays,isoFromValue,currentMonthBerlin } from "../utils/date.js";
 
 function normalizeEvent(e){return {...e,event_date:isoFromValue(e.event_date)}}
@@ -31,13 +32,15 @@ export async function buildWeekPlan(startInput){
     days.push({date,groups:dayGroups});
   }
 
-  const conflicts=days.flatMap(d=>d.groups.flatMap(g=>
+  const pitchConflicts=days.flatMap(d=>d.groups.flatMap(g=>
     g.segments.filter(s=>s.conflict).map(s=>({
       date:d.date,location:g.location,baseName:g.baseName,start:s.start,end:s.end,
       reason:s.reason,items:s.items
     }))
   ));
-  return {start,end,days,conflicts};
+  const cabinConflicts=findCabinConflicts(events);
+  const conflicts=[...pitchConflicts,...cabinConflicts];
+  return {start,end,days,conflicts,pitchConflicts,cabinConflicts};
 }
 
 function monthBounds(monthInput){
@@ -78,5 +81,7 @@ export async function buildMonthPlan(monthInput){
     });
     days.push({date,groups});
   }
-  return {month:ym,year,monthNumber:month,first,last,eventCount,conflictCount,days};
+  const cabinConflicts=findCabinConflicts(events);
+  conflictCount+=cabinConflicts.length;
+  return {month:ym,year,monthNumber:month,first,last,eventCount,conflictCount,days,cabinConflicts};
 }

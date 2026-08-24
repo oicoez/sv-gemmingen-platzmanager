@@ -15,3 +15,19 @@ export async function findPitchResource(locationId,baseName="Hauptplatz",section
     limit 1`,[locationId,baseName,section]);
   return q.rows[0]||null;
 }
+
+
+export async function findCabinsForLocation(locationId){
+  if(!locationId)return [];
+  const q=await db(`select * from cp5_resources
+    where location_id=$1 and resource_type='cabin' and active=true
+    order by case base_name when 'Heimkabine' then 1 when 'Gastkabine' then 2 else 9 end, display_name`,
+    [locationId]);
+  return q.rows;
+}
+
+export async function getResourceById(id){
+  if(!id)return null;
+  const q=await db(`select * from cp5_resources where id=$1 and active=true limit 1`,[id]);
+  return q.rows[0]||null;
+}

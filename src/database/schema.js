@@ -157,6 +157,20 @@ export async function initSchema() {
     }
   }
 
+
+  // Spiele reservieren intern automatisch beide Kabinen ihres Standortes.
+  // In der Spieleliste müssen diese nicht manuell gepflegt werden.
+  await db(`update cp5_events e set
+      home_cabin_id=(select r.id from cp5_resources r
+        where r.location_id=e.location_id and r.resource_type='cabin'
+          and r.base_name='Heimkabine' and r.active=true limit 1),
+      guest_cabin_id=(select r.id from cp5_resources r
+        where r.location_id=e.location_id and r.resource_type='cabin'
+          and r.base_name='Gastkabine' and r.active=true limit 1)
+    where e.event_type='home_match'
+      and e.status <> 'cancelled'
+      and e.location_id in ('gemmingen','stebbach')`);
+
   for(const name of OFFICIAL_TEAM_NAMES){
     await db(`insert into cp5_teams(id,club_id,name,external_name)
       values($1,$2,$3,$3)
@@ -164,6 +178,6 @@ export async function initSchema() {
       [crypto.randomUUID(),clubId,name]);
   }
 
-  logger.info("ClubPlanner 5.0 Sprint 3.2 Datenbankschema bereit", { clubId });
+  logger.info("ClubPlanner 5.0 Sprint 4.1 Datenbankschema bereit", { clubId });
   return { clubId };
 }
