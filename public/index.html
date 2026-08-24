@@ -14,11 +14,21 @@ button,select,input{font:inherit}button{border:1px solid #cad2dc;background:#fff
 .formgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.field label{display:block;font-size:13px;color:#667085;margin-bottom:5px}.field input,.field select{width:100%;padding:9px;border:1px solid #cbd3dc;border-radius:7px;background:#fff}.field.span2{grid-column:span 2}
 table{border-collapse:collapse;width:100%;font-size:14px}th,td{padding:10px;border-bottom:1px solid #e6eaf0;text-align:left;vertical-align:top}th{background:#1f4e78;color:#fff;position:sticky;top:0}.scroll{overflow:auto;max-height:62vh}.cancelled{background:#f8eeee}.conflictRow{background:#fff0f0}.conflictPill{display:inline-block;color:#b42318;background:#ffe7e7;border:1px solid #efb0b0;padding:4px 7px;border-radius:999px;font-weight:700;font-size:12px}.empty{padding:18px;color:#7a8490;text-align:center}
 .monthgrid{display:grid;grid-template-columns:repeat(7,minmax(160px,1fr));gap:8px;margin-top:14px}.monthday{min-height:135px;background:#fff;border:1px solid #d8dee6;border-radius:8px;padding:7px}.monthday.blank{background:#f7f8fa}.monthnum{font-weight:750;margin-bottom:6px}.monthitem{font-size:11px;padding:5px;margin:4px 0;border-left:3px solid #5c7994;background:#f5f7f9;border-radius:4px}.monthitem.split{border-left-color:#247d52;background:#eef8f2}.monthitem.conflict{border-left-color:#c62828;background:#fff0f0}.monthdow{font-weight:750;text-align:center;padding:5px;color:#5f6b78}
-.dashboardList{display:grid;gap:8px}.dashEvent{display:grid;grid-template-columns:120px 110px 1fr 160px 180px;gap:10px;padding:10px;border-bottom:1px solid #edf0f3;align-items:start}.dashEvent.conflict{background:#fff0f0}.typeGame{font-weight:700}.typeTraining{font-weight:700;color:#225f87}.resourceGrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.resourceLocation{border:1px solid #d8dee6;border-radius:9px;padding:14px;background:#fff}.resourceLocation h3{margin:0 0 4px}.resourcePitch{padding:9px 0;border-top:1px solid #edf0f3}.resourceTags{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px}.resourceTag{font-size:12px;background:#eef3f7;border:1px solid #d4dde5;padding:4px 7px;border-radius:999px}.resourceCabins{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.resourceCabin{padding:7px 9px;background:#f7f4ec;border:1px solid #dfd3b8;border-radius:7px;font-size:13px}
+.dashboardList{display:grid;gap:8px}.dashEvent{display:grid;grid-template-columns:120px 110px 1fr 160px 180px;gap:10px;padding:10px;border-bottom:1px solid #edf0f3;align-items:start}.dashEvent.conflict{background:#fff0f0}.typeGame{font-weight:700}.typeTraining{font-weight:700;color:#225f87}.weekLegend{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.legendTag{font-size:12px;padding:5px 8px;border-radius:999px;background:#eef3f7;border:1px solid #d4dde5}
+.legendTag.halfA{background:#eef8f2;border-color:#b9dec8}
+.legendTag.halfB{background:#eef6ff;border-color:#b8d3ec}
+.legendTag.conflictLegend{background:#fff0f0;border-color:#efb0b0;color:#b42318}
+.allocationPill{display:inline-block;padding:3px 6px;border-radius:999px;font-size:11px;font-weight:700;background:#eef3f7}
+.allocationPill.half_a{background:#eef8f2;color:#1f5f43}
+.allocationPill.half_b{background:#eef6ff;color:#225f87}
+.allocationPill.whole{background:#f0f0f0}
+.cabinConflictBox{margin-top:12px;padding:10px;border:1px solid #efb0b0;background:#fff0f0;border-radius:8px}
+.resourceGrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.resourceLocation{border:1px solid #d8dee6;border-radius:9px;padding:14px;background:#fff}.resourceLocation h3{margin:0 0 4px}.resourcePitch{padding:9px 0;border-top:1px solid #edf0f3}.resourceTags{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px}.resourceTag{font-size:12px;background:#eef3f7;border:1px solid #d4dde5;padding:4px 7px;border-radius:999px}.resourceCabins{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.resourceCabin{padding:7px 9px;background:#f7f4ec;border:1px solid #dfd3b8;border-radius:7px;font-size:13px}
 .errorBox{color:#b42318;background:#fff0f0;border:1px solid #efb0b0;padding:12px;border-radius:8px}
 @media(max-width:1000px){.cards{grid-template-columns:1fr 1fr}.formgrid{grid-template-columns:1fr 1fr}.days{grid-template-columns:repeat(7,220px)}.monthgrid{grid-template-columns:repeat(7,180px);overflow-x:auto}.dashEvent{grid-template-columns:1fr}}
 </style></head><body><div class="app">
-<header><div><h1>ClubPlanner 5.0</h1><div class="sub">SV Gemmingen · Sprint 4.1 · Plätze, Kabinen & Training bearbeiten</div></div><div class="toolbar"><span id="health" class="badge">System wird geprüft …</span><button id="login">Bearbeiten</button></div></header>
+<header><div><h1>ClubPlanner 5.0</h1><div class="sub">SV Gemmingen · Sprint 4.2 · Ressourcen-Wochenplan & sichtbare A/B-Belegung</div></div><div class="toolbar"><span id="health" class="badge">System wird geprüft …</span><button id="login">Bearbeiten</button></div></header>
 
 <div class="tabs">
 <button class="tab active" data-view="dashboard">Dashboard</button>
@@ -42,8 +52,8 @@ table{border-collapse:collapse;width:100%;font-size:14px}th,td{padding:10px;bord
 <section id="view-week" class="hidden"><div class="panel"><div class="weeknav">
 <div class="toolbar"><button id="prevWeek">‹ Vorherige Woche</button><button id="todayWeek">Aktuelle Woche</button><button id="nextWeek">Nächste Woche ›</button></div>
 <h2 id="weekTitle" style="margin:0"></h2><div id="conflictCount" class="badge"></div></div>
-<div class="help"><b>Flexibel:</b> allein = Gesamtplatz; bei genau zwei gleichzeitigen flexiblen Trainings = während der Überschneidung automatisch Hälfte A/B.</div>
-<div id="weekDays" class="days"></div></div></section>
+<div class="help"><b>Wochenplan:</b> Spiele und Trainings werden gemeinsam angezeigt. Flexible Trainings erscheinen je Zeitabschnitt als <b>Gesamt</b>, <b>Hälfte A</b> oder <b>Hälfte B</b>. Rot = echter Konflikt. Kabinenkonflikte werden zusätzlich unter dem Wochenplan angezeigt.</div>
+<div class="weekLegend"><span class="legendTag">Gesamt</span><span class="legendTag halfA">Hälfte A</span><span class="legendTag halfB">Hälfte B</span><span class="legendTag conflictLegend">Konflikt</span></div><div id="weekDays" class="days"></div><div id="weekCabinConflicts"></div></div></section>
 
 <section id="view-month" class="hidden"><div class="panel"><div class="weeknav">
 <div class="toolbar"><button id="prevMonth">‹ Vorheriger Monat</button><button id="todayMonth">Aktueller Monat</button><button id="nextMonth">Nächster Monat ›</button></div>
@@ -125,7 +135,7 @@ async function loadWeek(useServerCurrent=false){
   $("weekTitle").textContent=`Woche ${fmtDate(j.start)} – ${fmtDate(j.end)}`;
   $("conflictCount").textContent=j.conflicts.length?`${j.conflicts.length} Konflikt(e)`:"Keine Konflikte";
   $("conflictCount").className="badge "+(j.conflicts.length?"bad":"good");
-  $("weekDays").innerHTML=j.days.map((d,idx)=>`<div class="day"><div class="dayhead">${dayNames[idx]}, ${fmtDate(d.date)}</div>${d.groups.length?d.groups.map(g=>`<div class="pitch"><div class="pitchtitle">${esc(g.location)} · ${esc(g.baseName)}</div>${g.segments.map(s=>`<div class="seg ${s.conflict?"conflict":(s.items.length===2?"split":"")}"><div class="time">${s.start}–${s.end}</div>${s.items.map(i=>`<div>${esc(i.label)} · <span class="${i.section.startsWith("half")?"half":""}">${esc(i.sectionLabel)}</span></div>`).join("")}${s.conflict?`<div class="conflictText">${esc(s.reason)}</div>`:""}</div>`).join("")}</div>`).join(""):`<div class="empty">frei</div>`}</div>`).join("");
+  $("weekDays").innerHTML=j.days.map((d,idx)=>`<div class="day"><div class="dayhead">${dayNames[idx]}, ${fmtDate(d.date)}</div>${d.groups.length?d.groups.map(g=>`<div class="pitch"><div class="pitchtitle">${esc(g.location)} · ${esc(g.baseName)}</div>${g.segments.map(s=>`<div class="seg ${s.conflict?"conflict":(s.items.length===2?"split":"")}"><div class="time">${s.start}–${s.end}</div>${s.items.map(i=>`<div>${i.eventType==="home_match"?"⚽":"●"} ${esc(i.label)} · <span class="allocationPill ${esc(i.section)}">${esc(i.sectionLabel)}</span></div>`).join("")}${s.conflict?`<div class="conflictText">${esc(s.reason)}</div>`:""}</div>`).join("")}</div>`).join(""):`<div class="empty">frei</div>`}</div>`).join("");
  }catch(e){$("weekDays").innerHTML=`<div class="errorBox">${esc(e.message)}</div>`}
 }
 $("prevWeek").onclick=()=>{weekStart=addDays(weekStart,-7);loadWeek();loadTrainings()};
@@ -224,15 +234,27 @@ async function loadTrainings(){
  try{
   const to=addDays(weekStart,6);
   const [tj,wj]=await Promise.all([json(`/api/v5/trainings?from=${weekStart}&to=${to}`),json(`/api/v5/planner/week?start=${weekStart}`)]);
+  const allocationById=new Map();
+  for(const d of (wj.dayItems||[])){
+    for(const i of (d.items||[])){
+      if(i.eventType!=="training")continue;
+      if(!allocationById.has(i.id))allocationById.set(i.id,[]);
+      allocationById.get(i.id).push({start:i.start,end:i.end,section:i.section,sectionLabel:i.sectionLabel});
+    }
+  }
   const items=tj.items||[],conflictById=new Map();
   for(const c of wj.conflicts||[])for(const item of c.items||[]){
    if(item.eventType!=="training")continue;
    const others=(c.items||[]).filter(o=>o.id!==item.id).map(o=>`${o.eventType==="home_match"?"Spiel":"Training"} ${o.label}`).join(", ");
    conflictById.set(item.id,`${c.start}–${c.end}: ${c.reason}${others?` – ${others}`:""}`);
   }
-  $("trainingList").innerHTML=items.length?`<table><thead><tr><th>Datum</th><th>Zeit</th><th>Mannschaft</th><th>Ort</th><th>Platz</th><th>Modus</th><th>Kabinen</th><th>Konflikt</th><th></th></tr></thead><tbody>${items.map(x=>{
+  $("trainingList").innerHTML=items.length?`<table><thead><tr><th>Datum</th><th>Zeit</th><th>Mannschaft</th><th>Ort</th><th>Platz</th><th>Modus</th><th>Effektive Belegung</th><th>Kabinen</th><th>Konflikt</th><th></th></tr></thead><tbody>${items.map(x=>{
    const conflict=conflictById.get(x.id)||"";
-   return `<tr class="${conflict?"conflictRow":""}"><td>${fmtDate(x.event_date)}</td><td>${String(x.start_time).slice(0,5)}–${String(x.end_time).slice(0,5)}</td><td>${esc(x.team)}</td><td>${esc(x.location)}</td><td>${esc(x.base_name)}</td><td>${esc(({flexible:"flexibel",half_a:"Hälfte A",half_b:"Hälfte B",exclusive:"Gesamt exklusiv"}[x.allocation_mode]||x.allocation_mode))}</td><td>${esc([x.cabin1_label,x.cabin2_label].filter(Boolean).join(" + ")||"–")}</td><td>${conflict?`<span class="conflictPill">Konflikt</span><br>${esc(conflict)}`:"–"}</td><td><div class="toolbar"><button class="editTr" data-id="${x.id}" ${pin?"":"disabled"}>Bearbeiten</button><button class="delTr" data-id="${x.id}" ${pin?"":"disabled"}>Löschen</button></div></td></tr>`;
+   return `<tr class="${conflict?"conflictRow":""}"><td>${fmtDate(x.event_date)}</td><td>${String(x.start_time).slice(0,5)}–${String(x.end_time).slice(0,5)}</td><td>${esc(x.team)}</td><td>${esc(x.location)}</td><td>${esc(x.base_name)}</td><td>${esc(({flexible:"flexibel",half_a:"Hälfte A",half_b:"Hälfte B",exclusive:"Gesamt exklusiv"}[x.allocation_mode]||x.allocation_mode))}</td><td>${(()=>{
+      const a=allocationById.get(x.id)||[];
+      if(!a.length)return "–";
+      return a.map(v=>`${v.start}–${v.end}: ${v.sectionLabel}`).join(" · ");
+    })()}</td><td>${esc([x.cabin1_label,x.cabin2_label].filter(Boolean).join(" + ")||"–")}</td><td>${conflict?`<span class="conflictPill">Konflikt</span><br>${esc(conflict)}`:"–"}</td><td><div class="toolbar"><button class="editTr" data-id="${x.id}" ${pin?"":"disabled"}>Bearbeiten</button><button class="delTr" data-id="${x.id}" ${pin?"":"disabled"}>Löschen</button></div></td></tr>`;
   }).join("")}</tbody></table>`:`<div class="empty">In dieser Woche sind noch keine Trainings eingetragen.</div>`;
   document.querySelectorAll(".editTr").forEach(b=>b.onclick=()=>editTrainingForm(b.dataset.id));
   document.querySelectorAll(".delTr").forEach(b=>b.onclick=async()=>{if(!confirm("Training löschen?"))return;try{await json("/api/v5/trainings/"+b.dataset.id,{method:"DELETE",headers:{"x-edit-pin":pin}});await loadTrainings();await loadWeek();await loadMonth();await loadDashboard()}catch(e){alert(e.message)}})
