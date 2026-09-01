@@ -6,14 +6,14 @@ export async function createTraining(input){
   await db(`insert into cp5_events(
     id,club_id,team_id,event_type,event_date,kickoff_time,start_time,end_time,title,
     opponent,competition,status,location_id,venue_name,resource_id,allocation_mode,requested_section,
-    home_cabin_id,guest_cabin_id,address,note,source,created_at,updated_at
+    home_cabin_id,guest_cabin_id,address,note,source,series_id,created_at,updated_at
   ) values(
     $1,$2,$3,'training',$4,$5,$5,$6,'Training','','Training','planned',$7,'',$8,$9,$10,
-    $11,$12,$13,$14,'manual',now(),now()
+    $11,$12,$13,$14,'manual',$15,now(),now()
   )`,[
     id,input.clubId,input.teamId,input.date,input.start,input.end,input.locationId,input.resourceId,
     input.allocationMode,input.requestedSection,input.cabin1Id||null,input.cabin2Id||null,
-    input.address||"",input.note||""
+    input.address||"",input.note||"",input.seriesId||null
   ]);
   return id;
 }
@@ -49,7 +49,7 @@ export async function deleteTraining(id){
 export async function listTrainings({from,to}){
   const q=await db(`select e.id,e.event_date,e.start_time,e.end_time,e.title,e.note,
       e.location_id,e.resource_id,e.allocation_mode,e.requested_section,
-      e.home_cabin_id,e.guest_cabin_id,
+      e.home_cabin_id,e.guest_cabin_id,e.series_id,
       t.name as team,r.base_name,r.section,r.display_name as resource,l.name as location,
       c1.base_name as cabin1_base,c1.display_name as cabin1_name,
       c2.base_name as cabin2_base,c2.display_name as cabin2_name

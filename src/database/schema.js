@@ -178,6 +178,30 @@ export async function initSchema() {
       [crypto.randomUUID(),clubId,name]);
   }
 
-  logger.info("ClubPlanner 5.0 Sprint 4.1 Datenbankschema bereit", { clubId });
+  
+  await db(`create table if not exists cp5_training_series(
+    id text primary key,
+    club_id text not null,
+    team_id text not null,
+    recurrence_type text not null,
+    weekday integer not null,
+    month_ordinal text,
+    start_date date not null,
+    end_date date,
+    start_time time not null,
+    end_time time not null,
+    location_id text not null,
+    base_name text not null,
+    allocation_mode text not null default 'flexible',
+    cabin1_id text,
+    cabin2_id text,
+    note text default '',
+    active boolean not null default true,
+    created_at timestamptz not null default now(),
+    updated_at timestamptz not null default now()
+  )`);
+  await db(`alter table cp5_events add column if not exists series_id text`);
+
+  logger.info("ClubPlanner 5.0 Sprint 4.3.1 Datenbankschema bereit", { clubId });
   return { clubId };
 }

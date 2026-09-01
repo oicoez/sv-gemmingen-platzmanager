@@ -5,6 +5,31 @@ import { mondayOf,addDays,isoFromValue,currentMonthBerlin } from "../utils/date.
 
 function normalizeEvent(e){return {...e,event_date:isoFromValue(e.event_date)}}
 
+function summarizeDayEvents(day){
+  const items=[];
+  for(const g of day.groups){
+    for(const s of g.segments){
+      for(const i of s.items){
+        items.push({
+          id:i.id,
+          eventType:i.eventType,
+          label:i.label,
+          location:g.location,
+          baseName:g.baseName,
+          start:s.start,
+          end:s.end,
+          section:i.section,
+          sectionLabel:i.sectionLabel,
+          conflict:s.conflict,
+          reason:s.reason
+        });
+      }
+    }
+  }
+  return items;
+}
+
+
 export async function buildWeekPlan(startInput){
   const start=mondayOf(startInput),end=addDays(start,6);
   const events=(await listOccupancyEvents(start,end)).map(normalizeEvent);
@@ -40,7 +65,8 @@ export async function buildWeekPlan(startInput){
   ));
   const cabinConflicts=findCabinConflicts(events);
   const conflicts=[...pitchConflicts,...cabinConflicts];
-  return {start,end,days,conflicts,pitchConflicts,cabinConflicts};
+  const dayItems=days.map(d=>({date:d.date,items:summarizeDayEvents(d)}));
+  return {start,end,days,dayItems,conflicts,pitchConflicts,cabinConflicts};
 }
 
 function monthBounds(monthInput){
