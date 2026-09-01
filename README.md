@@ -1,44 +1,18 @@
-# ClubPlanner 5.0 – Sprint 4.3.2
+# ClubPlanner 5.0 – Sprint 4.3.3
 
-## Korrektur wiederkehrende Trainings
+## FUSSBALL.DE: alte falsch importierte Auswärtsspiele bereinigen
 
-Bei `Wiederkehrendes Training` wird das einzelne Feld `Datum` ausgeblendet.
-Eine Serie wird ausschließlich über Rhythmus, Wochentag, Startdatum und Enddatum gesteuert.
+Sprint 4.3.2 verhindert neue lokale Platzbelegungen für externe Spielorte.
+Bereits früher falsch importierte Datensätze blieben jedoch bisher in der Datenbank stehen.
 
-Der Speichern-Button verwendet jetzt tatsächlich die Trainingsserien-API.
-Dadurch werden alle Termine im gewählten Zeitraum erzeugt.
+Sprint 4.3.3 entfernt beim nächsten FUSSBALL.DE-Sync automatisch einen alten Datensatz,
+wenn das Spiel nun als Auswärtsspiel bzw. externer Spielort erkannt wird.
 
 Beispiel:
-- wöchentlich
-- Montag
-- Start 07.09.2026
-- Ende 31.05.2027
+Frauen SV Gemmingen – FC Odenheim 2, tatsächlicher Spielort
+`Am Felsenkeller 12, 76684 Östringen` → keine lokale Platzbelegung.
 
-=> jeder Montag im Zeitraum wird als eigener Trainingstermin angelegt und erscheint in
-Wochenplan, Monatsansicht und Dashboard.
+Die Render-Logs zeigen zusätzlich den erkannten Venue-Text zur Kontrolle.
 
-## Korrektur FUSSBALL.DE Heim/Auswärts
-
-ClubPlanner ist ein lokaler Platzbelegungsplaner.
-Ein geplantes Spiel wird nur als lokale Belegung importiert, wenn:
-
-- unsere Mannschaft Heimteam ist und
-- der tatsächliche Spielort Gemmingen oder Stebbach ist.
-
-Ein externer Spielort darf nicht allein wegen des Textes `SV Gemmingen`
-als Gemmingen erkannt werden.
-
-Damit soll z. B. das Auswärtsspiel der Frauen beim FC Odenheim 2 am 19.09.2026
-nicht mehr im lokalen Kalender erscheinen.
-
-Abgesetzte Spiele bleiben von der bisherigen ABSE.-Logik unberührt.
-
-## Unverändert
-
-- A/B-Platzaufteilung
-- Trainings-/Spiel-Konflikte
-- Kabinenkonflikte
-- Dashboard
-- Wochenansicht
-- Monatsansicht
-- Trainingsserienübersicht
+Unverändert bleiben ABSE.-Logik, Trainingsserien, A/B-Aufteilung,
+Kabinen- und Konfliktlogik sowie Woche/Monat/Dashboard.

@@ -435,6 +435,19 @@ function toCalendarEvent(detail) {
   };
 }
 
+async function removePreviouslyImportedGame(externalId, reason="extern") {
+  const found = await db(
+    `select id from clubplanner_events where source='fussball.de' and external_id=$1`,
+    [externalId]
+  );
+  if (!found.rowCount) return false;
+
+  await db(`delete from clubplanner_events where source='fussball.de' and external_id=$1`, [externalId]);
+  syncState.updated++;
+  console.log(`[FUSSBALL-4.3.3] ${externalId} entfernt: ${reason}`);
+  return true;
+}
+
 async function upsertHomeGame(event) {
   const hash = eventHash(event);
   const found = await db(
@@ -521,7 +534,7 @@ async function processFixture(overview, index, total) {
   try {
     const html = await fetchText(overview.url, DETAIL_TIMEOUT_MS);
     const detail = parseDetailHtml(html, overview);
-    console.log(`[FUSSBALL-4.0] ${overview.externalId} | ${detail.date || "kein Datum"} | ${detail.kickoff || "keine Zeit"} | ${detail.home || "kein Heim"} : ${detail.away || "kein Gast"} | ${detail.location || "kein Ort"}`);
+    console.log(`[FUSSBALL-4.3.3] ${overview.externalId} | ${detail.date || "kein Datum"} | ${detail.kickoff || "keine Zeit"} | ${detail.home || "kein Heim"} : ${detail.away || "kein Gast"} | Ort=${detail.location || "extern/kein lokaler Ort"} | Venue=${detail.venueText || "kein Venue-Text"}`);
 
     if (!detail.home || !detail.away || !detail.date) {
       throw new Error("Pflichtdaten auf Detailseite fehlen");
@@ -530,14 +543,20 @@ async function processFixture(overview, index, total) {
     const cancelled = ["abgesetzt","ausfall","abbruch"].includes(detail.status);
 
     if (!isClubTeam(detail.home)) {
+      await removePreviouslyImportedGame(detail.externalId, `kein Heimspiel: ${detail.home} : ${detail.away}`);
       syncState.skipped++;
       return;
     }
 
     // ClubPlanner reserves only our own pitches. A scheduled match must
-    // therefore have an actual local venue in Gemmingen or Stebbach.
-    // This prevents away fixtures from becoming local pitch bookings.
+    // have its ACTUAL venue in Gemmingen or Stebbach. External venues
+    // are away games for the local resource planner. Remove any stale
+    // record created by an older importer during the next sync.
     if (!cancelled && !["Gemmingen","Stebbach"].includes(detail.location)) {
+      await removePreviouslyImportedGame(
+        detail.externalId,
+        `externer Spielort: ${detail.venueText || "unbekannt"}`
+      );
       syncState.skipped++;
       return;
     }
