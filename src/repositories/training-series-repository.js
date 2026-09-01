@@ -12,7 +12,7 @@ export async function createSeries(x){
 }
 export async function listSeries(){
   const q=await db(`select s.*,t.name team,l.name location from cp5_training_series s
-    left join cp5_teams t on t.id=s.team_id left join cp5_locations l on l.id=s.location_id
+    left join cp5_teams t on t.id::text=s.team_id left join cp5_locations l on l.id=s.location_id
     where s.active=true order by s.start_date,s.weekday,s.start_time,t.name`);
   return q.rows;
 }

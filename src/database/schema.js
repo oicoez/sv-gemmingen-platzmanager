@@ -202,6 +202,6 @@ export async function initSchema() {
   )`);
   await db(`alter table cp5_events add column if not exists series_id text`);
 
-  logger.info("ClubPlanner 5.0 Sprint 4.3 Datenbankschema bereit", { clubId });
+  logger.info("ClubPlanner 5.0 Sprint 4.3.1 Datenbankschema bereit", { clubId });
   return { clubId };
 }
