@@ -320,7 +320,7 @@ function extractVenue($, bodyText) {
   if (/Jahnweg|Stebbach/i.test(venueText)) {
     location = "Stebbach";
     address = "Jahnweg 1, 75050 Gemmingen-Stebbach";
-  } else if (/Beim Sportplatz|SV Gemmingen/i.test(venueText)) {
+  } else if (/Beim Sportplatz|75050\s+Gemmingen(?!-Stebbach)/i.test(venueText)) {
     location = "Gemmingen";
     address = "Beim Sportplatz 3, 75050 Gemmingen";
   }
@@ -527,7 +527,17 @@ async function processFixture(overview, index, total) {
       throw new Error("Pflichtdaten auf Detailseite fehlen");
     }
 
+    const cancelled = ["abgesetzt","ausfall","abbruch"].includes(detail.status);
+
     if (!isClubTeam(detail.home)) {
+      syncState.skipped++;
+      return;
+    }
+
+    // ClubPlanner reserves only our own pitches. A scheduled match must
+    // therefore have an actual local venue in Gemmingen or Stebbach.
+    // This prevents away fixtures from becoming local pitch bookings.
+    if (!cancelled && !["Gemmingen","Stebbach"].includes(detail.location)) {
       syncState.skipped++;
       return;
     }

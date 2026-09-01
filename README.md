@@ -1,28 +1,44 @@
-# ClubPlanner 5.0 – Sprint 4.3.1
+# ClubPlanner 5.0 – Sprint 4.3.2
 
-## Fehlerkorrektur Trainingsserien
+## Korrektur wiederkehrende Trainings
 
-Sprint 4.3 erzeugte wiederkehrende Trainingstermine bereits korrekt.
-Beim Laden der Übersicht `Trainingsserien` trat jedoch ein interner Serverfehler auf.
+Bei `Wiederkehrendes Training` wird das einzelne Feld `Datum` ausgeblendet.
+Eine Serie wird ausschließlich über Rhythmus, Wochentag, Startdatum und Enddatum gesteuert.
 
-### Ursache
-Die bestehende Tabelle `cp5_training_series` speichert `team_id` als Text.
-Die Mannschaftstabelle `cp5_teams` verwendet UUID.
-Beim Join der Serienübersicht verglich PostgreSQL deshalb UUID mit Text.
+Der Speichern-Button verwendet jetzt tatsächlich die Trainingsserien-API.
+Dadurch werden alle Termine im gewählten Zeitraum erzeugt.
 
-### Korrektur
-Der Join wird nun explizit kompatibel ausgeführt (`t.id::text = s.team_id`).
-
-### Unverändert
-- bereits erzeugte Trainingstermine
+Beispiel:
 - wöchentlich
-- alle 2 Wochen
-- monatlich
-- 1./2./3./4./letzter Wochentag im Monat
-- Wochenplan
-- Monatsansicht
-- Dashboard
-- Gesamt / Hälfte A / Hälfte B
-- Spiel-vs-Training-Konflikte
+- Montag
+- Start 07.09.2026
+- Ende 31.05.2027
+
+=> jeder Montag im Zeitraum wird als eigener Trainingstermin angelegt und erscheint in
+Wochenplan, Monatsansicht und Dashboard.
+
+## Korrektur FUSSBALL.DE Heim/Auswärts
+
+ClubPlanner ist ein lokaler Platzbelegungsplaner.
+Ein geplantes Spiel wird nur als lokale Belegung importiert, wenn:
+
+- unsere Mannschaft Heimteam ist und
+- der tatsächliche Spielort Gemmingen oder Stebbach ist.
+
+Ein externer Spielort darf nicht allein wegen des Textes `SV Gemmingen`
+als Gemmingen erkannt werden.
+
+Damit soll z. B. das Auswärtsspiel der Frauen beim FC Odenheim 2 am 19.09.2026
+nicht mehr im lokalen Kalender erscheinen.
+
+Abgesetzte Spiele bleiben von der bisherigen ABSE.-Logik unberührt.
+
+## Unverändert
+
+- A/B-Platzaufteilung
+- Trainings-/Spiel-Konflikte
 - Kabinenkonflikte
-- FUSSBALL.DE-Import
+- Dashboard
+- Wochenansicht
+- Monatsansicht
+- Trainingsserienübersicht

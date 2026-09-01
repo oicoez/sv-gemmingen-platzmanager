@@ -28,7 +28,7 @@ table{border-collapse:collapse;width:100%;font-size:14px}th,td{padding:10px;bord
 .errorBox{color:#b42318;background:#fff0f0;border:1px solid #efb0b0;padding:12px;border-radius:8px}
 @media(max-width:1000px){.cards{grid-template-columns:1fr 1fr}.formgrid{grid-template-columns:1fr 1fr}.days{grid-template-columns:repeat(7,220px)}.monthgrid{grid-template-columns:repeat(7,180px);overflow-x:auto}.dashEvent{grid-template-columns:1fr}}
 </style></head><body><div class="app">
-<header><div><h1>ClubPlanner 5.0</h1><div class="sub">SV Gemmingen · Sprint 4.3.1.1 · Wiederkehrende Trainings & Serien</div></div><div class="toolbar"><span id="health" class="badge">System wird geprüft …</span><button id="login">Bearbeiten</button></div></header>
+<header><div><h1>ClubPlanner 5.0</h1><div class="sub">SV Gemmingen · Sprint 4.3.2.1 · Wiederkehrende Trainings & Serien</div></div><div class="toolbar"><span id="health" class="badge">System wird geprüft …</span><button id="login">Bearbeiten</button></div></header>
 
 <div class="tabs">
 <button class="tab active" data-view="dashboard">Dashboard</button>
@@ -74,7 +74,7 @@ table{border-collapse:collapse;width:100%;font-size:14px}th,td{padding:10px;bord
 <div class="field"><label>Startdatum</label><input id="seriesStartDate" type="date"></div>
 <div class="field"><label>Enddatum</label><input id="seriesEndDate" type="date"></div>
 </div><div class="formgrid">
-<div class="field span2"><label>Mannschaft</label><select id="trTeam"></select></div><div class="field"><label>Datum</label><input id="trDate" type="date"></div><div class="field"><label>Ort</label><select id="trLocation"><option value="gemmingen">Gemmingen</option><option value="stebbach">Stebbach</option></select></div>
+<div class="field span2"><label>Mannschaft</label><select id="trTeam"></select></div><div class="field" id="singleDateField"><label>Datum</label><input id="trDate" type="date"></div><div class="field"><label>Ort</label><select id="trLocation"><option value="gemmingen">Gemmingen</option><option value="stebbach">Stebbach</option></select></div>
 <div class="field"><label>Von</label><input id="trStart" type="time" value="18:00"></div><div class="field"><label>Bis</label><input id="trEnd" type="time" value="19:30"></div><div class="field"><label>Platz</label><select id="trBase"><option>Hauptplatz</option><option>Trainingsplatz</option></select></div>
 <div class="field"><label>Belegung</label><select id="trMode"><option value="flexible">Flexibel – automatisch Gesamt/A/B</option><option value="half_a">Fest Hälfte A</option><option value="half_b">Fest Hälfte B</option><option value="exclusive">Gesamtplatz exklusiv</option></select></div><div class="field"><label>Kabine 1</label><select id="trCabin1"><option value="">keine</option></select></div>
 <div class="field"><label>Kabine 2</label><select id="trCabin2"><option value="">keine</option></select></div>
@@ -246,6 +246,7 @@ function fmtDateInput(v){return String(v||"").slice(0,10)}
 document.querySelectorAll('input[name="trainingMode"]').forEach(r=>r.addEventListener("change",()=>{
  trainingMode=document.querySelector('input[name="trainingMode"]:checked').value;
  $("seriesFields").classList.toggle("hidden",trainingMode!=="series");
+ $("singleDateField").classList.toggle("hidden",trainingMode==="series");
  $("saveTraining").textContent=trainingMode==="series"?"Trainingsserie speichern":"Training speichern";
 }));
 $("seriesRecurrence").addEventListener("change",()=>$("monthOrdinalField").classList.toggle("hidden",$("seriesRecurrence").value!=="monthly"));
@@ -288,13 +289,30 @@ async function loadTrainings(){
  }catch(e){$("trainingList").innerHTML=`<div class="errorBox">${esc(e.message)}</div>`}
 }
 $("saveTraining").onclick=async()=>{try{
- const body={teamId:$("trTeam").value,date:$("trDate").value,start:$("trStart").value,end:$("trEnd").value,locationId:$("trLocation").value,baseName:$("trBase").value,allocationMode:$("trMode").value,cabin1Id:$("trCabin1").value||null,cabin2Id:$("trCabin2").value||null,note:$("trNote").value};
- const url=editingTrainingId?"/api/v5/trainings/"+editingTrainingId:"/api/v5/trainings";
- const method=editingTrainingId?"PUT":"POST";
- await json(url,{method,headers:{"content-type":"application/json","x-edit-pin":pin},body:JSON.stringify(body)});
- $("trainingMsg").textContent=editingTrainingId?"Training aktualisiert.":"Training gespeichert.";
- clearTrainingForm();
- const d=new Date(body.date+"T12:00:00Z"),day=d.getUTCDay()||7;d.setUTCDate(d.getUTCDate()-day+1);weekStart=d.toISOString().slice(0,10);monthValue=body.date.slice(0,7);
+ const common={teamId:$("trTeam").value,start:$("trStart").value,end:$("trEnd").value,locationId:$("trLocation").value,baseName:$("trBase").value,allocationMode:$("trMode").value,cabin1Id:$("trCabin1").value||null,cabin2Id:$("trCabin2").value||null,note:$("trNote").value};
+
+ if(trainingMode==="series"&&!editingTrainingId){
+   const body={...common,
+     recurrenceType:$("seriesRecurrence").value,
+     weekday:Number($("seriesWeekday").value),
+     monthOrdinal:$("seriesMonthOrdinal").value,
+     startDate:$("seriesStartDate").value,
+     endDate:$("seriesEndDate").value||null
+   };
+   const result=await json("/api/v5/training-series",{method:"POST",headers:{"content-type":"application/json","x-edit-pin":pin},body:JSON.stringify(body)});
+   $("trainingMsg").textContent=`Trainingsserie gespeichert – ${result.created} Termine angelegt.`;
+   const first=(result.dates||[])[0]||body.startDate;
+   const d=new Date(first+"T12:00:00Z"),day=d.getUTCDay()||7;d.setUTCDate(d.getUTCDate()-day+1);weekStart=d.toISOString().slice(0,10);monthValue=first.slice(0,7);
+   await loadSeries();
+ }else{
+   const body={...common,date:$("trDate").value};
+   const url=editingTrainingId?"/api/v5/trainings/"+editingTrainingId:"/api/v5/trainings";
+   const method=editingTrainingId?"PUT":"POST";
+   await json(url,{method,headers:{"content-type":"application/json","x-edit-pin":pin},body:JSON.stringify(body)});
+   $("trainingMsg").textContent=editingTrainingId?"Training aktualisiert.":"Training gespeichert.";
+   clearTrainingForm();
+   const d=new Date(body.date+"T12:00:00Z"),day=d.getUTCDay()||7;d.setUTCDate(d.getUTCDate()-day+1);weekStart=d.toISOString().slice(0,10);monthValue=body.date.slice(0,7);
+ }
  await loadTrainings();await loadWeek();await loadMonth();await loadDashboard()
 }catch(e){$("trainingMsg").textContent=e.message}};
 
