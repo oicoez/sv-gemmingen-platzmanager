@@ -84,13 +84,18 @@ export async function startFussballSync(){
       );
 
       const removedExternal=await deleteConfirmedExternalEvents(
-        confirmedExternal.map(row=>row.externalId)
+        confirmedExternal.map(row=>({
+          externalId:row.externalId,
+          date:row.date,
+          home:row.home,
+          away:row.away
+        }))
       );
 
       state.total=rows.length;
       state.phase="database";
       state.progress=`${rows.length} lokale/abgesetzte Spiele · ${confirmedExternal.length} externe Spielorte ausgeschlossen`;
-      logger.info("Externe Spielorte ausgeschlossen",{
+      logger.info("Externe Spielorte ausgeschlossen / Alt-Datensätze bereinigt",{
         external:confirmedExternal.length,
         removedExisting:removedExternal,
         examples:confirmedExternal.slice(0,5).map(r=>({

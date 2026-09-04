@@ -77,13 +77,36 @@ export async function listImportedEvents({includePast=false}={}){
 }
 
 
-export async function deleteConfirmedExternalEvents(externalIds=[]){
-  const ids=externalIds.filter(Boolean);
-  if(!ids.length)return 0;
-  const res=await db(`delete from cp5_events
-    where source='fussballde'
-      and event_type='home_match'
-      and external_id = any($1::text[])
-    returning id`,[ids]);
-  return res.rowCount||0;
+export async function deleteConfirmedExternalEvents(externalRows=[]){
+  const rows=(externalRows||[]).filter(Boolean);
+  if(!rows.length)return 0;
+
+  let removed=0;
+  for(const row of rows){
+    const externalId=row.externalId||"";
+    const date=row.date||"";
+    const home=row.home||"";
+    const away=row.away||"";
+
+    // Primary match: stable FUSSBALL.DE external id.
+    // Migration fallback: old imports may have a different external_id.
+    // Then identify the stale local booking by date + stored opponent + team name.
+    const res=await db(`delete from cp5_events e
+      using cp5_teams t
+      where e.team_id=t.id
+        and e.source='fussballde'
+        and e.event_type='home_match'
+        and (
+          ($1<>'' and e.external_id=$1)
+          or (
+            $2<>'' and e.event_date=$2::date
+            and lower(trim(e.opponent))=lower(trim($4))
+            and lower(trim(t.name))=lower(trim($3))
+          )
+        )
+      returning e.id`,[externalId,date,home,away]);
+
+    removed += res.rowCount||0;
+  }
+  return removed;
 }
