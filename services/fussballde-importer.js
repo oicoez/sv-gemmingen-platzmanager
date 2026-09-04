@@ -435,16 +435,34 @@ function toCalendarEvent(detail) {
   };
 }
 
-async function removePreviouslyImportedGame(externalId, reason="extern") {
+async function removePreviouslyImportedGame(detail, reason="extern") {
+  // First choice: stable FUSSBALL.DE id. Older imports can however contain a
+  // different external_id for the same fixture. Therefore we also match the
+  // fixture identity (date + the external opponent) as a migration fallback.
+  const externalOpponent = isClubTeam(detail.home) ? detail.away : detail.home;
   const found = await db(
-    `select id from clubplanner_events where source='fussball.de' and external_id=$1`,
-    [externalId]
+    `select id, external_id, event_date, team, opponent
+       from clubplanner_events
+      where source='fussball.de'
+        and (
+          external_id=$1
+          or (
+            event_date=$2::date
+            and lower(trim(opponent))=lower(trim($3))
+            and (lower(team) like '%gemmingen%' or lower(team) like '%stebbach%')
+          )
+        )`,
+    [detail.externalId, detail.date, externalOpponent]
   );
-  if (!found.rowCount) return false;
+  if (!found.rowCount) {
+    console.log(`[FUSSBALL-4.3.4] Kein Alt-Datensatz gefunden: ${detail.externalId} | ${detail.date} | Gegner=${externalOpponent}`);
+    return false;
+  }
 
-  await db(`delete from clubplanner_events where source='fussball.de' and external_id=$1`, [externalId]);
-  syncState.updated++;
-  console.log(`[FUSSBALL-4.3.3] ${externalId} entfernt: ${reason}`);
+  const ids = found.rows.map(row => row.id);
+  await db(`delete from clubplanner_events where id = any($1::uuid[])`, [ids]);
+  syncState.updated += ids.length;
+  console.log(`[FUSSBALL-4.3.4] ${ids.length} Alt-Datensatz/-sätze entfernt: ${reason} | ${detail.date} | Gegner=${externalOpponent}`);
   return true;
 }
 
@@ -534,7 +552,7 @@ async function processFixture(overview, index, total) {
   try {
     const html = await fetchText(overview.url, DETAIL_TIMEOUT_MS);
     const detail = parseDetailHtml(html, overview);
-    console.log(`[FUSSBALL-4.3.3] ${overview.externalId} | ${detail.date || "kein Datum"} | ${detail.kickoff || "keine Zeit"} | ${detail.home || "kein Heim"} : ${detail.away || "kein Gast"} | Ort=${detail.location || "extern/kein lokaler Ort"} | Venue=${detail.venueText || "kein Venue-Text"}`);
+    console.log(`[FUSSBALL-4.3.4] ${overview.externalId} | ${detail.date || "kein Datum"} | ${detail.kickoff || "keine Zeit"} | ${detail.home || "kein Heim"} : ${detail.away || "kein Gast"} | Ort=${detail.location || "extern/kein lokaler Ort"} | Venue=${detail.venueText || "kein Venue-Text"}`);
 
     if (!detail.home || !detail.away || !detail.date) {
       throw new Error("Pflichtdaten auf Detailseite fehlen");
@@ -543,7 +561,7 @@ async function processFixture(overview, index, total) {
     const cancelled = ["abgesetzt","ausfall","abbruch"].includes(detail.status);
 
     if (!isClubTeam(detail.home)) {
-      await removePreviouslyImportedGame(detail.externalId, `kein Heimspiel: ${detail.home} : ${detail.away}`);
+      await removePreviouslyImportedGame(detail, `kein Heimspiel: ${detail.home} : ${detail.away}`);
       syncState.skipped++;
       return;
     }
@@ -554,7 +572,7 @@ async function processFixture(overview, index, total) {
     // record created by an older importer during the next sync.
     if (!cancelled && !["Gemmingen","Stebbach"].includes(detail.location)) {
       await removePreviouslyImportedGame(
-        detail.externalId,
+        detail,
         `externer Spielort: ${detail.venueText || "unbekannt"}`
       );
       syncState.skipped++;
