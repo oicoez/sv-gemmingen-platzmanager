@@ -34,15 +34,32 @@ function seasonBounds(){
   return {from:`${startYear}-07-01`,to:`${startYear+1}-06-30`};
 }
 
-export function buildSeasonMatchplanUrl(){
+export function buildSeasonMatchplanUrl(clubId=config.fussballdeClubId){
   const {from,to}=seasonBounds();
-  return `${BASE}/ajax.club.matchplan/-/datum-bis/${to}/datum-von/${from}/id/${config.fussballdeClubId}/match-type/-1/max/999/mode/PAGE/show-filter/false`;
+  return `${BASE}/ajax.club.matchplan/-/datum-bis/${to}/datum-von/${from}/id/${clubId}/match-type/-1/max/999/mode/PAGE/show-filter/false`;
 }
 
-export async function loadSeasonMatchplan(){
-  const url=buildSeasonMatchplanUrl();
+export async function loadSeasonMatchplan(clubId=config.fussballdeClubId){
+  const url=buildSeasonMatchplanUrl(clubId);
   const html=await fetchText(url);
-  return {url,html};
+  return {url,html,clubId};
+}
+
+export async function loadClubMatchplans(){
+  const clubIds=[
+    {id:config.fussballdeClubId,sourceClub:"gemmingen"},
+    {id:"00ES8GN9B800005MVV0AG08LVUPGND5I",sourceClub:"stebbach"}
+  ];
+  const out=[];
+  for(const c of clubIds){
+    try{
+      const x=await loadSeasonMatchplan(c.id);
+      out.push({...x,sourceClub:c.sourceClub});
+    }catch(e){
+      out.push({clubId:c.id,sourceClub:c.sourceClub,error:e.message,url:"",html:""});
+    }
+  }
+  return out;
 }
 
 export async function loadGameDetail(url){

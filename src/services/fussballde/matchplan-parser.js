@@ -83,5 +83,5 @@ export function parseSeasonMatchplan(html,sourceUrl=""){
 
 export function isClubHomeTeam(name){
   const n=clean(name).replace(/\s*\/\s*/g,"/");
-  return /^(?:SV Gemmingen(?:\b|\s)|SG Stebbach\/Gemmingen(?:\b|\s)|JSG Gemmingen\/Stebbach(?:\b|\s))/i.test(n);
+  return /^(?:SV Gemmingen(?:\b|\s)|SG Stebbach\/Gemmingen(?:\b|\s)|JSG Gemmingen\/Stebbach(?:\b|\s)|Gemmingen\/Stebbach(?:\b|\s))/i.test(n);
 }

@@ -1,7 +1,7 @@
 import crypto from "crypto";
 import { db } from "../../database/client.js";
 import { logger } from "../../utils/logger.js";
-import { loadSeasonMatchplan,loadGameDetail } from "./matchplan-client.js";
+import { loadClubMatchplans,loadGameDetail } from "./matchplan-client.js";
 import { parseSeasonMatchplan,isClubHomeTeam } from "./matchplan-parser.js";
 import { parseVenue } from "./detail-parser.js";
 import { getClub } from "../../repositories/team-repository.js";
@@ -56,8 +56,35 @@ export async function startFussballSync(){
   (async()=>{
     try{
       const club=await getClub();
-      const {url,html}=await loadSeasonMatchplan();
-      const all=parseSeasonMatchplan(html,url);
+      const plans=await loadClubMatchplans();
+      const parsed=[];
+      for(const plan of plans){
+        if(plan.error||!plan.html)continue;
+        for(const row of parseSeasonMatchplan(plan.html,plan.url)){
+          parsed.push({...row,sourceClub:plan.sourceClub});
+        }
+      }
+
+      function fixtureKey(row){
+        return row.gameNumber?`game:${row.gameNumber}`:`ext:${row.externalId}`;
+      }
+      function preferredSource(row){
+        const n=String(row.home||row.away||"").replace(/\s*\/\s*/g,"/");
+        if(/^(JSG Gemmingen\/Stebbach|SG Stebbach\/Gemmingen|Gemmingen\/Stebbach)/i.test(n))return "stebbach";
+        if(/^SV Gemmingen/i.test(n))return "gemmingen";
+        return "stebbach";
+      }
+
+      const merged=new Map();
+      for(const row of parsed){
+        const key=fixtureKey(row);
+        if(!key)continue;
+        const current=merged.get(key);
+        if(!current){merged.set(key,row);continue}
+        const wanted=preferredSource(row);
+        if(row.sourceClub===wanted && current.sourceClub!==wanted)merged.set(key,row);
+      }
+      const all=[...merged.values()];
       const candidateHome=all.filter(x=>isClubHomeTeam(x.home));
       const candidateAway=all.filter(x=>isClubHomeTeam(x.away));
 
@@ -89,7 +116,8 @@ export async function startFussballSync(){
       state.total=homeAll.length;
       state.progress=`${all.length} Spiele gefunden · ${homeAll.length} Spiele aktiver Mannschaften · ${upcomingCount} kommende Heimspiele · ${awayAll.length} Auswärtsspiele geprüft`;
       logger.info("FUSSBALL.DE Spielplan geladen",{
-        all:all.length,homeAll:homeAll.length,awayAll:awayAll.length,
+        sources:plans.map(x=>({sourceClub:x.sourceClub,ok:!x.error,error:x.error||""})),
+        parsed:parsed.length,merged:all.length,homeAll:homeAll.length,awayAll:awayAll.length,
         removedTrueAway,upcoming:upcomingCount,pastHidden:past
       });
 
