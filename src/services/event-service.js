@@ -1,4 +1,4 @@
-import { getImportedEvent,updateImportedEventManually } from "../repositories/event-repository.js";
+import { getImportedEvent,updateImportedEventManually,deleteAllImportedGames } from "../repositories/event-repository.js";
 import { findWholePitch } from "../repositories/resource-repository.js";
 
 function addMinutes(time,minutes){
@@ -39,4 +39,9 @@ export async function editGame(id,input){
   });
   if(!updated)throw new Error("Spiel konnte nicht aktualisiert werden");
   return updated.id;
+}
+
+
+export async function resetImportedGames(){
+  return deleteAllImportedGames();
 }

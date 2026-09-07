@@ -68,11 +68,11 @@ export async function startFussballSync(){
       function fixtureKey(row){
         return row.gameNumber?`game:${row.gameNumber}`:`ext:${row.externalId}`;
       }
-      function preferredSource(row){
-        const n=String(row.home||row.away||"").replace(/\s*\/\s*/g,"/");
-        if(/^(JSG Gemmingen\/Stebbach|SG Stebbach\/Gemmingen|Gemmingen\/Stebbach)/i.test(n))return "stebbach";
-        if(/^SV Gemmingen/i.test(n))return "gemmingen";
-        return "stebbach";
+      function preferredSource(){
+        // ClubPlanner is the SV-Gemmingen planner. If the same official game
+        // occurs in both club plans, the current SV-Gemmingen club matchplan
+        // is authoritative. Stebbach remains a fallback for games missing there.
+        return "gemmingen";
       }
 
       const merged=new Map();

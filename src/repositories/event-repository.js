@@ -189,3 +189,11 @@ export async function deleteConfirmedExternalEvents(externalRows=[]){
   }
   return removed;
 }
+
+
+export async function deleteAllImportedGames(){
+  const q=await db(`delete from cp5_events
+    where source='fussballde' and event_type='home_match'
+    returning id`);
+  return q.rowCount;
+}
