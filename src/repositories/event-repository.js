@@ -101,7 +101,13 @@ export async function deleteConfirmedExternalEvents(externalRows=[]){
           or (
             $2<>'' and e.event_date=$2::date
             and lower(trim(e.opponent))=lower(trim($4))
-            and lower(trim(t.name))=lower(trim($3))
+            and (
+              lower(trim(t.name))=lower(trim($3))
+              or (
+                lower(t.name) like '%gemmingen%'
+                and lower($3) like '%gemmingen%'
+              )
+            )
           )
         )
       returning e.id`,[externalId,date,home,away]);

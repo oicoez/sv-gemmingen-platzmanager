@@ -58,11 +58,27 @@ export async function startFussballSync(){
       const {url,html}=await loadSeasonMatchplan();
       const all=parseSeasonMatchplan(html,url);
       const homeAll=all.filter(x=>isClubHomeTeam(x.home));
+
+      // Echte Auswärtsspiele werden nicht importiert, müssen aber zur
+      // Bereinigung alter falscher Heimspiel-Datensätze geprüft werden.
+      const awayAll=all.filter(x=>isClubHomeTeam(x.away));
+      const removedTrueAway=await deleteConfirmedExternalEvents(
+        awayAll.map(row=>({
+          externalId:row.externalId,
+          date:row.date,
+          home:row.away,
+          away:row.home
+        }))
+      );
+
       const upcomingCount=homeAll.filter(isUpcomingFixture).length;
       const past=homeAll.length-upcomingCount;
       state.total=homeAll.length;
-      state.progress=`${all.length} Spiele gefunden · ${upcomingCount} kommende Spiele · ${past} vergangene in der Standardansicht ausgeblendet`;
-      logger.info("FUSSBALL.DE Spielplan geladen",{all:all.length,homeAll:homeAll.length,upcoming:upcomingCount,pastHidden:past});
+      state.progress=`${all.length} Spiele gefunden · ${upcomingCount} kommende Heimspiele · ${awayAll.length} Auswärtsspiele geprüft · ${past} vergangene in der Standardansicht ausgeblendet`;
+      logger.info("FUSSBALL.DE Spielplan geladen",{
+        all:all.length,homeAll:homeAll.length,awayAll:awayAll.length,
+        removedTrueAway,upcoming:upcomingCount,pastHidden:past
+      });
 
       state.phase="venues";
       state.progress="Spielorte/Adressen werden aus den offiziellen Spielseiten geprüft …";
@@ -122,7 +138,7 @@ export async function startFussballSync(){
       }
       state.phase="done";
       state.progress=`Fertig: ${state.inserted} neu · ${state.updated} aktualisiert · ${state.unchanged} unverändert · ${state.skipped} übersprungen · ${confirmedExternal.length} externe Spielorte ausgeblendet`;
-      await db(`update cp5_sync_runs set status='success',finished_at=now(),found_count=$2,inserted_count=$3,updated_count=$4,unchanged_count=$5,skipped_count=$6,error_count=$7,details=$8 where id=$1`,[runId,state.total,state.inserted,state.updated,state.unchanged,state.skipped,state.errors.length,JSON.stringify({errors:state.errors,externalExcluded:confirmedExternal.length,removedExternal})]);
+      await db(`update cp5_sync_runs set status='success',finished_at=now(),found_count=$2,inserted_count=$3,updated_count=$4,unchanged_count=$5,skipped_count=$6,error_count=$7,details=$8 where id=$1`,[runId,state.total,state.inserted,state.updated,state.unchanged,state.skipped,state.errors.length,JSON.stringify({errors:state.errors,externalExcluded:confirmedExternal.length,removedExternal,removedTrueAway})]);
     }catch(e){
       state.phase="error";state.progress=`Fehler: ${e.message}`;state.errors.push(e.message);
       await db(`update cp5_sync_runs set status='error',finished_at=now(),error_count=$2,details=$3 where id=$1`,[runId,state.errors.length,JSON.stringify({errors:state.errors})]).catch(()=>{});
