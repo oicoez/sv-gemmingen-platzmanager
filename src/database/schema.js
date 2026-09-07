@@ -174,7 +174,7 @@ export async function initSchema() {
   for(const name of OFFICIAL_TEAM_NAMES){
     await db(`insert into cp5_teams(id,club_id,name,external_name)
       values($1,$2,$3,$3)
-      on conflict(club_id,name) do update set active=true`,
+      on conflict(club_id,name) do nothing`,
       [crypto.randomUUID(),clubId,name]);
   }
 
@@ -202,6 +202,6 @@ export async function initSchema() {
   )`);
   await db(`alter table cp5_events add column if not exists series_id text`);
 
-  logger.info("ClubPlanner 5.0 Sprint 4.3.1 Datenbankschema bereit", { clubId });
+  logger.info("ClubPlanner 5.0 Sprint 4.4.0 Datenbankschema bereit", { clubId });
   return { clubId };
 }

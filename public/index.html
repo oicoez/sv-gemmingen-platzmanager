@@ -27,8 +27,9 @@ table{border-collapse:collapse;width:100%;font-size:14px}th,td{padding:10px;bord
 .resourceGrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.resourceLocation{border:1px solid #d8dee6;border-radius:9px;padding:14px;background:#fff}.resourceLocation h3{margin:0 0 4px}.resourcePitch{padding:9px 0;border-top:1px solid #edf0f3}.resourceTags{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px}.resourceTag{font-size:12px;background:#eef3f7;border:1px solid #d4dde5;padding:4px 7px;border-radius:999px}.resourceCabins{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.resourceCabin{padding:7px 9px;background:#f7f4ec;border:1px solid #dfd3b8;border-radius:7px;font-size:13px}
 .errorBox{color:#b42318;background:#fff0f0;border:1px solid #efb0b0;padding:12px;border-radius:8px}
 @media(max-width:1000px){.cards{grid-template-columns:1fr 1fr}.formgrid{grid-template-columns:1fr 1fr}.days{grid-template-columns:repeat(7,220px)}.monthgrid{grid-template-columns:repeat(7,180px);overflow-x:auto}.dashEvent{grid-template-columns:1fr}}
+.hidden{display:none!important}
 </style></head><body><div class="app">
-<header><div><h1>ClubPlanner 5.0</h1><div class="sub">SV Gemmingen · Sprint 4.3.8 · Wiederkehrende Trainings & Serien</div></div><div class="toolbar"><span id="health" class="badge">System wird geprüft …</span><button id="login">Bearbeiten</button></div></header>
+<header><div><h1>ClubPlanner 5.0</h1><div class="sub">SV Gemmingen · Sprint 4.4.0 · Mannschaften & Trainingsmaske</div></div><div class="toolbar"><span id="health" class="badge">System wird geprüft …</span><button id="login">Bearbeiten</button></div></header>
 
 <div class="tabs">
 <button class="tab active" data-view="dashboard">Dashboard</button>
@@ -36,6 +37,7 @@ table{border-collapse:collapse;width:100%;font-size:14px}th,td{padding:10px;bord
 <button class="tab" data-view="month">Monat</button>
 <button class="tab" data-view="training">Training eintragen</button>
 <button class="tab" data-view="resources">Plätze & Kabinen</button>
+<button class="tab" data-view="teams">Mannschaften</button>
 <button class="tab" data-view="games">Spiele</button>
 </div>
 
@@ -73,26 +75,40 @@ table{border-collapse:collapse;width:100%;font-size:14px}th,td{padding:10px;bord
 <div class="field hidden" id="monthOrdinalField"><label>Monatliche Regel</label><select id="seriesMonthOrdinal"><option value="1">1. Wochentag im Monat</option><option value="2">2. Wochentag im Monat</option><option value="3">3. Wochentag im Monat</option><option value="4">4. Wochentag im Monat</option><option value="last">letzter Wochentag im Monat</option></select></div>
 <div class="field"><label>Startdatum</label><input id="seriesStartDate" type="date"></div>
 <div class="field"><label>Enddatum</label><input id="seriesEndDate" type="date"></div>
-</div><div class="formgrid">
-<div class="field span2"><label>Mannschaft</label><select id="trTeam"></select></div><div class="field" id="singleDateField"><label>Datum</label><input id="trDate" type="date"></div><div class="field"><label>Ort</label><select id="trLocation"><option value="gemmingen">Gemmingen</option><option value="stebbach">Stebbach</option></select></div>
-<div class="field"><label>Von</label><input id="trStart" type="time" value="18:00"></div><div class="field"><label>Bis</label><input id="trEnd" type="time" value="19:30"></div><div class="field"><label>Platz</label><select id="trBase"><option>Hauptplatz</option><option>Trainingsplatz</option></select></div>
-<div class="field"><label>Belegung</label><select id="trMode"><option value="flexible">Flexibel – automatisch Gesamt/A/B</option><option value="half_a">Fest Hälfte A</option><option value="half_b">Fest Hälfte B</option><option value="exclusive">Gesamtplatz exklusiv</option></select></div><div class="field"><label>Kabine 1</label><select id="trCabin1"><option value="">keine</option></select></div>
-<div class="field"><label>Kabine 2</label><select id="trCabin2"><option value="">keine</option></select></div>
+</div>
+<div class="formgrid">
+<div class="field span2"><label>Mannschaft</label><select id="trTeam"></select></div>
+<div class="field" id="singleDateField"><label>Datum</label><input id="trDate" type="date"></div>
+<div class="field"><label>Ort</label><select id="trLocation"><option value="gemmingen">Gemmingen</option><option value="stebbach">Stebbach</option></select></div>
+<div class="field"><label>Platz</label><select id="trBase"><option>Hauptplatz</option><option>Trainingsplatz</option></select></div>
+<div class="field"><label>Belegung</label><select id="trMode"><option value="flexible">Flexibel – automatisch Gesamt/A/B</option><option value="half_a">Fest Hälfte A</option><option value="half_b">Fest Hälfte B</option><option value="exclusive">Gesamtplatz exklusiv</option></select></div>
+<div class="field"><label>Von</label><input id="trStart" type="time" value="18:00"></div>
+<div class="field"><label>Bis</label><input id="trEnd" type="time" value="19:30"></div>
+<div class="field"><label>Heimkabine</label><select id="trCabin1"><option value="">Nein</option><option value="yes">Ja</option></select></div>
+<div class="field"><label>Gastkabine</label><select id="trCabin2"><option value="">Nein</option><option value="yes">Ja</option></select></div>
 <div class="field span2"><label>Bemerkung</label><input id="trNote" placeholder="optional"></div>
-</div><div class="toolbar" style="margin-top:15px"><button id="saveTraining" class="primary" disabled>Training speichern</button><button id="cancelEdit" class="hidden">Bearbeiten abbrechen</button><span id="trainingMsg" class="muted"></span></div></div>
+</div>
+<div class="toolbar" style="margin-top:15px"><button id="saveTraining" class="primary" disabled>Training speichern</button><button id="cancelEdit" class="hidden">Bearbeiten abbrechen</button><span id="trainingMsg" class="muted"></span></div></div>
 <div class="panel"><h2>Trainings der angezeigten Woche</h2><div class="help">Wenn ein Training mit einem Spiel oder einer anderen Belegung kollidiert, wird der Konflikt direkt in dieser Tabelle angezeigt.</div><div id="trainingList"></div></div>
+<div class="panel"><h2>Trainingsserien</h2><div class="help">Jeder erzeugte Termin wird automatisch in Woche, Monat und Dashboard eingetragen und durch die vorhandene Platz-, Spiel- und Kabinen-Konfliktprüfung geprüft.</div><div id="seriesList"></div></div>
 </section>
-
 
 <section id="view-resources" class="hidden">
 <div class="panel">
   <h2>Plätze & Kabinen</h2>
-  <div class="help">Jeder Standort besitzt Hauptplatz und Trainingsplatz mit Gesamt / Hälfte A / Hälfte B sowie zwei Kabinen. Bei Spielen reserviert ClubPlanner beide Kabinen intern automatisch. Bei Trainings kannst du Kabinen optional auswählen.</div>
+  <div class="help">Jeder Standort besitzt Hauptplatz und Trainingsplatz mit Gesamt / Hälfte A / Hälfte B sowie Heimkabine und Gastkabine. Bei Heimspielen reserviert ClubPlanner beide Kabinen automatisch. Bei Trainings wählst du je Kabine Ja oder Nein.</div>
   <div id="resourceOverview" class="resourceGrid"></div>
 </div>
 </section>
 
-<div class="panel"><h2>Trainingsserien</h2><div class="help">Jeder erzeugte Termin wird automatisch in Woche, Monat und Dashboard eingetragen und durch die vorhandene Platz-, Spiel- und Kabinen-Konfliktprüfung geprüft.</div><div id="seriesList"></div></div>
+<section id="view-teams" class="hidden">
+<div class="panel"><h2>Mannschaften verwalten</h2>
+<div class="help">Trage den Mannschaftsnamen exakt so ein, wie er in FUSSBALL.DE erscheint, z. B. <b>B-Junioren - JSG Gemmingen/Stebbach</b>. Nur aktive Mannschaften werden synchronisiert.</div>
+<div class="formgrid"><div class="field span2"><label>Mannschaftsname exakt wie FUSSBALL.DE</label><input id="newTeamName" placeholder="z. B. E-Junioren - SV Gemmingen"></div>
+<div class="field"><label>&nbsp;</label><button id="addTeam" class="primary" disabled>Mannschaft hinzufügen</button></div></div>
+<div id="teamMsg" class="muted" style="margin-top:10px"></div><div id="teamList" style="margin-top:15px"></div></div>
+</section>
+
 <section id="view-games" class="hidden">
 <div class="cards"><div class="card"><div class="muted">Lokale Spiele</div><div id="count" class="big">0</div></div><div class="card"><div class="muted">Mit Anstoßzeit</div><div id="times" class="big">0</div></div><div class="card"><div class="muted">Mit Spielort</div><div id="venues" class="big">0</div></div><div class="card"><div class="muted">Abgesetzt</div><div id="cancelled" class="big">0</div></div></div>
 <div class="panel"><div class="toolbar"><button id="sync" class="primary" disabled>FUSSBALL.DE synchronisieren</button><button id="reload">Aktualisieren</button><button id="past">Vergangene Spiele anzeigen</button></div><div id="syncState" class="progress">Noch nicht synchronisiert.</div></div>
@@ -110,12 +126,13 @@ const dayNames=["Mo","Di","Mi","Do","Fr","Sa","So"];
 
 document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{
  document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("active",x===b));
- ["dashboard","week","month","training","resources","games"].forEach(v=>$(`view-${v}`).classList.toggle("hidden",b.dataset.view!==v));
+ ["dashboard","week","month","training","resources","teams","games"].forEach(v=>$(`view-${v}`).classList.toggle("hidden",b.dataset.view!==v));
  if(b.dataset.view==="dashboard")loadDashboard();
  if(b.dataset.view==="week")loadWeek();
  if(b.dataset.view==="month")loadMonth();
  if(b.dataset.view==="training"){syncTrainingModeUI();loadTrainings();loadCabins();loadSeries();}
  if(b.dataset.view==="resources")loadResources();
+ if(b.dataset.view==="teams")loadTeamManager();
 });
 
 async function bootstrapToday(){
@@ -123,8 +140,26 @@ async function bootstrapToday(){
  serverToday=t.today;weekStart=t.weekStart;monthValue=t.month;$("trDate").value=t.today;$("seriesStartDate").value=t.today;$("seriesEndDate").value=addDays(t.today,180);
 }
 async function check(){try{await json("/health");$("health").textContent="ClubPlanner 5.0 online";$("health").classList.add("good")}catch{$("health").textContent="Systemfehler";$("health").classList.add("bad")}}
-async function loadTeams(){const j=await json("/api/v5/teams");$("trTeam").innerHTML=(j.items||[]).map(x=>`<option value="${esc(x.id)}">${esc(x.name)}</option>`).join("")}
-$("login").onclick=async()=>{const p=prompt("Bearbeitungs-PIN:");if(!p)return;try{await json("/api/v5/auth/check",{method:"POST",headers:{"content-type":"application/json","x-edit-pin":p}});pin=p;$("sync").disabled=false;$("saveTraining").disabled=false;$("login").textContent="Bearbeitungsmodus aktiv";loadTrainings()}catch(e){alert(e.message)}};
+async function loadTeams(){
+ const selected=$("trTeam").value;
+ const j=await json("/api/v5/teams");
+ $("trTeam").innerHTML=(j.items||[]).map(x=>`<option value="${esc(x.id)}">${esc(x.name)}</option>`).join("");
+ if((j.items||[]).some(x=>x.id===selected))$("trTeam").value=selected;
+ return j.items||[];
+}
+async function loadTeamManager(){
+ try{
+  const items=await loadTeams();
+  $("teamList").innerHTML=items.length?`<table><thead><tr><th>Mannschaft</th><th>FUSSBALL.DE</th><th></th></tr></thead><tbody>${items.map(x=>`<tr><td>${esc(x.name)}</td><td>exakter Namensabgleich</td><td><button class="delTeam" data-id="${x.id}" ${pin?"":"disabled"}>Entfernen</button></td></tr>`).join("")}</tbody></table>`:`<div class="empty">Keine Mannschaften angelegt.</div>`;
+  document.querySelectorAll(".delTeam").forEach(b=>b.onclick=async()=>{if(!confirm("Mannschaft entfernen? Künftige FUSSBALL.DE-Spiele werden aus dem lokalen Kalender entfernt."))return;await json("/api/v5/teams/"+b.dataset.id,{method:"DELETE",headers:{"x-edit-pin":pin}});$("teamMsg").textContent="Mannschaft entfernt.";await loadTeamManager();});
+ }catch(e){$("teamList").innerHTML=`<div class="errorBox">${esc(e.message)}</div>`}
+}
+$("addTeam").onclick=async()=>{try{
+ const name=$("newTeamName").value.trim();if(!name)throw new Error("Bitte Mannschaftsname eingeben");
+ await json("/api/v5/teams",{method:"POST",headers:{"content-type":"application/json","x-edit-pin":pin},body:JSON.stringify({name})});
+ $("newTeamName").value="";$("teamMsg").textContent="Mannschaft hinzugefügt. Beim nächsten FUSSBALL.DE-Sync wird exakt dieser Name berücksichtigt.";await loadTeamManager();
+}catch(e){$("teamMsg").textContent=e.message}};
+$("login").onclick=async()=>{const p=prompt("Bearbeitungs-PIN:");if(!p)return;try{await json("/api/v5/auth/check",{method:"POST",headers:{"content-type":"application/json","x-edit-pin":p}});pin=p;$("sync").disabled=false;$("saveTraining").disabled=false;$("addTeam").disabled=false;$("login").textContent="Bearbeitungsmodus aktiv";loadTrainings()}catch(e){alert(e.message)}};
 
 async function loadDashboard(){
  try{
@@ -195,19 +230,14 @@ async function loadResources(){
  }catch(e){$("resourceOverview").innerHTML=`<div class="errorBox">${esc(e.message)}</div>`}
 }
 async function loadCabins(){
- try{
-  const j=await json("/api/v5/resources");
-  resourceCache=j.items||[];
-  const location=$("trLocation").value;
-  const cabins=resourceCache.filter(x=>x.location_id===location&&x.resource_type==="cabin");
-  const opts=`<option value="">keine</option>`+cabins.map(x=>`<option value="${x.id}">${esc(x.ui_name||x.display_name)}</option>`).join("");
-  const old1=$("trCabin1").value,old2=$("trCabin2").value;
-  $("trCabin1").innerHTML=opts;$("trCabin2").innerHTML=opts;
-  if(cabins.some(x=>x.id===old1))$("trCabin1").value=old1;
-  if(cabins.some(x=>x.id===old2))$("trCabin2").value=old2;
- }catch(e){console.error(e)}
+ try{const j=await json("/api/v5/resources");resourceCache=j.items||[];}catch(e){console.error(e)}
 }
-$("trLocation").addEventListener("change",()=>{ $("trCabin1").value="";$("trCabin2").value="";loadCabins() });
+function cabinResourceId(kind){
+ const location=$("trLocation").value;
+ const base=kind==="home"?"Heimkabine":"Gastkabine";
+ return resourceCache.find(x=>x.location_id===location&&x.resource_type==="cabin"&&x.base_name===base)?.id||null;
+}
+$("trLocation").addEventListener("change",()=>{$("trCabin1").value="";$("trCabin2").value="";});
 
 function clearTrainingForm(){
  editingTrainingId="";
@@ -233,8 +263,8 @@ async function editTrainingForm(id){
   $("trMode").value=x.allocation_mode||"flexible";
   $("trNote").value=x.note||"";
   await loadCabins();
-  $("trCabin1").value=x.home_cabin_id||"";
-  $("trCabin2").value=x.guest_cabin_id||"";
+  $("trCabin1").value=x.home_cabin_id?"yes":"";
+  $("trCabin2").value=x.guest_cabin_id?"yes":"";
   $("saveTraining").textContent="Änderungen speichern";
   $("cancelEdit").classList.remove("hidden");
   window.scrollTo({top:0,behavior:"smooth"});
@@ -294,7 +324,7 @@ async function loadTrainings(){
 $("saveTraining").onclick=async()=>{try{
  const selectedMode=document.querySelector('input[name="trainingMode"]:checked')?.value||"single";
  trainingMode=selectedMode;
- const common={teamId:$("trTeam").value,start:$("trStart").value,end:$("trEnd").value,locationId:$("trLocation").value,baseName:$("trBase").value,allocationMode:$("trMode").value,cabin1Id:$("trCabin1").value||null,cabin2Id:$("trCabin2").value||null,note:$("trNote").value};
+ const common={teamId:$("trTeam").value,start:$("trStart").value,end:$("trEnd").value,locationId:$("trLocation").value,baseName:$("trBase").value,allocationMode:$("trMode").value,cabin1Id:$("trCabin1").value==="yes"?cabinResourceId("home"):null,cabin2Id:$("trCabin2").value==="yes"?cabinResourceId("guest"):null,note:$("trNote").value};
 
  if(selectedMode==="series"&&!editingTrainingId){
    const body={...common,

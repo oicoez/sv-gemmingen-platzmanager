@@ -4,7 +4,8 @@ import { logger } from "../../utils/logger.js";
 import { loadSeasonMatchplan,loadGameDetail } from "./matchplan-client.js";
 import { parseSeasonMatchplan,isClubHomeTeam } from "./matchplan-parser.js";
 import { parseVenue } from "./detail-parser.js";
-import { ensureImportedTeam,getClub } from "../../repositories/team-repository.js";
+import { getClub } from "../../repositories/team-repository.js";
+import { findActiveTeamForFixture } from "../team-service.js";
 import { findWholePitch } from "../../repositories/resource-repository.js";
 import { upsertImportedEvent, deleteConfirmedExternalEvents } from "../../repositories/event-repository.js";
 
@@ -57,11 +58,23 @@ export async function startFussballSync(){
       const club=await getClub();
       const {url,html}=await loadSeasonMatchplan();
       const all=parseSeasonMatchplan(html,url);
-      const homeAll=all.filter(x=>isClubHomeTeam(x.home));
+      const candidateHome=all.filter(x=>isClubHomeTeam(x.home));
+      const candidateAway=all.filter(x=>isClubHomeTeam(x.away));
+
+      const homeAll=[];
+      for(const row of candidateHome){
+        const team=await findActiveTeamForFixture(club.id,{category:row.category,externalName:row.home});
+        if(team)homeAll.push({...row,matchedTeamId:team.id});
+      }
+
+      const awayAll=[];
+      for(const row of candidateAway){
+        const team=await findActiveTeamForFixture(club.id,{category:row.category,externalName:row.away});
+        if(team)awayAll.push({...row,matchedTeamId:team.id});
+      }
 
       // Echte Auswärtsspiele werden nicht importiert, müssen aber zur
       // Bereinigung alter falscher Heimspiel-Datensätze geprüft werden.
-      const awayAll=all.filter(x=>isClubHomeTeam(x.away));
       const removedTrueAway=await deleteConfirmedExternalEvents(
         awayAll.map(row=>({
           externalId:row.externalId,
@@ -74,7 +87,7 @@ export async function startFussballSync(){
       const upcomingCount=homeAll.filter(isUpcomingFixture).length;
       const past=homeAll.length-upcomingCount;
       state.total=homeAll.length;
-      state.progress=`${all.length} Spiele gefunden · ${upcomingCount} kommende Heimspiele · ${awayAll.length} Auswärtsspiele geprüft · ${past} vergangene in der Standardansicht ausgeblendet`;
+      state.progress=`${all.length} Spiele gefunden · ${homeAll.length} Spiele aktiver Mannschaften · ${upcomingCount} kommende Heimspiele · ${awayAll.length} Auswärtsspiele geprüft`;
       logger.info("FUSSBALL.DE Spielplan geladen",{
         all:all.length,homeAll:homeAll.length,awayAll:awayAll.length,
         removedTrueAway,upcoming:upcomingCount,pastHidden:past
@@ -123,10 +136,11 @@ export async function startFussballSync(){
         state.processed++;
         if(!row.date||!row.kickoff||!row.home||!row.away){state.skipped++;state.errors.push(`${row.externalId}: Pflichtdaten fehlen`);continue}
         try{
-          const team=await ensureImportedTeam(club.id,{category:row.category,externalName:row.home});
+          const teamId=row.matchedTeamId;
+          if(!teamId){state.skipped++;continue}
           const resource=await findWholePitch(row.venue.locationId,row.venue.pitchBase||"Hauptplatz");
           const saved=await upsertImportedEvent({
-            clubId:club.id,teamId:team.id,date:row.date,kickoff:row.kickoff,endTime:addMinutes(row.kickoff,120),
+            clubId:club.id,teamId,date:row.date,kickoff:row.kickoff,endTime:addMinutes(row.kickoff,120),
             title:`${row.home} – ${row.away}`,opponent:row.away,competition:row.competition,status:row.status,
             locationId:row.venue.locationId,venueName:row.venue.venueName||"",resourceId:resource?.id||null,address:row.venue.address||"",
             externalId:row.externalId,externalUrl:row.url,gameNumber:row.gameNumber||""

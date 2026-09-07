@@ -63,7 +63,7 @@ export async function listTrainings({from,to}){
     order by e.event_date,e.start_time,t.name`,[from,to]);
   return q.rows.map(x=>({
     ...x,
-    cabin1_label:x.cabin1_base==="Heimkabine"?"Kabine 1":x.cabin1_name||"",
-    cabin2_label:x.cabin2_base==="Gastkabine"?"Kabine 2":x.cabin2_name||""
+    cabin1_label:x.cabin1_base==="Heimkabine"?"Heimkabine":x.cabin1_name||"",
+    cabin2_label:x.cabin2_base==="Gastkabine"?"Gastkabine":x.cabin2_name||""
   }));
 }
