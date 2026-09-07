@@ -16,7 +16,6 @@ export async function addTrainingSeries(input){
     allocationMode="flexible",cabin1Id=null,cabin2Id=null,note=""}=input;
   if(!teamId||!startDate||!start||!end)throw new Error("Pflichtfelder fehlen");
   if(endDate&&endDate<startDate)throw new Error("Enddatum liegt vor dem Startdatum");
-  if(endDate&&endDate<startDate)throw new Error("Enddatum liegt vor dem Startdatum");
   if(!["weekly","biweekly","monthly"].includes(recurrenceType))throw new Error("Ungültiger Wiederholungsrhythmus");
   if(recurrenceType==="monthly"&&!["1","2","3","4","last"].includes(String(monthOrdinal)))throw new Error("Ungültige Monatsregel");
   if(!["gemmingen","stebbach"].includes(locationId))throw new Error("Ungültiger Ort");
@@ -33,6 +32,7 @@ export async function addTrainingSeries(input){
   const seriesId=await createSeries({clubId:club.id,teamId,recurrenceType,weekday:Number(weekday),monthOrdinal,
     startDate,endDate,start,end,locationId,baseName,allocationMode,cabin1Id,cabin2Id,note});
   const dates=generateOccurrences({recurrenceType,weekday:Number(weekday),monthOrdinal,startDate,endDate});
+  if(!dates.length)throw new Error("Für diese Trainingsserie wurden keine Termine berechnet");
   for(const date of dates){
     await createTraining({clubId:club.id,teamId,date,start,end,locationId,resourceId:resource.id,allocationMode,
       requestedSection:section,cabin1Id,cabin2Id,address,note,seriesId});

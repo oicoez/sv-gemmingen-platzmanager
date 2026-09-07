@@ -28,7 +28,7 @@ table{border-collapse:collapse;width:100%;font-size:14px}th,td{padding:10px;bord
 .errorBox{color:#b42318;background:#fff0f0;border:1px solid #efb0b0;padding:12px;border-radius:8px}
 @media(max-width:1000px){.cards{grid-template-columns:1fr 1fr}.formgrid{grid-template-columns:1fr 1fr}.days{grid-template-columns:repeat(7,220px)}.monthgrid{grid-template-columns:repeat(7,180px);overflow-x:auto}.dashEvent{grid-template-columns:1fr}}
 </style></head><body><div class="app">
-<header><div><h1>ClubPlanner 5.0</h1><div class="sub">SV Gemmingen · Sprint 4.3.7 · Wiederkehrende Trainings & Serien</div></div><div class="toolbar"><span id="health" class="badge">System wird geprüft …</span><button id="login">Bearbeiten</button></div></header>
+<header><div><h1>ClubPlanner 5.0</h1><div class="sub">SV Gemmingen · Sprint 4.3.8 · Wiederkehrende Trainings & Serien</div></div><div class="toolbar"><span id="health" class="badge">System wird geprüft …</span><button id="login">Bearbeiten</button></div></header>
 
 <div class="tabs">
 <button class="tab active" data-view="dashboard">Dashboard</button>
@@ -114,7 +114,7 @@ document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{
  if(b.dataset.view==="dashboard")loadDashboard();
  if(b.dataset.view==="week")loadWeek();
  if(b.dataset.view==="month")loadMonth();
- if(b.dataset.view==="training"){loadTrainings();loadCabins();loadSeries();}
+ if(b.dataset.view==="training"){syncTrainingModeUI();loadTrainings();loadCabins();loadSeries();}
  if(b.dataset.view==="resources")loadResources();
 });
 
@@ -243,12 +243,15 @@ async function editTrainingForm(id){
 function fmtDateInput(v){return String(v||"").slice(0,10)}
 
 
-document.querySelectorAll('input[name="trainingMode"]').forEach(r=>r.addEventListener("change",()=>{
- trainingMode=document.querySelector('input[name="trainingMode"]:checked').value;
+function syncTrainingModeUI(){
+ const checked=document.querySelector('input[name="trainingMode"]:checked');
+ trainingMode=checked?checked.value:"single";
  $("seriesFields").classList.toggle("hidden",trainingMode!=="series");
  $("singleDateField").classList.toggle("hidden",trainingMode==="series");
+ $("singleDateField").style.display=trainingMode==="series"?"none":"";
  $("saveTraining").textContent=trainingMode==="series"?"Trainingsserie speichern":"Training speichern";
-}));
+}
+document.querySelectorAll('input[name="trainingMode"]').forEach(r=>r.addEventListener("change",syncTrainingModeUI));
 $("seriesRecurrence").addEventListener("change",()=>$("monthOrdinalField").classList.toggle("hidden",$("seriesRecurrence").value!=="monthly"));
 async function loadSeries(){
  try{
@@ -289,9 +292,11 @@ async function loadTrainings(){
  }catch(e){$("trainingList").innerHTML=`<div class="errorBox">${esc(e.message)}</div>`}
 }
 $("saveTraining").onclick=async()=>{try{
+ const selectedMode=document.querySelector('input[name="trainingMode"]:checked')?.value||"single";
+ trainingMode=selectedMode;
  const common={teamId:$("trTeam").value,start:$("trStart").value,end:$("trEnd").value,locationId:$("trLocation").value,baseName:$("trBase").value,allocationMode:$("trMode").value,cabin1Id:$("trCabin1").value||null,cabin2Id:$("trCabin2").value||null,note:$("trNote").value};
 
- if(trainingMode==="series"&&!editingTrainingId){
+ if(selectedMode==="series"&&!editingTrainingId){
    const body={...common,
      recurrenceType:$("seriesRecurrence").value,
      weekday:Number($("seriesWeekday").value),
@@ -299,6 +304,8 @@ $("saveTraining").onclick=async()=>{try{
      startDate:$("seriesStartDate").value,
      endDate:$("seriesEndDate").value||null
    };
+   if(!body.startDate)throw new Error("Startdatum fehlt");
+   if(body.endDate&&body.endDate<body.startDate)throw new Error("Enddatum liegt vor dem Startdatum");
    const result=await json("/api/v5/training-series",{method:"POST",headers:{"content-type":"application/json","x-edit-pin":pin},body:JSON.stringify(body)});
    $("trainingMsg").textContent=`Trainingsserie gespeichert – ${result.created} Termine angelegt.`;
    const first=(result.dates||[])[0]||body.startDate;
@@ -321,5 +328,5 @@ $("reload").onclick=loadGames;$("past").onclick=async()=>{includePast=!includePa
 $("sync").onclick=async()=>{if(!confirm("FUSSBALL.DE jetzt synchronisieren?"))return;try{await json("/api/v5/sync/fussballde",{method:"POST",headers:{"x-edit-pin":pin}});$("sync").disabled=true;poll()}catch(e){alert(e.message)}};
 async function poll(){try{const s=await json("/api/v5/sync/status");$("syncState").textContent=s.running?`${s.progress} (${s.processed}/${s.total||"?"})`:s.progress;if(s.running){clearTimeout(timer);timer=setTimeout(poll,1000)}else{$("sync").disabled=!pin;await loadGames();await loadWeek();await loadMonth();await loadDashboard()}}catch(e){$("syncState").textContent=e.message}}
 
-(async()=>{try{await bootstrapToday();await Promise.all([check(),loadTeams(),loadGames(),loadResources()]);await loadCabins();await loadSeries();await loadDashboard();await loadWeek();await loadMonth();poll()}catch(e){console.error(e);alert("Startfehler: "+e.message)}})();
+(async()=>{try{await bootstrapToday();syncTrainingModeUI();await Promise.all([check(),loadTeams(),loadGames(),loadResources()]);await loadCabins();await loadSeries();await loadDashboard();await loadWeek();await loadMonth();poll()}catch(e){console.error(e);alert("Startfehler: "+e.message)}})();
 </script></body></html>
