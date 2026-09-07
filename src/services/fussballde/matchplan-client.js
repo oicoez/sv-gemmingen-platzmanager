@@ -9,12 +9,15 @@ async function fetchText(url,{timeoutMs=18000}={}){
     const response=await fetch(url,{
       signal:controller.signal,
       redirect:"follow",
+      cache:"no-store",
       headers:{
         "user-agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131 Safari/537.36",
         "accept-language":"de-DE,de;q=0.9",
         "x-requested-with":"XMLHttpRequest",
         "referer":`${BASE}/verein/sv-gemmingen-baden/-/id/${config.fussballdeClubId}`,
-        "accept":"text/html,application/xhtml+xml,*/*"
+        "accept":"text/html,application/xhtml+xml,*/*",
+        "cache-control":"no-cache, no-store, must-revalidate",
+        "pragma":"no-cache"
       }
     });
     if(!response.ok)throw new Error(`FUSSBALL.DE HTTP ${response.status}`);

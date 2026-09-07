@@ -1,15 +1,29 @@
-# ClubPlanner 5.0 – Sprint 4.4.1
+# ClubPlanner 5.0 – Sprint 4.4.2
 
-Basis: Sprint 4.4.0.
+## Spiele direkt bearbeiten
+- Spiele im Monatskalender, Wochenplan und in der Spieleliste sind anklickbar.
+- Änderbar: Datum, Anstoßzeit, Ort und Platz.
+- Die manuelle Änderung gilt bis zum nächsten FUSSBALL.DE-Sync.
+- Beim nächsten Sync wird wieder der offizielle FUSSBALL.DE-Stand übernommen.
 
-## Direktbearbeitung aus Kalender und Wochenplan
-- Trainings im Monatskalender sind anklickbar.
-- Trainings im Wochenplan sind anklickbar.
-- Klick öffnet direkt „Training eintragen“ im Bearbeitungsmodus.
-- Änderbar: Datum, Ort, Von/Bis, Platz, Belegung, Heimkabine, Gastkabine, Bemerkung.
-- Bei Trainingsserien wird ausschließlich der angeklickte Termin geändert.
-- Die Trainingsserie selbst und alle anderen Termine bleiben unverändert.
-- Ein Hinweis in der Maske macht die Einzeltermin-Bearbeitung deutlich.
-- Spiele bleiben nicht anklickbar/bearbeitbar.
+## FUSSBALL.DE Vollabgleich
+Bei jeder Synchronisierung wird der komplette Saisonspielplan der aktiven Mannschaften frisch geladen.
+Der Abruf erfolgt ausdrücklich ohne Cache.
 
-Mannschaftsverwaltung, FUSSBALL.DE-Sync, Auswärtsspielbereinigung und Serienfunktion aus Sprint 4.4.0 bleiben erhalten.
+Bereits importierte Spiele werden nicht nur anhand der externen Spiel-ID erkannt,
+sondern zusätzlich über:
+- Spielnummer
+- Mannschaft
+- Gegner
+
+Dadurch können auch Verlegungen erkannt werden, wenn sich eine externe Kennung ändert.
+Geänderte Werte werden aktualisiert:
+- Datum
+- Uhrzeit
+- Spielort
+- Platz/Adresse
+- Status
+- Gegner/Wettbewerb
+
+Alte Dubletten derselben offiziellen Partie werden entfernt.
+Der vorhandene Auswärtsspiel-/externe-Spielort-Fix bleibt erhalten.
