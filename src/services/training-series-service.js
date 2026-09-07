@@ -16,6 +16,7 @@ export async function addTrainingSeries(input){
     allocationMode="flexible",cabin1Id=null,cabin2Id=null,note=""}=input;
   if(!teamId||!startDate||!start||!end)throw new Error("Pflichtfelder fehlen");
   if(endDate&&endDate<startDate)throw new Error("Enddatum liegt vor dem Startdatum");
+  if(endDate&&endDate<startDate)throw new Error("Enddatum liegt vor dem Startdatum");
   if(!["weekly","biweekly","monthly"].includes(recurrenceType))throw new Error("Ungültiger Wiederholungsrhythmus");
   if(recurrenceType==="monthly"&&!["1","2","3","4","last"].includes(String(monthOrdinal)))throw new Error("Ungültige Monatsregel");
   if(!["gemmingen","stebbach"].includes(locationId))throw new Error("Ungültiger Ort");

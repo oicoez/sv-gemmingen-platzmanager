@@ -1,24 +1,17 @@
-# ClubPlanner 5.0 – Sprint 4.3.6
+# ClubPlanner 5.0 – Sprint 4.3.7
 
-## Echte Auswärtsspiele werden jetzt aktiv bereinigt
+## Trainingsserien-Fix auf dem richtigen clubplanner-v5 Stand
 
-Bisher wurden nur Heimspiele und externe Spielorte im Heimspiel-Pfad geprüft.
-Ein echtes Auswärtsspiel wurde vorher aus diesem Pfad entfernt und konnte deshalb
-einen alten falschen Heimspiel-Datensatz in ClubPlanner zurücklassen.
+Dieser Sprint baut direkt auf Sprint 4.3.6 auf.
+Der funktionierende FUSSBALL.DE-Auswärtsspiel-Fix bleibt unverändert.
 
-Sprint 4.3.6 prüft zusätzlich alle Spiele, bei denen unsere Mannschaft auf der
-Auswärtsseite des FUSSBALL.DE-Spielplans steht.
+### Korrekturen
+- Beim Modus „Wiederkehrendes Training“ wird das einzelne Feld „Datum“ ausgeblendet.
+- Für Serien gelten nur Rhythmus, Wochentag, Startdatum, Enddatum, Uhrzeit, Team, Ort, Platz und Belegung.
+- Der Speichern-Button verwendet bei Serien die API `/api/v5/training-series`.
+- Alle berechneten Serientermine werden als einzelne Trainings gespeichert.
+- Wochenplan, Monatsansicht und Dashboard werden nach dem Speichern neu geladen.
 
-Für solche Spiele wird ein eventuell alter lokaler Datensatz gelöscht über:
-1. external_id
-2. Fallback: Datum + lokales Team + externer Gegner
-
-Beispiel:
-19.09.2026
-FC Odenheim 2 – SV Gemmingen
-Am Felsenkeller 12, 76684 Östringen
-
-Dieser Datensatz darf nach dem nächsten Sync nicht mehr in der lokalen
-Spieleliste, Wochenansicht oder Monatsansicht stehen.
-
-Die sichtbare Versionsanzeige wurde ebenfalls auf Sprint 4.3.6 vereinheitlicht.
+### Beispiel
+B-Jugend, wöchentlich, Montag, 07.09.2026 bis 31.05.2027, 18:00–19:30
+=> jeder Montag im Zeitraum wird angelegt.
