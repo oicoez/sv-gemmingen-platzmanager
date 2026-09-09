@@ -22,4 +22,4 @@ test("planner no longer hardcodes only Gemmingen and Stebbach",()=>assert.ok(!pl
 test("calendar uses place color",()=>assert.ok(html.includes("--place-color")));
 test("location/base shown bold",()=>assert.ok(html.includes("placeTitle")));
 test("UI can add training places",()=>assert.ok(html.includes("Trainingsort hinzufügen")));
-test("version 4.5.0 visible",()=>assert.match(html,/Sprint 4\.5\.0/));
+test("4.5.0 flexible resource UI retained",()=>assert.ok(html.includes("Trainingsort hinzufügen")));

@@ -3,7 +3,7 @@ import { db } from "../database/client.js";
 export async function listOccupancyEvents(from,to){
   const q=await db(`select e.id,e.event_type,e.event_date,e.start_time,e.end_time,e.kickoff_time,
       e.title,e.opponent,e.competition,e.status,e.location_id,e.resource_id,
-      e.allocation_mode,e.requested_section,e.address,e.note,
+      e.allocation_mode,e.requested_section,e.address,e.note,e.manually_changed,
       e.home_cabin_id,e.guest_cabin_id,
       t.name as team,r.base_name,r.section as resource_section,r.display_name as resource,r.division_count as resource_division_count,r.calendar_color as resource_color,
       l.name as location,

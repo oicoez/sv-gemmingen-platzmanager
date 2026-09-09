@@ -67,6 +67,7 @@ export async function updateImportedEventManually(id,input){
       guest_cabin_id=$9,
       address=$10,
       source_hash='',
+      manually_changed=true,
       updated_at=now()
     where id=$1 and event_type='home_match'
     returning id`,[
@@ -109,7 +110,7 @@ export async function upsertImportedEvent(input){
       club_id=$2,team_id=$3,event_type='home_match',event_date=$4,kickoff_time=$5,start_time=$5,end_time=$6,
       title=$7,opponent=$8,competition=$9,status=$10,location_id=$11,venue_name=$12,resource_id=$13,
       home_cabin_id=$18,guest_cabin_id=$19,allocation_mode='exclusive',requested_section='whole',address=$14,note='',source='fussballde',external_url=$15,
-      game_number=$16,source_hash=$17,last_synced_at=now(),updated_at=now(),external_id=$20
+      game_number=$16,source_hash=$17,last_synced_at=now(),updated_at=now(),external_id=$20,manually_changed=false
       where id=$1`,[
         id,input.clubId,input.teamId,input.date,input.kickoff,input.endTime,input.title,input.opponent,
         input.competition,input.status,input.locationId,input.venueName||"",input.resourceId,input.address,
@@ -121,8 +122,8 @@ export async function upsertImportedEvent(input){
   await db(`insert into cp5_events(
     id,club_id,team_id,event_type,event_date,kickoff_time,start_time,end_time,title,opponent,competition,status,
     location_id,venue_name,resource_id,home_cabin_id,guest_cabin_id,allocation_mode,requested_section,address,note,source,external_id,external_url,
-    game_number,source_hash,last_synced_at
-  ) values($1,$2,$3,'home_match',$4,$5,$5,$6,$7,$8,$9,$10,$11,$12,$13,$19,$20,'exclusive','whole',$14,'','fussballde',$15,$16,$17,$18,now())`,
+    game_number,source_hash,last_synced_at,manually_changed
+  ) values($1,$2,$3,'home_match',$4,$5,$5,$6,$7,$8,$9,$10,$11,$12,$13,$19,$20,'exclusive','whole',$14,'','fussballde',$15,$16,$17,$18,now(),false)`,
   [
     id,input.clubId,input.teamId,input.date,input.kickoff,input.endTime,input.title,input.opponent,input.competition,
     input.status,input.locationId,input.venueName||"",input.resourceId,input.address,input.externalId,input.externalUrl,
@@ -136,7 +137,7 @@ export async function listImportedEvents({includePast=false}={}){
   const pastFilter=includePast ? "" : `and (e.event_date > (now() at time zone 'Europe/Berlin')::date
       or (e.event_date = (now() at time zone 'Europe/Berlin')::date
           and coalesce(e.kickoff_time,time '23:59') >= (now() at time zone 'Europe/Berlin')::time))`;
-  const r=await db(`select e.id,e.event_date,e.kickoff_time,e.opponent,e.competition,e.status,e.address,e.external_id,e.game_number,
+  const r=await db(`select e.id,e.event_date,e.kickoff_time,e.opponent,e.competition,e.status,e.address,e.external_id,e.game_number,e.manually_changed,
       t.name as team,coalesce(l.name,nullif(e.venue_name,'')) as location,r.display_name as resource
     from cp5_events e
     left join cp5_teams t on t.id=e.team_id

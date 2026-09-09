@@ -101,7 +101,8 @@ export function buildSegments(events){
         label:x.event.event_type==="home_match"
           ? `${x.event.team||x.event.title}${x.event.opponent?` – ${x.event.opponent}`:""}`
           : (x.event.team||x.event.title||"Training"),
-        section:x.section,sectionLabel:x.sectionLabel
+        section:x.section,sectionLabel:x.sectionLabel,
+        manuallyChanged:Boolean(x.event.manually_changed)
       }))
     };
     const signature=o=>JSON.stringify({

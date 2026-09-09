@@ -25,7 +25,8 @@ export async function initSchema() {
     fussballde_club_id text,
     active boolean not null default true,
     created_at timestamptz not null default now(),
-    updated_at timestamptz not null default now()
+    updated_at timestamptz not null default now(),
+    manually_changed boolean not null default false
   )`);
 
   await db(`create table if not exists cp5_teams(
@@ -105,6 +106,7 @@ export async function initSchema() {
   await db(`alter table cp5_events add column if not exists venue_name text default ''`);
   await db(`alter table cp5_events add column if not exists allocation_mode text not null default 'flexible'`);
   await db(`alter table cp5_events add column if not exists requested_section text not null default 'whole'`);
+  await db(`alter table cp5_events add column if not exists manually_changed boolean not null default false`);
 
   await db(`create unique index if not exists uq_cp5_event_external
     on cp5_events(source,external_id) where external_id is not null`);
@@ -245,6 +247,6 @@ for(const x of EXTRA_PLACES){
   )`);
   await db(`alter table cp5_events add column if not exists series_id text`);
 
-  logger.info("ClubPlanner 5.0 Sprint 4.5.0 Datenbankschema bereit", { clubId });
+  logger.info("ClubPlanner 5.0 Sprint 4.5.1 Datenbankschema bereit", { clubId });
   return { clubId };
 }
