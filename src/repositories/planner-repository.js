@@ -5,7 +5,7 @@ export async function listOccupancyEvents(from,to){
       e.title,e.opponent,e.competition,e.status,e.location_id,e.resource_id,
       e.allocation_mode,e.requested_section,e.address,e.note,
       e.home_cabin_id,e.guest_cabin_id,
-      t.name as team,r.base_name,r.section as resource_section,r.display_name as resource,
+      t.name as team,r.base_name,r.section as resource_section,r.display_name as resource,r.division_count as resource_division_count,r.calendar_color as resource_color,
       l.name as location,
       c1.base_name as cabin1_base,c2.base_name as cabin2_base
     from cp5_events e
@@ -15,7 +15,6 @@ export async function listOccupancyEvents(from,to){
     left join cp5_resources c2 on c2.id=e.guest_cabin_id
     left join cp5_locations l on l.id=e.location_id
     where e.event_date between $1 and $2
-      and e.location_id in ('gemmingen','stebbach')
       and e.resource_id is not null
       and e.status <> 'cancelled'
       and e.event_type in ('training','home_match')

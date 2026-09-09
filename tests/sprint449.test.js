@@ -12,4 +12,4 @@ test("B remains 120",()=>assert.equal(matchBlockingMinutes({category:"B-Junioren
 test("Herren remains 120",()=>assert.equal(matchBlockingMinutes({category:"Herren"}),120));
 test("sync uses D duration",()=>assert.ok(sync.includes("matchBlockingMinutes({category:row.category,teamName:row.home})")));
 test("4.4.8 visible-page import retained",()=>{assert.ok(client.includes("buildVisibleClubUrl"));assert.ok(sync.includes('sourceKind==="visible"'));});
-test("4.4.9 visible",()=>assert.match(html,/Sprint 4\.4\.9/));
+test("D-Junioren rule remains present after 4.5.0",()=>assert.ok(sync.includes("matchBlockingMinutes")));

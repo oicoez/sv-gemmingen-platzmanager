@@ -31,3 +31,19 @@ export async function getResourceById(id){
   const q=await db(`select * from cp5_resources where id=$1 and active=true limit 1`,[id]);
   return q.rows[0]||null;
 }
+
+
+export async function getLocation(locationId){
+  if(!locationId)return null;
+  const q=await db(`select * from cp5_locations where id=$1 and active=true limit 1`,[locationId]);
+  return q.rows[0]||null;
+}
+
+export async function getPitchDefinition(locationId,baseName){
+  if(!locationId||!baseName)return null;
+  const q=await db(`select r.*,l.name as location_name,l.address as location_address
+    from cp5_resources r join cp5_locations l on l.id=r.location_id
+    where r.location_id=$1 and r.resource_type='pitch' and r.base_name=$2
+      and r.section='whole' and r.active=true and l.active=true limit 1`,[locationId,baseName]);
+  return q.rows[0]||null;
+}

@@ -24,72 +24,63 @@ export function allocateInterval(active){
 
   const games=events.filter(e=>e.event_type==="home_match");
   if(games.length){
-    if(events.length===1){
-      return {items:[{event:events[0],section:"whole",sectionLabel:"Gesamt"}],conflict:false,reason:""};
-    }
-    return {
-      items:events.map(e=>({event:e,section:"whole",sectionLabel:"Gesamt"})),
-      conflict:true,
-      reason:"Spiel und weitere Belegung überschneiden sich auf demselben Platz."
-    };
+    if(events.length===1)return {items:[{event:events[0],section:"whole",sectionLabel:"Gesamt"}],conflict:false,reason:""};
+    return {items:events.map(e=>({event:e,section:"whole",sectionLabel:"Gesamt"})),conflict:true,
+      reason:"Spiel und weitere Belegung überschneiden sich auf demselben Platz."};
   }
 
-  if(events.length>2){
-    return {
-      items:events.map(e=>({event:e,section:"conflict",sectionLabel:"Konflikt"})),
-      conflict:true,
-      reason:"Mehr als zwei Mannschaften gleichzeitig auf demselben Platz."
-    };
+  const division=Math.max(1,...events.map(e=>Number(e.resource_division_count||2)));
+
+  if(division===1){
+    if(events.length===1)return {items:[{event:events[0],section:"whole",sectionLabel:"Gesamt"}],conflict:false,reason:""};
+    return {items:events.map(e=>({event:e,section:"conflict",sectionLabel:"Konflikt"})),conflict:true,
+      reason:"Dieser Trainingsort ist nicht teilbar und bereits belegt."};
   }
 
+  if(division===3){
+    const demand=e=>e.allocation_mode==="exclusive"?3:e.allocation_mode==="two_thirds"?2:1;
+    if(events.some(e=>e.allocation_mode==="exclusive")&&events.length>1)
+      return {items:events.map(e=>({event:e,section:"conflict",sectionLabel:"Konflikt"})),conflict:true,
+        reason:"Eine Mannschaft hat die gesamte Halle gebucht."};
+    const total=events.reduce((n,e)=>n+demand(e),0);
+    if(total>3)return {items:events.map(e=>({event:e,section:"conflict",sectionLabel:"Konflikt"})),conflict:true,
+      reason:"Die Hallenbelegung überschreitet 3/3."};
+    let next=1;
+    const items=events.map(e=>{
+      const d=demand(e);
+      if(d===3)return {event:e,section:"whole",sectionLabel:"Gesamt (3/3)"};
+      if(d===2){
+        const a=next,b=next+1;next+=2;
+        return {event:e,section:`two_thirds_${a}${b}`,sectionLabel:`2/3 · Drittel ${a}+${b}`};
+      }
+      const a=next++;
+      return {event:e,section:`third_${a}`,sectionLabel:`1/3 · Drittel ${a}`};
+    });
+    return {items,conflict:false,reason:""};
+  }
+
+  // Standard-Fußballplatz: Gesamt / Hälfte A / Hälfte B
+  if(events.length>2)return {items:events.map(e=>({event:e,section:"conflict",sectionLabel:"Konflikt"})),conflict:true,
+    reason:"Mehr als zwei Mannschaften gleichzeitig auf demselben Platz."};
   if(events.length===1){
     const e=events[0];
-    if(e.allocation_mode==="half_a"||e.requested_section==="half_a")
-      return {items:[{event:e,section:"half_a",sectionLabel:"Hälfte A"}],conflict:false,reason:""};
-    if(e.allocation_mode==="half_b"||e.requested_section==="half_b")
-      return {items:[{event:e,section:"half_b",sectionLabel:"Hälfte B"}],conflict:false,reason:""};
+    if(e.allocation_mode==="half_a"||e.requested_section==="half_a")return {items:[{event:e,section:"half_a",sectionLabel:"Hälfte A"}],conflict:false,reason:""};
+    if(e.allocation_mode==="half_b"||e.requested_section==="half_b")return {items:[{event:e,section:"half_b",sectionLabel:"Hälfte B"}],conflict:false,reason:""};
     return {items:[{event:e,section:"whole",sectionLabel:"Gesamt"}],conflict:false,reason:""};
   }
-
   const exclusive=events.find(e=>e.allocation_mode==="exclusive");
-  if(exclusive){
-    return {
-      items:events.map(e=>({event:e,section:"whole",sectionLabel:"Gesamt"})),
-      conflict:true,
-      reason:"Eine Mannschaft hat den Gesamtplatz exklusiv gebucht."
-    };
-  }
+  if(exclusive)return {items:events.map(e=>({event:e,section:"whole",sectionLabel:"Gesamt"})),conflict:true,reason:"Eine Mannschaft hat den Gesamtplatz exklusiv gebucht."};
 
   const fixedA=events.filter(e=>e.allocation_mode==="half_a"||e.requested_section==="half_a");
   const fixedB=events.filter(e=>e.allocation_mode==="half_b"||e.requested_section==="half_b");
-  if(fixedA.length===2||fixedB.length===2){
-    return {
-      items:events.map(e=>({event:e,section:"conflict",sectionLabel:"Konflikt"})),
-      conflict:true,
-      reason:"Beide Mannschaften haben dieselbe Platzhälfte fest gebucht."
-    };
-  }
-
-  if(fixedA.length===1){
-    const other=events.find(e=>e.id!==fixedA[0].id);
-    return {items:[
-      {event:fixedA[0],section:"half_a",sectionLabel:"Hälfte A"},
-      {event:other,section:"half_b",sectionLabel:"Hälfte B"}
-    ],conflict:false,reason:""};
-  }
-  if(fixedB.length===1){
-    const other=events.find(e=>e.id!==fixedB[0].id);
-    return {items:[
-      {event:other,section:"half_a",sectionLabel:"Hälfte A"},
-      {event:fixedB[0],section:"half_b",sectionLabel:"Hälfte B"}
-    ],conflict:false,reason:""};
-  }
-
+  if(fixedA.length===2||fixedB.length===2)return {items:events.map(e=>({event:e,section:"conflict",sectionLabel:"Konflikt"})),conflict:true,
+    reason:"Beide Mannschaften haben dieselbe Platzhälfte fest gebucht."};
+  if(fixedA.length===1){const other=events.find(e=>e.id!==fixedA[0].id);return {items:[
+    {event:fixedA[0],section:"half_a",sectionLabel:"Hälfte A"},{event:other,section:"half_b",sectionLabel:"Hälfte B"}],conflict:false,reason:""};}
+  if(fixedB.length===1){const other=events.find(e=>e.id!==fixedB[0].id);return {items:[
+    {event:other,section:"half_a",sectionLabel:"Hälfte A"},{event:fixedB[0],section:"half_b",sectionLabel:"Hälfte B"}],conflict:false,reason:""};}
   const [a,b]=events;
-  return {items:[
-    {event:a,section:"half_a",sectionLabel:"Hälfte A"},
-    {event:b,section:"half_b",sectionLabel:"Hälfte B"}
-  ],conflict:false,reason:""};
+  return {items:[{event:a,section:"half_a",sectionLabel:"Hälfte A"},{event:b,section:"half_b",sectionLabel:"Hälfte B"}],conflict:false,reason:""};
 }
 
 export function buildSegments(events){

@@ -39,7 +39,7 @@ export async function buildWeekPlan(startInput){
     if(!e.base_name||!e.event_date)continue;
     const key=`${e.event_date}|${e.location_id}|${e.base_name}`;
     if(!groups.has(key))groups.set(key,{
-      date:e.event_date,locationId:e.location_id,location:e.location,baseName:e.base_name,events:[]
+      date:e.event_date,locationId:e.location_id,location:e.location,baseName:e.base_name,color:e.resource_color||"#f5f7f9",divisionCount:Number(e.resource_division_count||2),events:[]
     });
     groups.get(key).events.push(e);
   }
@@ -50,7 +50,7 @@ export async function buildWeekPlan(startInput){
     const dayGroups=[...groups.values()]
       .filter(g=>g.date===date)
       .map(g=>({
-        locationId:g.locationId,location:g.location,baseName:g.baseName,
+        locationId:g.locationId,location:g.location,baseName:g.baseName,color:g.color,divisionCount:g.divisionCount,
         segments:buildSegments(g.events)
       }))
       .sort((a,b)=>`${a.location}${a.baseName}`.localeCompare(`${b.location}${b.baseName}`,"de"));
@@ -97,13 +97,13 @@ export async function buildMonthPlan(monthInput){
     for(const e of dayEvents){
       if(!e.base_name)continue;
       const key=`${e.location_id}|${e.base_name}`;
-      if(!grouped.has(key))grouped.set(key,{location:e.location,baseName:e.base_name,events:[]});
+      if(!grouped.has(key))grouped.set(key,{location:e.location,baseName:e.base_name,color:e.resource_color||"#f5f7f9",divisionCount:Number(e.resource_division_count||2),events:[]});
       grouped.get(key).events.push(e);
     }
     const groups=[...grouped.values()].map(g=>{
       const segments=buildSegments(g.events);
       conflictCount+=segments.filter(s=>s.conflict).length;
-      return {location:g.location,baseName:g.baseName,segments};
+      return {location:g.location,baseName:g.baseName,color:g.color,divisionCount:g.divisionCount,segments};
     });
     days.push({date,groups});
   }

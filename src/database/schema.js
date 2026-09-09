@@ -46,8 +46,10 @@ export async function initSchema() {
     id text primary key,
     name text not null unique,
     address text default '',
+    user_managed boolean not null default false,
     active boolean not null default true
   )`);
+  await db(`alter table cp5_locations add column if not exists user_managed boolean not null default false`);
 
   await db(`create table if not exists cp5_resources(
     id uuid primary key,
@@ -56,10 +58,17 @@ export async function initSchema() {
     base_name text not null,
     section text not null default 'whole',
     display_name text not null,
+    division_count integer not null default 2,
+    calendar_color text not null default '#f5f7f9',
+    user_managed boolean not null default false,
     active boolean not null default true,
     created_at timestamptz not null default now(),
     unique(location_id,resource_type,display_name)
   )`);
+
+  await db(`alter table cp5_resources add column if not exists division_count integer not null default 2`);
+  await db(`alter table cp5_resources add column if not exists calendar_color text not null default '#f5f7f9'`);
+  await db(`alter table cp5_resources add column if not exists user_managed boolean not null default false`);
 
   await db(`create table if not exists cp5_events(
     id uuid primary key,
@@ -139,26 +148,60 @@ export async function initSchema() {
       [loc.id,loc.name,loc.address]);
   }
 
-  for(const loc of LOCATIONS){
-    for(const base of ["Hauptplatz","Trainingsplatz"]){
-      for(const [section,label] of [["whole","Gesamt"],["half_a","Hälfte A"],["half_b","Hälfte B"]]){
-        const display=`${base} – ${label}`;
-        await db(`insert into cp5_resources(id,location_id,resource_type,base_name,section,display_name)
-          values($1,$2,'pitch',$3,$4,$5)
-          on conflict(location_id,resource_type,display_name) do update set active=true`,
-          [crypto.randomUUID(),loc.id,base,section,display]);
-      }
-    }
-    for(const cabin of ["Heimkabine","Gastkabine"]){
-      await db(`insert into cp5_resources(id,location_id,resource_type,base_name,section,display_name)
-        values($1,$2,'cabin',$3,'whole',$3)
-        on conflict(location_id,resource_type,display_name) do update set active=true`,
-        [crypto.randomUUID(),loc.id,cabin]);
+
+  const BUILTIN_PITCHES={
+  gemmingen:{
+    Hauptplatz:{division:2,color:"#FFF4BF"},
+    Trainingsplatz:{division:2,color:"#E4F1FF"}
+  },
+  stebbach:{
+    Hauptplatz:{division:2,color:"#E1F4E5"},
+    Trainingsplatz:{division:2,color:"#EFE6FA"}
+  }
+};
+
+for(const loc of LOCATIONS){
+  for(const base of ["Hauptplatz","Trainingsplatz"]){
+    const cfg=BUILTIN_PITCHES[loc.id][base];
+    for(const [section,label] of [["whole","Gesamt"],["half_a","Hälfte A"],["half_b","Hälfte B"]]){
+      const display=`${base} – ${label}`;
+      await db(`insert into cp5_resources(id,location_id,resource_type,base_name,section,display_name,division_count,calendar_color,user_managed)
+        values($1,$2,'pitch',$3,$4,$5,$6,$7,false)
+        on conflict(location_id,resource_type,display_name) do update set
+          active=true,division_count=excluded.division_count,calendar_color=excluded.calendar_color`,
+        [crypto.randomUUID(),loc.id,base,section,display,cfg.division,cfg.color]);
     }
   }
+  for(const cabin of ["Heimkabine","Gastkabine"]){
+    await db(`insert into cp5_resources(id,location_id,resource_type,base_name,section,display_name,division_count,calendar_color,user_managed)
+      values($1,$2,'cabin',$3,'whole',$3,1,'#F7F4EC',false)
+      on conflict(location_id,resource_type,display_name) do update set active=true`,
+      [crypto.randomUUID(),loc.id,cabin]);
+  }
+}
+
+// Bereits gewünschte zusätzliche Trainingsorte.
+const EXTRA_PLACES=[
+  {id:"schule",name:"Schule",address:"",base:"Trainingsplatz",division:1,color:"#FFE8CC"},
+  {id:"kraichgauhalle",name:"Kraichgauhalle",address:"",base:"Halle",division:3,color:"#F2EBDD"}
+];
+for(const x of EXTRA_PLACES){
+  await db(`insert into cp5_locations(id,name,address,user_managed,active)
+    values($1,$2,$3,true,true) on conflict(id) do nothing`,[x.id,x.name,x.address]);
+  const sections=x.division===3
+    ? [["whole","Gesamt"],["third_1","Drittel 1"],["third_2","Drittel 2"],["third_3","Drittel 3"]]
+    : [["whole","Gesamt"]];
+  for(const [section,label] of sections){
+    const display=`${x.base} – ${label}`;
+    await db(`insert into cp5_resources(id,location_id,resource_type,base_name,section,display_name,division_count,calendar_color,user_managed)
+      values($1,$2,'pitch',$3,$4,$5,$6,$7,true)
+      on conflict(location_id,resource_type,display_name) do nothing`,
+      [crypto.randomUUID(),x.id,x.base,section,display,x.division,x.color]);
+  }
+}
 
 
-  // Spiele reservieren intern automatisch beide Kabinen ihres Standortes.
+// Spiele reservieren  // Spiele reservieren intern automatisch beide Kabinen ihres Standortes.
   // In der Spieleliste müssen diese nicht manuell gepflegt werden.
   await db(`update cp5_events e set
       home_cabin_id=(select r.id from cp5_resources r
@@ -202,6 +245,6 @@ export async function initSchema() {
   )`);
   await db(`alter table cp5_events add column if not exists series_id text`);
 
-  logger.info("ClubPlanner 5.0 Sprint 4.4.0 Datenbankschema bereit", { clubId });
+  logger.info("ClubPlanner 5.0 Sprint 4.5.0 Datenbankschema bereit", { clubId });
   return { clubId };
 }

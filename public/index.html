@@ -10,10 +10,10 @@ button,select,input{font:inherit}button{border:1px solid #cad2dc;background:#fff
 .toolbar,.tabs{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.tabs{margin-top:18px}.hidden{display:none}.help,.notice,.progress{padding:12px;border-radius:8px;margin-top:12px}.help{background:#f6f9fc}.notice{background:#fff7e6;border:1px solid #f1d39b}.progress{background:#eef6ff;border:1px solid #b7d4f0}
 .weeknav{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}.days{display:grid;grid-template-columns:repeat(7,minmax(190px,1fr));gap:10px;margin-top:14px;overflow-x:auto}
 .day{min-width:190px;background:#fff;border:1px solid #d8dee6;border-radius:9px;min-height:180px}.dayhead{padding:10px;background:#1f4e78;color:#fff;font-weight:700;border-radius:8px 8px 0 0}.pitch{padding:9px;border-bottom:1px solid #edf0f3}.pitchtitle{font-weight:700;font-size:13px;margin-bottom:7px}
-.seg{border-left:4px solid #5c7994;padding:6px 7px;margin:5px 0;background:#f6f8fa;border-radius:5px;font-size:12px}.trainingClick{cursor:pointer}.trainingClick:hover{outline:2px solid #9bbbd5;outline-offset:1px}.seg.split{border-left-color:#247d52;background:#eef8f2}.seg.conflict{border-left-color:#c62828;background:#fff0f0}.time{font-weight:750}.half{font-weight:700;color:#1f5f43}.conflictText{color:#b42318;font-weight:700;margin-top:4px}
+.seg{border-left:4px solid #5c7994;padding:6px 7px;margin:5px 0;background:var(--place-color,#f6f8fa);border-radius:5px;font-size:12px}.trainingClick{cursor:pointer}.trainingClick:hover{outline:2px solid #9bbbd5;outline-offset:1px}.seg.split{border-left-color:#247d52}.seg.conflict{border-left-color:#c62828;background:#fff0f0}.time{font-weight:750}.half{font-weight:700;color:#1f5f43}.conflictText{color:#b42318;font-weight:700;margin-top:4px}
 .formgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.field label{display:block;font-size:13px;color:#667085;margin-bottom:5px}.field input,.field select{width:100%;padding:9px;border:1px solid #cbd3dc;border-radius:7px;background:#fff}.field.span2{grid-column:span 2}
 table{border-collapse:collapse;width:100%;font-size:14px}th,td{padding:10px;border-bottom:1px solid #e6eaf0;text-align:left;vertical-align:top}th{background:#1f4e78;color:#fff;position:sticky;top:0}.scroll{overflow:auto;max-height:62vh}.cancelled{background:#f8eeee}.conflictRow{background:#fff0f0}.conflictPill{display:inline-block;color:#b42318;background:#ffe7e7;border:1px solid #efb0b0;padding:4px 7px;border-radius:999px;font-weight:700;font-size:12px}.empty{padding:18px;color:#7a8490;text-align:center}
-.monthgrid{display:grid;grid-template-columns:repeat(7,minmax(160px,1fr));gap:8px;margin-top:14px}.monthday{min-height:135px;background:#fff;border:1px solid #d8dee6;border-radius:8px;padding:7px}.monthday.blank{background:#f7f8fa}.monthnum{font-weight:750;margin-bottom:6px}.monthitem{font-size:11px;padding:5px;margin:4px 0;border-left:3px solid #5c7994;background:#f5f7f9;border-radius:4px}.trainingClick{cursor:pointer}.trainingClick:hover{outline:2px solid #9bbbd5;outline-offset:1px}.monthitem.split{border-left-color:#247d52;background:#eef8f2}.monthitem.conflict{border-left-color:#c62828;background:#fff0f0}.monthdow{font-weight:750;text-align:center;padding:5px;color:#5f6b78}
+.monthgrid{display:grid;grid-template-columns:repeat(7,minmax(160px,1fr));gap:8px;margin-top:14px}.monthday{min-height:135px;background:#fff;border:1px solid #d8dee6;border-radius:8px;padding:7px}.monthday.blank{background:#f7f8fa}.monthnum{font-weight:750;margin-bottom:6px}.monthitem{font-size:11px;padding:5px;margin:4px 0;border-left:3px solid #5c7994;background:var(--place-color,#f5f7f9);border-radius:4px}.trainingClick{cursor:pointer}.trainingClick:hover{outline:2px solid #9bbbd5;outline-offset:1px}.monthitem.split{border-left-color:#247d52}.monthitem.conflict{border-left-color:#c62828;background:#fff0f0}.monthdow{font-weight:750;text-align:center;padding:5px;color:#5f6b78}
 .dashboardList{display:grid;gap:8px}.dashEvent{display:grid;grid-template-columns:120px 110px 1fr 160px 180px;gap:10px;padding:10px;border-bottom:1px solid #edf0f3;align-items:start}.dashEvent.conflict{background:#fff0f0}.typeGame{font-weight:700}.typeTraining{font-weight:700;color:#225f87}.weekLegend{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
 .legendTag{font-size:12px;padding:5px 8px;border-radius:999px;background:#eef3f7;border:1px solid #d4dde5}
 .legendTag.halfA{background:#eef8f2;border-color:#b9dec8}
@@ -24,12 +24,12 @@ table{border-collapse:collapse;width:100%;font-size:14px}th,td{padding:10px;bord
 .allocationPill.half_b{background:#eef6ff;color:#225f87}
 .allocationPill.whole{background:#f0f0f0}
 .cabinConflictBox{margin-top:12px;padding:10px;border:1px solid #efb0b0;background:#fff0f0;border-radius:8px}
-.resourceGrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.resourceLocation{border:1px solid #d8dee6;border-radius:9px;padding:14px;background:#fff}.resourceLocation h3{margin:0 0 4px}.resourcePitch{padding:9px 0;border-top:1px solid #edf0f3}.resourceTags{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px}.resourceTag{font-size:12px;background:#eef3f7;border:1px solid #d4dde5;padding:4px 7px;border-radius:999px}.resourceCabins{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.resourceCabin{padding:7px 9px;background:#f7f4ec;border:1px solid #dfd3b8;border-radius:7px;font-size:13px}
+.resourceGrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.resourceLocation{border:1px solid #d8dee6;border-radius:9px;padding:14px;background:#fff}.resourceLocation h3{margin:0 0 4px}.resourcePitch{padding:9px 0;border-top:1px solid #edf0f3}.resourceTags{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px}.resourceTag{font-size:12px;background:#eef3f7;border:1px solid #d4dde5;padding:4px 7px;border-radius:999px}.resourceCabins{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.resourceCabin{padding:7px 9px;background:#f7f4ec;border:1px solid #dfd3b8;border-radius:7px;font-size:13px}.placeSwatch{display:inline-block;width:16px;height:16px;border-radius:4px;border:1px solid #c8ced6;vertical-align:middle;margin-right:6px}.placeTitle{font-weight:800}.resourceActions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:9px}
 .errorBox{color:#b42318;background:#fff0f0;border:1px solid #efb0b0;padding:12px;border-radius:8px}
 @media(max-width:1000px){.cards{grid-template-columns:1fr 1fr}.formgrid{grid-template-columns:1fr 1fr}.days{grid-template-columns:repeat(7,220px)}.monthgrid{grid-template-columns:repeat(7,180px);overflow-x:auto}.dashEvent{grid-template-columns:1fr}}
 .hidden{display:none!important}
 </style></head><body><div class="app">
-<header><div><h1>ClubPlanner 5.0</h1><div class="sub">SV Gemmingen · Sprint 4.4.9 · D-Junioren 90-Minuten-Belegung</div></div><div class="toolbar"><span id="health" class="badge">System wird geprüft …</span><button id="login">Bearbeiten</button></div></header>
+<header><div><h1>ClubPlanner 5.0</h1><div class="sub">SV Gemmingen · Sprint 4.5.0 · Flexible Trainingsorte & Hallenteilung</div></div><div class="toolbar"><span id="health" class="badge">System wird geprüft …</span><button id="login">Bearbeiten</button></div></header>
 
 <div class="tabs">
 <button class="tab active" data-view="dashboard">Dashboard</button>
@@ -79,9 +79,9 @@ table{border-collapse:collapse;width:100%;font-size:14px}th,td{padding:10px;bord
 <div class="formgrid">
 <div class="field span2"><label>Mannschaft</label><select id="trTeam"></select></div>
 <div class="field" id="singleDateField"><label>Datum</label><input id="trDate" type="date"></div>
-<div class="field"><label>Ort</label><select id="trLocation"><option value="gemmingen">Gemmingen</option><option value="stebbach">Stebbach</option></select></div>
-<div class="field"><label>Platz</label><select id="trBase"><option>Hauptplatz</option><option>Trainingsplatz</option></select></div>
-<div class="field"><label>Belegung</label><select id="trMode"><option value="flexible">Flexibel – automatisch Gesamt/A/B</option><option value="half_a">Fest Hälfte A</option><option value="half_b">Fest Hälfte B</option><option value="exclusive">Gesamtplatz exklusiv</option></select></div>
+<div class="field"><label>Ort</label><select id="trLocation"></select></div>
+<div class="field"><label>Platz / Fläche</label><select id="trBase"></select></div>
+<div class="field"><label>Belegung</label><select id="trMode"></select></div>
 <div class="field"><label>Von</label><input id="trStart" type="time" value="18:00"></div>
 <div class="field"><label>Bis</label><input id="trEnd" type="time" value="19:30"></div>
 <div class="field"><label>Heimkabine</label><select id="trCabin1"><option value="">Nein</option><option value="yes">Ja</option></select></div>
@@ -95,9 +95,25 @@ table{border-collapse:collapse;width:100%;font-size:14px}th,td{padding:10px;bord
 
 <section id="view-resources" class="hidden">
 <div class="panel">
-  <h2>Plätze & Kabinen</h2>
-  <div class="help">Jeder Standort besitzt Hauptplatz und Trainingsplatz mit Gesamt / Hälfte A / Hälfte B sowie Heimkabine und Gastkabine. Bei Heimspielen reserviert ClubPlanner beide Kabinen automatisch. Bei Trainings wählst du je Kabine Ja oder Nein.</div>
+  <h2>Trainingsorte, Plätze & Hallen</h2>
+  <div class="help">Jeder Trainingsort besitzt eine feste Kalenderfarbe. Neue Flächen können nicht teilbar, halbierbar oder in drei Drittel teilbar sein. Rot bleibt ausschließlich echten Konflikten vorbehalten.</div>
   <div id="resourceOverview" class="resourceGrid"></div>
+</div>
+<div class="panel">
+  <h2>Neuen Trainingsort hinzufügen</h2>
+  <div class="formgrid">
+    <div class="field"><label>Ort / Standort</label><input id="newPlaceName" placeholder="z. B. Schule Nord"></div>
+    <div class="field"><label>Flächenname</label><input id="newPlaceBase" value="Trainingsplatz" placeholder="Trainingsplatz / Halle"></div>
+    <div class="field span2"><label>Adresse (optional)</label><input id="newPlaceAddress" placeholder="Straße, Ort"></div>
+    <div class="field"><label>Teilbarkeit</label><select id="newPlaceDivision"><option value="1">nicht teilbar – Gesamt</option><option value="2">2 Teile – Hälfte A/B</option><option value="3">3 Teile – Drittel</option></select></div>
+    <div class="field"><label>Kalenderfarbe</label><select id="newPlaceColor">
+      <option value="#FFF4BF">Gelb</option><option value="#E1F4E5">Grün</option><option value="#E4F1FF">Blau</option>
+      <option value="#EFE6FA">Violett</option><option value="#FFE8CC">Orange</option><option value="#F2EBDD">Beige</option>
+      <option value="#DFF4F1">Türkis</option><option value="#EEF1F4">Grau</option><option value="#F8E6F0">Rosa</option>
+    </select></div>
+    <div class="field"><label>&nbsp;</label><button id="addPlace" class="primary" disabled>Trainingsort hinzufügen</button></div>
+  </div>
+  <div id="placeMsg" class="muted" style="margin-top:10px"></div>
 </div>
 </section>
 
@@ -128,7 +144,7 @@ table{border-collapse:collapse;width:100%;font-size:14px}th,td{padding:10px;bord
 </section>
 </div>
 <script>
-const $=id=>document.getElementById(id);let pin="",timer=null,includePast=false,weekStart="",monthValue="",serverToday="",editingTrainingId="",resourceCache=[],trainingMode="single",editingGameId="";
+const $=id=>document.getElementById(id);let pin="",timer=null,includePast=false,weekStart="",monthValue="",serverToday="",editingTrainingId="",resourceCache=[],trainingMode="single",editingGameId="",resourceOverviewCache=null;
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const fmtDate=v=>{const s=String(v||"").slice(0,10),m=s.match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?`${m[3]}.${m[2]}.${m[1]}`:s};
 const fmtStatus=v=>({planned:"geplant",cancelled:"abgesetzt",rescheduled:"verlegt"}[v]||v||"");
@@ -188,7 +204,7 @@ $("addTeam").onclick=async()=>{try{
  await json("/api/v5/teams",{method:"POST",headers:{"content-type":"application/json","x-edit-pin":pin},body:JSON.stringify({name})});
  $("newTeamName").value="";$("teamMsg").textContent="Mannschaft hinzugefügt. Beim nächsten FUSSBALL.DE-Sync wird exakt dieser Name berücksichtigt.";await loadTeamManager();
 }catch(e){$("teamMsg").textContent=e.message}};
-$("login").onclick=async()=>{const p=prompt("Bearbeitungs-PIN:");if(!p)return;try{await json("/api/v5/auth/check",{method:"POST",headers:{"content-type":"application/json","x-edit-pin":p}});pin=p;$("sync").disabled=false;$("saveTraining").disabled=false;$("addTeam").disabled=false;$("saveGame").disabled=false;$("resetGames").disabled=false;$("login").textContent="Bearbeitungsmodus aktiv";loadTrainings()}catch(e){alert(e.message)}};
+$("login").onclick=async()=>{const p=prompt("Bearbeitungs-PIN:");if(!p)return;try{await json("/api/v5/auth/check",{method:"POST",headers:{"content-type":"application/json","x-edit-pin":p}});pin=p;$("sync").disabled=false;$("saveTraining").disabled=false;$("addTeam").disabled=false;$("saveGame").disabled=false;$("resetGames").disabled=false;$("addPlace").disabled=false;$("login").textContent="Bearbeitungsmodus aktiv";loadTrainings()}catch(e){alert(e.message)}};
 
 async function loadDashboard(){
  try{
@@ -199,7 +215,7 @@ async function loadDashboard(){
   $("dashboardList").innerHTML=j.events.length?j.events.map(x=>`<div class="dashEvent ${x.conflict?"conflict":""}">
    <div><b>${fmtDate(x.date)}</b></div><div><b>${x.start}</b></div>
    <div><span class="${x.eventType==="home_match"?"typeGame":"typeTraining"}">${x.eventType==="home_match"?"SPIEL":"TRAINING"}</span><br>${esc(x.label)}${x.conflict?`<br><span class="conflictPill">Konflikt</span>`:""}</div>
-   <div>${esc(x.location)}<br>${esc(x.baseName)}</div><div>${esc(x.segments.map(s=>`${s.start}–${s.end} ${s.sectionLabel}`).join(" · "))}</div>
+   <div><b>${esc(x.location)} · ${esc(x.baseName)}</b></div><div>${esc(x.segments.map(s=>`${s.start}–${s.end} ${s.sectionLabel}`).join(" · "))}</div>
   </div>`).join(""):`<div class="empty">Diese Woche stehen keine lokalen Spiele oder Trainings an.</div>`;
  }catch(e){$("dashboardList").innerHTML=`<div class="errorBox">${esc(e.message)}</div>`}
 }
@@ -211,7 +227,7 @@ async function loadWeek(useServerCurrent=false){
   $("weekTitle").textContent=`Woche ${fmtDate(j.start)} – ${fmtDate(j.end)}`;
   $("conflictCount").textContent=j.conflicts.length?`${j.conflicts.length} Konflikt(e)`:"Keine Konflikte";
   $("conflictCount").className="badge "+(j.conflicts.length?"bad":"good");
-  $("weekDays").innerHTML=j.days.map((d,idx)=>`<div class="day"><div class="dayhead">${dayNames[idx]}, ${fmtDate(d.date)}</div>${d.groups.length?d.groups.map(g=>`<div class="pitch"><div class="pitchtitle">${esc(g.location)} · ${esc(g.baseName)}</div>${g.segments.map(s=>`<div class="seg ${s.conflict?"conflict":(s.items.length===2?"split":"")}"><div class="time">${s.start}–${s.end}</div>${s.items.map(i=>`<div class="${i.eventType==="training"?"trainingClick":(i.eventType==="home_match"?"trainingClick":"")}" ${i.eventType==="training"?`data-training-id="${esc(i.id)}" title="Training bearbeiten"`:(i.eventType==="home_match"?`data-game-id="${esc(i.id)}" title="Spiel bearbeiten"`:"")}>${i.eventType==="home_match"?"⚽":"●"} ${esc(i.label)} · <span class="allocationPill ${esc(i.section)}">${esc(i.sectionLabel)}</span></div>`).join("")}${s.conflict?`<div class="conflictText">${esc(s.reason)}</div>`:""}</div>`).join("")}</div>`).join(""):`<div class="empty">frei</div>`}</div>`).join("");
+  $("weekDays").innerHTML=j.days.map((d,idx)=>`<div class="day"><div class="dayhead">${dayNames[idx]}, ${fmtDate(d.date)}</div>${d.groups.length?d.groups.map(g=>`<div class="pitch"><div class="pitchtitle"><span class="placeSwatch" style="background:${esc(g.color||"#f5f7f9")}"></span><b>${esc(g.location)} · ${esc(g.baseName)}</b></div>${g.segments.map(s=>`<div class="seg ${s.conflict?"conflict":(s.items.length===2?"split":"")}" style="--place-color:${esc(g.color||"#f5f7f9")}"><div class="time">${s.start}–${s.end}</div>${s.items.map(i=>`<div class="${i.eventType==="training"?"trainingClick":(i.eventType==="home_match"?"trainingClick":"")}" ${i.eventType==="training"?`data-training-id="${esc(i.id)}" title="Training bearbeiten"`:(i.eventType==="home_match"?`data-game-id="${esc(i.id)}" title="Spiel bearbeiten"`:"")}>${i.eventType==="home_match"?"⚽":"●"} ${esc(i.label)} · <span class="allocationPill ${esc(i.section)}">${esc(i.sectionLabel)}</span></div>`).join("")}${s.conflict?`<div class="conflictText">${esc(s.reason)}</div>`:""}</div>`).join("")}</div>`).join(""):`<div class="empty">frei</div>`}</div>`).join("");
  }catch(e){$("weekDays").innerHTML=`<div class="errorBox">${esc(e.message)}</div>`}
 }
 $("prevWeek").onclick=()=>{weekStart=addDays(weekStart,-7);loadWeek();loadTrainings()};
@@ -236,7 +252,7 @@ async function loadMonth(useServerCurrent=false){
     const labels=s.items.map(i=>`${i.eventType==="home_match"?"SPIEL":"Training"}: ${i.label}${i.sectionLabel!=="Gesamt"?` (${i.sectionLabel})`:""}`).join(" / ");
     const onlyItem=s.items.length===1?s.items[0]:null;
     const clickAttr=onlyItem?.eventType==="training"?`data-training-id="${esc(onlyItem.id)}" title="Training bearbeiten"`:(onlyItem?.eventType==="home_match"?`data-game-id="${esc(onlyItem.id)}" title="Spiel bearbeiten"`:"");
-    entries.push(`<div class="monthitem ${s.conflict?"conflict":(s.items.length===2?"split":"")} ${clickAttr?"trainingClick":""}" ${clickAttr}><b>${s.start}–${s.end}</b><br>${esc(g.location)} · ${esc(g.baseName)}<br>${esc(labels)}${s.conflict?`<br><b class="bad">KONFLIKT</b>`:""}</div>`);
+    entries.push(`<div class="monthitem ${s.conflict?"conflict":(s.items.length===2?"split":"")} ${clickAttr?"trainingClick":""}" style="--place-color:${esc(g.color||"#f5f7f9")}" ${clickAttr}><span class="placeTitle">${esc(g.location)} · ${esc(g.baseName)}</span><br><b>${s.start}–${s.end}</b><br>${esc(labels)}${s.conflict?`<br><b class="bad">KONFLIKT</b>`:""}</div>`);
    }
    cells.push(`<div class="monthday"><div class="monthnum">${Number(d.date.slice(-2))}</div>${entries.join("")}</div>`);
   }
@@ -248,27 +264,73 @@ $("nextMonth").onclick=()=>{monthValue=monthShift(monthValue,1);loadMonth()};
 $("todayMonth").onclick=async()=>{const t=await json("/api/v5/system/today");monthValue=t.month;await loadMonth(true)};
 
 
+function wholePitches(){return resourceCache.filter(x=>x.resource_type==="pitch"&&x.section==="whole")}
+function currentPitch(){return wholePitches().find(x=>x.location_id===$("trLocation").value&&x.base_name===$("trBase").value)}
+function updateTrainingModeOptions(){
+ const p=currentPitch(),n=Number(p?.division_count||1),selected=$("trMode").value;
+ const opts=n===1?[["exclusive","Gesamt – nicht teilbar"]]:
+   n===3?[["one_third","1/3 Halle"],["two_thirds","2/3 Halle"],["exclusive","Gesamte Halle (3/3)"]]:
+   [["flexible","Flexibel – automatisch Gesamt/A/B"],["half_a","Fest Hälfte A"],["half_b","Fest Hälfte B"],["exclusive","Gesamtplatz exklusiv"]];
+ $("trMode").innerHTML=opts.map(([v,l])=>`<option value="${v}">${l}</option>`).join("");
+ if(opts.some(([v])=>v===selected))$("trMode").value=selected;
+}
+function updateBaseOptions(){
+ const loc=$("trLocation").value,selected=$("trBase").value;
+ const bases=wholePitches().filter(x=>x.location_id===loc);
+ $("trBase").innerHTML=bases.map(x=>`<option value="${esc(x.base_name)}">${esc(x.base_name)}</option>`).join("");
+ if(bases.some(x=>x.base_name===selected))$("trBase").value=selected;
+ updateTrainingModeOptions();updateCabinAvailability();
+}
+function updateLocationOptions(){
+ const selected=$("trLocation").value;
+ const locs=[];for(const p of wholePitches())if(!locs.some(x=>x.id===p.location_id))locs.push({id:p.location_id,name:p.location_name});
+ $("trLocation").innerHTML=locs.map(x=>`<option value="${esc(x.id)}">${esc(x.name)}</option>`).join("");
+ if(locs.some(x=>x.id===selected))$("trLocation").value=selected;
+ updateBaseOptions();
+}
+function updateCabinAvailability(){
+ const hasHome=!!cabinResourceId("home"),hasGuest=!!cabinResourceId("guest");
+ $("trCabin1").disabled=!hasHome;$("trCabin2").disabled=!hasGuest;
+ if(!hasHome)$("trCabin1").value="";if(!hasGuest)$("trCabin2").value="";
+}
 async function loadResources(){
  try{
-  const j=await json("/api/v5/resources/overview");
+  const [j,r]=await Promise.all([json("/api/v5/resources/overview"),json("/api/v5/resources")]);
+  resourceOverviewCache=j;resourceCache=r.items||[];
   $("resourceOverview").innerHTML=(j.locations||[]).map(loc=>`<div class="resourceLocation">
-    <h3>${esc(loc.name)}</h3><div class="muted">${esc(loc.address)}</div>
-    ${loc.pitches.map(p=>`<div class="resourcePitch"><b>${esc(p.baseName)}</b>
-      <div class="resourceTags"><span class="resourceTag">Gesamt</span><span class="resourceTag">Hälfte A</span><span class="resourceTag">Hälfte B</span></div>
+    <h3>${esc(loc.name)}</h3><div class="muted">${esc(loc.address||"Adresse nicht hinterlegt")}</div>
+    ${loc.pitches.map(p=>`<div class="resourcePitch">
+      <div><span class="placeSwatch" style="background:${esc(p.color)}"></span><b>${esc(p.baseName)}</b> · ${p.divisionCount===1?"nicht teilbar":p.divisionCount===2?"2 Hälften":"3 Drittel"}</div>
+      <div class="resourceTags">${p.tags.map(t=>`<span class="resourceTag">${esc(t)}</span>`).join("")}</div>
     </div>`).join("")}
-    <div><b>Kabinen</b><div class="resourceCabins">${loc.cabins.map(c=>`<span class="resourceCabin">${esc(c.name)}</span>`).join("")}</div></div>
+    ${loc.cabins.length?`<div><b>Kabinen</b><div class="resourceCabins">${loc.cabins.map(c=>`<span class="resourceCabin">${esc(c.name)}</span>`).join("")}</div></div>`:""}
+    ${loc.userManaged?`<div class="resourceActions">
+      <select class="placeColor" data-id="${esc(loc.id)}">${[
+       ["#FFF4BF","Gelb"],["#E1F4E5","Grün"],["#E4F1FF","Blau"],["#EFE6FA","Violett"],["#FFE8CC","Orange"],["#F2EBDD","Beige"],["#DFF4F1","Türkis"],["#EEF1F4","Grau"],["#F8E6F0","Rosa"]
+      ].map(([v,l])=>`<option value="${v}" ${loc.pitches[0]?.color?.toUpperCase()===v?"selected":""}>${l}</option>`).join("")}</select>
+      <button class="savePlaceColor" data-id="${esc(loc.id)}" ${pin?"":"disabled"}>Farbe speichern</button>
+      <button class="delPlace" data-id="${esc(loc.id)}" ${pin?"":"disabled"}>Ort entfernen</button>
+    </div>`:""}
   </div>`).join("");
+  document.querySelectorAll(".savePlaceColor").forEach(b=>b.onclick=async()=>{
+    const sel=document.querySelector(`.placeColor[data-id="${CSS.escape(b.dataset.id)}"]`);
+    await json(`/api/v5/resources/places/${encodeURIComponent(b.dataset.id)}/color`,{method:"PATCH",headers:{"content-type":"application/json","x-edit-pin":pin},body:JSON.stringify({color:sel.value})});
+    await Promise.all([loadResources(),loadWeek(),loadMonth(),loadDashboard()]);
+  });
+  document.querySelectorAll(".delPlace").forEach(b=>b.onclick=async()=>{
+    if(!confirm("Trainingsort wirklich entfernen?"))return;
+    try{await json(`/api/v5/resources/places/${encodeURIComponent(b.dataset.id)}`,{method:"DELETE",headers:{"x-edit-pin":pin}});await loadResources();$("placeMsg").textContent="Trainingsort entfernt."}catch(e){$("placeMsg").textContent=e.message}
+  });
+  updateLocationOptions();
  }catch(e){$("resourceOverview").innerHTML=`<div class="errorBox">${esc(e.message)}</div>`}
 }
-async function loadCabins(){
- try{const j=await json("/api/v5/resources");resourceCache=j.items||[];}catch(e){console.error(e)}
-}
+async function loadCabins(){try{const j=await json("/api/v5/resources");resourceCache=j.items||[];updateLocationOptions()}catch(e){console.error(e)}}
 function cabinResourceId(kind){
- const location=$("trLocation").value;
- const base=kind==="home"?"Heimkabine":"Gastkabine";
+ const location=$("trLocation").value,base=kind==="home"?"Heimkabine":"Gastkabine";
  return resourceCache.find(x=>x.location_id===location&&x.resource_type==="cabin"&&x.base_name===base)?.id||null;
 }
-$("trLocation").addEventListener("change",()=>{$("trCabin1").value="";$("trCabin2").value="";});
+$("trLocation").addEventListener("change",()=>{$("trCabin1").value="";$("trCabin2").value="";updateBaseOptions()});
+$("trBase").addEventListener("change",updateTrainingModeOptions);
 
 function clearTrainingForm(){
  editingTrainingId="";
@@ -357,6 +419,14 @@ async function loadTrainings(){
   document.querySelectorAll(".delTr").forEach(b=>b.onclick=async()=>{if(!confirm("Training löschen?"))return;try{await json("/api/v5/trainings/"+b.dataset.id,{method:"DELETE",headers:{"x-edit-pin":pin}});await loadTrainings();await loadWeek();await loadMonth();await loadDashboard()}catch(e){alert(e.message)}})
  }catch(e){$("trainingList").innerHTML=`<div class="errorBox">${esc(e.message)}</div>`}
 }
+$("addPlace").onclick=async()=>{try{
+ const body={name:$("newPlaceName").value.trim(),baseName:$("newPlaceBase").value.trim(),address:$("newPlaceAddress").value.trim(),
+   divisionCount:Number($("newPlaceDivision").value),color:$("newPlaceColor").value};
+ await json("/api/v5/resources/places",{method:"POST",headers:{"content-type":"application/json","x-edit-pin":pin},body:JSON.stringify(body)});
+ $("newPlaceName").value="";$("newPlaceAddress").value="";$("placeMsg").textContent="Trainingsort hinzugefügt.";
+ await loadResources();
+}catch(e){$("placeMsg").textContent=e.message}};
+
 $("saveTraining").onclick=async()=>{try{
  const selectedMode=document.querySelector('input[name="trainingMode"]:checked')?.value||"single";
  trainingMode=selectedMode;
