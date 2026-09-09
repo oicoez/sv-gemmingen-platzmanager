@@ -18,4 +18,4 @@ test("manual dialog exists",()=>assert.ok(html.includes('id="manualDialog"')));
 test("turnier and platzbelegung types exist",()=>{assert.ok(html.includes("<option>Turnier</option>"));assert.ok(html.includes("<option>Platzbelegung</option>"))});
 test("manual edit delete UI exists",()=>{assert.ok(html.includes("editManualDialog"));assert.ok(html.includes('id="deleteManual"'))});
 test("manual entries marked",()=>assert.ok(html.includes("MANUELL")));
-test("version 4.5.4 visible",()=>assert.match(html,/Sprint 4\.5\.4/));
+test("4.5.4 manual calendar retained",()=>assert.ok(html.includes('id="manualDialog"')));

@@ -1,6 +1,12 @@
 <!doctype html>
-<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ClubPlanner 5.0 – Sprint 3.2</title>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1f4e78">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="ClubPlanner">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<title>ClubPlanner 5.1 – Mobile & PWA</title>
 <style>
 :root{font-family:Segoe UI,Arial,sans-serif;color:#17212b;background:#f4f6f8}*{box-sizing:border-box}body{margin:0}.app{max-width:1600px;margin:auto;padding:22px}
 header{display:flex;justify-content:space-between;gap:16px;align-items:center;flex-wrap:wrap}h1{margin:0;font-size:30px}.sub,.muted{color:#6b7785}
@@ -27,18 +33,73 @@ table{border-collapse:collapse;width:100%;font-size:14px}th,td{padding:10px;bord
 .resourceGrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.resourceLocation{border:1px solid #d8dee6;border-radius:9px;padding:14px;background:#fff}.resourceLocation h3{margin:0 0 4px}.resourcePitch{padding:9px 0;border-top:1px solid #edf0f3}.resourceTags{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px}.resourceTag{font-size:12px;background:#eef3f7;border:1px solid #d4dde5;padding:4px 7px;border-radius:999px}.resourceCabins{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.resourceCabin{padding:7px 9px;background:#f7f4ec;border:1px solid #dfd3b8;border-radius:7px;font-size:13px}.placeSwatch{display:inline-block;width:16px;height:16px;border-radius:4px;border:1px solid #c8ced6;vertical-align:middle;margin-right:6px}.placeTitle{font-weight:800}.manualEventClick{cursor:pointer}.manualEventClick:hover{outline:2px solid #d5ad32;outline-offset:1px}.manualBadge{display:inline-block;margin-left:5px;padding:2px 5px;border-radius:999px;background:#fff3cd;border:1px solid #d6a700;color:#795c00;font-size:9px;font-weight:800;letter-spacing:.2px}.printControls{display:flex;gap:8px;align-items:end;flex-wrap:wrap}.printControls .field{min-width:155px}.printControls input[type="range"]{width:100%}.resourceActions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:9px}
 .errorBox{color:#b42318;background:#fff0f0;border:1px solid #efb0b0;padding:12px;border-radius:8px}
 @media(max-width:1000px){.cards{grid-template-columns:1fr 1fr}.formgrid{grid-template-columns:1fr 1fr}.days{grid-template-columns:repeat(7,220px)}.monthgrid{grid-template-columns:repeat(7,180px);overflow-x:auto}.dashEvent{grid-template-columns:1fr}}
+
+/* Sprint 5.1.0 – Smartphone/PWA */
+.headerActions{justify-content:flex-end}
+body.adminMode .monthday:not(.blank){cursor:pointer}
+body:not(.adminMode) .monthday{cursor:default}
+body:not(.adminMode) .monthday:not(.blank):hover{outline:none}
+.mobileDate{display:none}
+@media(max-width:700px){
+ body{padding-bottom:env(safe-area-inset-bottom)}
+ .app{padding:12px 12px calc(86px + env(safe-area-inset-bottom));max-width:none}
+ header{gap:8px;align-items:flex-start}
+ header h1{font-size:23px;line-height:1.1}
+ header .sub{font-size:12px;margin-top:3px}
+ .headerActions{width:100%;justify-content:flex-start;gap:7px}
+ .headerActions .badge{font-size:11px;padding:6px 8px}
+ button{min-height:44px;padding:9px 12px}
+ .tabs{position:fixed;z-index:50;left:0;right:0;bottom:0;margin:0;padding:7px 8px calc(7px + env(safe-area-inset-bottom));background:#fff;border-top:1px solid #d8dee6;flex-wrap:nowrap;overflow-x:auto;box-shadow:0 -4px 16px #0001;scrollbar-width:none}
+ .tabs::-webkit-scrollbar{display:none}
+ .tabs .tab{flex:0 0 auto;white-space:nowrap;min-height:42px;padding:8px 11px;font-size:13px}
+ .panel{padding:12px;margin-top:10px;border-radius:9px}
+ .cards{grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+ .card{padding:11px}.big{font-size:23px}
+ .weeknav{align-items:flex-start}.weeknav h2{width:100%;font-size:19px}
+ .weeknav .toolbar{width:100%;display:grid;grid-template-columns:1fr 1fr 1fr}
+ .weeknav .toolbar button{padding:8px 6px;font-size:12px}
+ .days{display:block;overflow:visible;margin-top:10px}
+ .day{min-width:0;min-height:0;margin-bottom:10px}
+ .dayhead{position:sticky;top:0;z-index:3}
+ .seg{font-size:13px;padding:8px;margin:6px 0}
+ .monthgrid{display:block;margin-top:8px}
+ .monthdow,.monthday.blank{display:none}
+ .monthday{min-height:0;margin:8px 0;padding:10px;border-radius:9px;box-shadow:0 1px 2px #0000000d}
+ .monthnum{display:flex;align-items:center;gap:7px;font-size:15px;margin-bottom:7px}
+ .monthnum .desktopDay{display:none}
+ .mobileDate{display:inline;font-weight:800}
+ .monthitem{font-size:12px;padding:8px;margin:6px 0}
+ .dashboardList{gap:5px}
+ .dashEvent{grid-template-columns:78px 74px 1fr;gap:5px 8px;padding:9px;font-size:12px}
+ .dashEvent>*:nth-child(4),.dashEvent>*:nth-child(5){grid-column:3}
+ .formgrid{grid-template-columns:1fr!important}
+ .field.span2{grid-column:span 1}
+ .resourceGrid{grid-template-columns:1fr}
+ table{font-size:12px}th,td{padding:8px 6px}.scroll{max-height:none}
+ #manualDialog,#printDialog{left:8px!important;right:8px!important;top:8px!important;bottom:8px!important;width:auto!important;max-height:none!important;transform:none!important;overflow:auto;border-radius:12px}
+ .printControls{display:grid;grid-template-columns:1fr 1fr}
+ .printControls .field{min-width:0}
+ .printControls .field:first-child,.printControls .field:last-child{grid-column:1/-1}
+ .help,.notice,.progress{font-size:12px;padding:9px}
+}
+@media(max-width:390px){
+ .weeknav .toolbar{grid-template-columns:1fr 1fr}
+ .weeknav .toolbar button:nth-child(3){grid-column:1/-1}
+}
+@media(display-mode:standalone){.app{padding-top:calc(12px + env(safe-area-inset-top))}}
+
 .hidden{display:none!important}
 </style></head><body><div class="app">
-<header><div><h1>ClubPlanner 5.0</h1><div class="sub">SV Gemmingen · Sprint 4.5.4 · Manuelle Kalendertermine</div></div><div class="toolbar"><span id="health" class="badge">System wird geprüft …</span><button id="login">Bearbeiten</button></div></header>
+<header><div><h1>ClubPlanner 5.0</h1><div class="sub">SV Gemmingen · Sprint 5.1.0 · Mobile & PWA</div></div><div class="toolbar headerActions"><span id="health" class="badge">System wird geprüft …</span><button id="installApp" class="hidden">App installieren</button><button id="login">Admin</button></div></header>
 
 <div class="tabs">
 <button class="tab active" data-view="dashboard">Dashboard</button>
 <button class="tab" data-view="week">Wochenplan</button>
 <button class="tab" data-view="month">Monat</button>
-<button class="tab" data-view="training">Training eintragen</button>
-<button class="tab" data-view="resources">Plätze & Kabinen</button>
-<button class="tab" data-view="teams">Mannschaften</button>
-<button class="tab" data-view="games">Spiele</button>
+<button class="tab adminOnly hidden" data-view="training">Training eintragen</button>
+<button class="tab adminOnly hidden" data-view="resources">Plätze & Kabinen</button>
+<button class="tab adminOnly hidden" data-view="teams">Mannschaften</button>
+<button class="tab adminOnly hidden" data-view="games">Spiele</button>
 </div>
 
 <section id="view-dashboard">
@@ -60,7 +121,7 @@ table{border-collapse:collapse;width:100%;font-size:14px}th,td{padding:10px;bord
 <section id="view-month" class="hidden"><div class="panel"><div class="weeknav">
 <div class="toolbar"><button id="prevMonth">‹ Vorheriger Monat</button><button id="todayMonth">Aktueller Monat</button><button id="nextMonth">Nächster Monat ›</button><button id="printCalendar">PDF / Drucken</button></div>
 <h2 id="monthTitle" style="margin:0"></h2><div id="monthConflictCount" class="badge"></div></div>
-<div class="help">Hier stehen <b>alle lokalen Spiele und Trainings</b>. Rot = tatsächlicher Konflikt.</div>
+<div class="help"><b>Lesemodus:</b> Alle lokalen Spiele, Trainings und manuellen Termine sind sichtbar. PDF/Druck ist für alle verfügbar. Änderungen sind nur im Admin-Modus möglich. Rot = tatsächlicher Konflikt.</div>
 <div id="monthError"></div><div id="monthGrid" class="monthgrid"></div></div></section>
 
 <div id="manualDialog" class="panel hidden" style="position:fixed;z-index:35;left:50%;top:50%;transform:translate(-50%,-50%);width:min(820px,94vw);max-height:90vh;overflow:auto;box-shadow:0 12px 45px #0003">
@@ -236,7 +297,27 @@ $("addTeam").onclick=async()=>{try{
  await json("/api/v5/teams",{method:"POST",headers:{"content-type":"application/json","x-edit-pin":pin},body:JSON.stringify({name})});
  $("newTeamName").value="";$("teamMsg").textContent="Mannschaft hinzugefügt. Beim nächsten FUSSBALL.DE-Sync wird exakt dieser Name berücksichtigt.";await loadTeamManager();
 }catch(e){$("teamMsg").textContent=e.message}};
-$("login").onclick=async()=>{const p=prompt("Bearbeitungs-PIN:");if(!p)return;try{await json("/api/v5/auth/check",{method:"POST",headers:{"content-type":"application/json","x-edit-pin":p}});pin=p;$("sync").disabled=false;$("saveTraining").disabled=false;$("addTeam").disabled=false;$("saveGame").disabled=false;$("resetGames").disabled=false;$("addPlace").disabled=false;$("saveManual").disabled=false;$("login").textContent="Bearbeitungsmodus aktiv";loadTrainings()}catch(e){alert(e.message)}};
+
+function setAdminMode(active){
+ document.body.classList.toggle("adminMode",active);
+ document.querySelectorAll(".adminOnly").forEach(x=>x.classList.toggle("hidden",!active));
+ $("login").textContent=active?"Admin aktiv · Abmelden":"Admin";
+ $("login").classList.toggle("primary",active);
+ if(!active){
+  document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("active",x.dataset.view==="month"));
+  ["dashboard","week","month","training","resources","teams","games"].forEach(v=>$(`view-${v}`).classList.toggle("hidden",v!=="month"));
+  loadMonth();
+ }
+}
+$("login").onclick=async()=>{
+ if(pin){pin="";setAdminMode(false);return}
+ const p=prompt("Admin-PIN:");if(!p)return;
+ try{
+  await json("/api/v5/auth/check",{method:"POST",headers:{"content-type":"application/json","x-edit-pin":p}});
+  pin=p;$("sync").disabled=false;$("saveTraining").disabled=false;$("addTeam").disabled=false;$("saveGame").disabled=false;$("resetGames").disabled=false;$("addPlace").disabled=false;$("saveManual").disabled=false;
+  setAdminMode(true);loadTrainings();
+ }catch(e){alert(e.message)}
+};
 
 async function loadDashboard(){
  try{
@@ -286,12 +367,12 @@ async function loadMonth(useServerCurrent=false){
     const clickAttr=onlyItem?.eventType==="training"?`data-training-id="${esc(onlyItem.id)}" title="Training bearbeiten"`:(onlyItem?.eventType==="home_match"?`data-game-id="${esc(onlyItem.id)}" title="Spiel bearbeiten"`:(onlyItem?.eventType==="manual_event"?`data-manual-id="${esc(onlyItem.id)}" title="Manuellen Termin bearbeiten"`:""));
     entries.push(`<div class="monthitem ${s.conflict?"conflict":(s.items.length===2?"split":"")} ${onlyItem?.eventType==="manual_event"?"manualEventClick":(clickAttr?"trainingClick":"")}" style="--place-color:${esc(g.color||"#f5f7f9")}" ${clickAttr}><span class="placeTitle">${esc(g.location)} · ${esc(g.baseName)}</span><br><b>${s.start}–${s.end}</b><br>${esc(labels)}${hasManual?` <span class="manualBadge">MANUELL</span>`:""}${s.conflict?`<br><b class="bad">KONFLIKT</b>`:""}</div>`);
    }
-   cells.push(`<div class="monthday" data-date="${esc(d.date)}" title="Klicken: manuellen Termin hinzufügen"><div class="monthnum">${Number(d.date.slice(-2))}</div>${entries.join("")}</div>`);
+   cells.push(`<div class="monthday" data-date="${esc(d.date)}" title="${pin?"Klicken: manuellen Termin hinzufügen":"Nur lesen"}"><div class="monthnum"><span class="desktopDay">${Number(d.date.slice(-2))}</span><span class="mobileDate">${new Date(d.date+"T12:00:00").toLocaleDateString("de-DE",{weekday:"short",day:"2-digit",month:"2-digit"})}</span></div>${entries.join("")}</div>`);
   }
   $("monthGrid").innerHTML=`${["Mo","Di","Mi","Do","Fr","Sa","So"].map(x=>`<div class="monthdow">${x}</div>`).join("")}${cells.join("")}`;
   document.querySelectorAll("#monthGrid .monthday[data-date]").forEach(el=>el.onclick=e=>{
    if(e.target.closest("[data-training-id],[data-game-id],[data-manual-id]"))return;
-   if(!pin){alert("Bitte zuerst Bearbeiten aktivieren.");return}openManualDialog(el.dataset.date);
+   if(!pin)return;openManualDialog(el.dataset.date);
   });
   document.querySelectorAll("#monthGrid [data-manual-id]").forEach(el=>el.onclick=e=>{e.stopPropagation();editManualDialog(el.dataset.manualId)});
  }catch(e){$("monthError").innerHTML=`<div class="errorBox">Monatsansicht konnte nicht geladen werden: ${esc(e.message)}</div>`;$("monthGrid").innerHTML=""}
@@ -710,4 +791,21 @@ $("sync").onclick=async()=>{if(!confirm("FUSSBALL.DE jetzt synchronisieren?"))re
 async function poll(){try{const s=await json("/api/v5/sync/status");$("syncState").textContent=s.running?`${s.progress} (${s.processed}/${s.total||"?"})`:s.progress;if(s.running){clearTimeout(timer);timer=setTimeout(poll,1000)}else{$("sync").disabled=!pin;await loadGames();await loadWeek();await loadMonth();await loadDashboard()}}catch(e){$("syncState").textContent=e.message}}
 
 (async()=>{try{await bootstrapToday();syncTrainingModeUI();await Promise.all([check(),loadTeams(),loadGames(),loadResources()]);await loadCabins();await loadSeries();await loadDashboard();await loadWeek();await loadMonth();poll()}catch(e){console.error(e);alert("Startfehler: "+e.message)}})();
+
+let deferredInstallPrompt=null;
+window.addEventListener("beforeinstallprompt",e=>{
+ e.preventDefault();deferredInstallPrompt=e;
+ if(!window.matchMedia("(display-mode: standalone)").matches)$("installApp").classList.remove("hidden");
+});
+$("installApp").onclick=async()=>{
+ if(deferredInstallPrompt){
+  deferredInstallPrompt.prompt();await deferredInstallPrompt.userChoice;
+  deferredInstallPrompt=null;$("installApp").classList.add("hidden");return;
+ }
+ alert("iPhone/iPad: Im Browser auf Teilen → Zum Home-Bildschirm. Android: Browser-Menü → App installieren bzw. Zum Startbildschirm.");
+};
+window.addEventListener("appinstalled",()=>$("installApp").classList.add("hidden"));
+if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("/service-worker.js").catch(()=>{}))}
+if(/iPhone|iPad|iPod/.test(navigator.userAgent)&&!window.navigator.standalone)$("installApp").classList.remove("hidden");
+
 </script></body></html>
