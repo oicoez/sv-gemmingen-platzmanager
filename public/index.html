@@ -24,12 +24,12 @@ table{border-collapse:collapse;width:100%;font-size:14px}th,td{padding:10px;bord
 .allocationPill.half_b{background:#eef6ff;color:#225f87}
 .allocationPill.whole{background:#f0f0f0}
 .cabinConflictBox{margin-top:12px;padding:10px;border:1px solid #efb0b0;background:#fff0f0;border-radius:8px}
-.resourceGrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.resourceLocation{border:1px solid #d8dee6;border-radius:9px;padding:14px;background:#fff}.resourceLocation h3{margin:0 0 4px}.resourcePitch{padding:9px 0;border-top:1px solid #edf0f3}.resourceTags{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px}.resourceTag{font-size:12px;background:#eef3f7;border:1px solid #d4dde5;padding:4px 7px;border-radius:999px}.resourceCabins{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.resourceCabin{padding:7px 9px;background:#f7f4ec;border:1px solid #dfd3b8;border-radius:7px;font-size:13px}.placeSwatch{display:inline-block;width:16px;height:16px;border-radius:4px;border:1px solid #c8ced6;vertical-align:middle;margin-right:6px}.placeTitle{font-weight:800}.manualBadge{display:inline-block;margin-left:5px;padding:2px 5px;border-radius:999px;background:#fff3cd;border:1px solid #d6a700;color:#795c00;font-size:9px;font-weight:800;letter-spacing:.2px}.printControls{display:flex;gap:8px;align-items:end;flex-wrap:wrap}.printControls .field{min-width:155px}.resourceActions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:9px}
+.resourceGrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.resourceLocation{border:1px solid #d8dee6;border-radius:9px;padding:14px;background:#fff}.resourceLocation h3{margin:0 0 4px}.resourcePitch{padding:9px 0;border-top:1px solid #edf0f3}.resourceTags{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px}.resourceTag{font-size:12px;background:#eef3f7;border:1px solid #d4dde5;padding:4px 7px;border-radius:999px}.resourceCabins{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.resourceCabin{padding:7px 9px;background:#f7f4ec;border:1px solid #dfd3b8;border-radius:7px;font-size:13px}.placeSwatch{display:inline-block;width:16px;height:16px;border-radius:4px;border:1px solid #c8ced6;vertical-align:middle;margin-right:6px}.placeTitle{font-weight:800}.manualBadge{display:inline-block;margin-left:5px;padding:2px 5px;border-radius:999px;background:#fff3cd;border:1px solid #d6a700;color:#795c00;font-size:9px;font-weight:800;letter-spacing:.2px}.printControls{display:flex;gap:8px;align-items:end;flex-wrap:wrap}.printControls .field{min-width:155px}.printControls input[type="range"]{width:100%}.resourceActions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:9px}
 .errorBox{color:#b42318;background:#fff0f0;border:1px solid #efb0b0;padding:12px;border-radius:8px}
 @media(max-width:1000px){.cards{grid-template-columns:1fr 1fr}.formgrid{grid-template-columns:1fr 1fr}.days{grid-template-columns:repeat(7,220px)}.monthgrid{grid-template-columns:repeat(7,180px);overflow-x:auto}.dashEvent{grid-template-columns:1fr}}
 .hidden{display:none!important}
 </style></head><body><div class="app">
-<header><div><h1>ClubPlanner 5.0</h1><div class="sub">SV Gemmingen · Sprint 4.5.2 · Farbiger Einseiten-PDF-Druck</div></div><div class="toolbar"><span id="health" class="badge">System wird geprüft …</span><button id="login">Bearbeiten</button></div></header>
+<header><div><h1>ClubPlanner 5.0</h1><div class="sub">SV Gemmingen · Sprint 4.5.3 · Freier Zeitraum & Druckskalierung</div></div><div class="toolbar"><span id="health" class="badge">System wird geprüft …</span><button id="login">Bearbeiten</button></div></header>
 
 <div class="tabs">
 <button class="tab active" data-view="dashboard">Dashboard</button>
@@ -70,8 +70,9 @@ table{border-collapse:collapse;width:100%;font-size:14px}th,td{padding:10px;bord
  <div class="field"><label>Vorlage</label><select id="printPreset"><option value="month">Aktueller angezeigter Monat</option><option value="hinrunde">Hinrunde bis 31.12.</option><option value="rueckrunde">Rückrunde 01.01.–01.06.</option><option value="custom">Zeitraum frei wählen</option></select></div>
  <div class="field"><label>Von</label><input id="printFrom" type="date"></div>
  <div class="field"><label>Bis</label><input id="printTo" type="date"></div>
+ <div class="field" style="min-width:220px"><label>Inhaltsgröße <span id="printScaleLabel">85%</span></label><input id="printScale" type="range" min="60" max="100" step="5" value="85"></div>
 </div>
-<div class="notice" style="margin-top:10px">Die Standortfarben werden für den PDF-Druck ausdrücklich erzwungen. Jeder Monat wird automatisch auf genau eine A4-Querformat-Seite angepasst.</div><div class="toolbar" style="margin-top:15px"><button id="startPrint" class="primary">Druckansicht öffnen</button><button id="closePrint">Abbrechen</button></div>
+<div class="notice" style="margin-top:10px">Die Standortfarben werden für den PDF-Druck ausdrücklich erzwungen. Wähle „Zeitraum frei wählen“, um Von/Bis selbst festzulegen. Mit „Inhaltsgröße“ kannst du bei vollen Monaten die Einträge kleiner darstellen, damit alle Spiele sichtbar bleiben.</div><div class="toolbar" style="margin-top:15px"><button id="startPrint" class="primary">Druckansicht öffnen</button><button id="closePrint">Abbrechen</button></div>
 </div>
 
 <section id="view-training" class="hidden">
@@ -511,14 +512,23 @@ function printRangeFromPreset(){
   $("printFrom").value=`${monthValue}-01`;
   $("printTo").value=new Date(Date.UTC(y,m,0)).toISOString().slice(0,10);
  }else if(preset==="hinrunde"){
-  $("printFrom").value=`${y}-07-01`;$("printTo").value=`${y}-12-31`;
+  $("printFrom").value=`${y}-07-01`;
+  $("printTo").value=`${y}-12-31`;
  }else if(preset==="rueckrunde"){
   const ry=m>=7?y+1:y;$("printFrom").value=`${ry}-01-01`;$("printTo").value=`${ry}-06-01`;
+ }else if(preset==="custom"){
+  // Bei freiem Zeitraum bleiben die aktuell eingetragenen Werte erhalten.
+  if(!$("printFrom").value)$("printFrom").value=`${monthValue}-01`;
+  if(!$("printTo").value)$("printTo").value=new Date(Date.UTC(y,m,0)).toISOString().slice(0,10);
  }
 }
-$("printCalendar").onclick=()=>{$("printDialog").classList.remove("hidden");printRangeFromPreset()};
+function syncPrintScaleLabel(){$("printScaleLabel").textContent=$("printScale").value+"%"}
+$("printCalendar").onclick=()=>{$("printDialog").classList.remove("hidden");printRangeFromPreset();syncPrintScaleLabel()};
 $("closePrint").onclick=()=>$("printDialog").classList.add("hidden");
 $("printPreset").onchange=printRangeFromPreset;
+$("printFrom").addEventListener("change",()=>{$("printPreset").value="custom"});
+$("printTo").addEventListener("change",()=>{$("printPreset").value="custom"});
+$("printScale").addEventListener("input",syncPrintScaleLabel);
 
 function monthsBetween(from,to){
  const a=from.slice(0,7),b=to.slice(0,7),out=[];let x=a;
@@ -549,10 +559,10 @@ async function buildPrintMonth(ym,from,to){
      ${printEsc(labels)}${manual?' <span class="pmanual">MANUELL</span>':""}${s.conflict?'<br><b class="pred">KONFLIKT</b>':""}
    </div>`);
   }
-  cells.push(`<div class="pday"><div class="pnum">${Number(d.date.slice(-2))}</div>${entries.join("")}</div>`);
+  cells.push(`<div class="pday ${entries.length>=3?"crowded":""}"><div class="pnum">${Number(d.date.slice(-2))}</div>${entries.join("")}</div>`);
  }
  while(cells.length<weekRows*7)cells.push('<div class="pday blank"></div>');
- return `<section class="printPage weeks${weekRows}">
+ const scale=Number($("printScale").value||85)/100; return `<section class="printPage weeks${weekRows}" style="--content-scale:${scale}">
    <header><h1>ClubPlanner · Platzbelegung</h1><div>${printEsc(monthName(ym))}</div></header>
    <div class="pgrid weeks${weekRows}">
     ${["Mo","Di","Mi","Do","Fr","Sa","So"].map(x=>`<div class="pdow">${x}</div>`).join("")}${cells.join("")}
@@ -578,28 +588,28 @@ html,body{margin:0;padding:0;font-family:Arial,sans-serif;color:#14202b;backgrou
  padding:0;margin:0 auto;background:#fff
 }
 .printPage:last-child{break-after:auto;page-break-after:auto}
-header{height:13mm;display:flex;justify-content:space-between;align-items:center;border-bottom:1.2mm solid #1f4e78;margin:0 0 2mm;padding:0 1mm}
+header{height:11mm;display:flex;justify-content:space-between;align-items:center;border-bottom:1.2mm solid #1f4e78;margin:0 0 2mm;padding:0 1mm}
 h1{font-size:14pt;margin:0}header div{font-size:12pt;font-weight:700}
-.pgrid{height:176mm;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:1mm;align-content:stretch}
+.pgrid{height:178mm;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:1mm;align-content:stretch}
 .pgrid.weeks4{grid-template-rows:5mm repeat(4,41.75mm)}
 .pgrid.weeks5{grid-template-rows:5mm repeat(5,33.4mm)}
 .pgrid.weeks6{grid-template-rows:5mm repeat(6,27.83mm)}
 .pdow{text-align:center;font-weight:800;font-size:7.5pt;padding:.8mm 0;overflow:hidden}
 .pday{
- border:.35mm solid #aebdcb;padding:1mm;font-size:6.4pt;line-height:1.18;overflow:hidden;
+ border:.35mm solid #aebdcb;padding:calc(1mm * var(--content-scale,0.85));font-size:calc(6.4pt * var(--content-scale,0.85));line-height:1.12;overflow:hidden;
  background:#fff;min-width:0;min-height:0
 }
 .pday.blank,.pday.mutedday{background:#f5f6f7!important}
-.pnum{font-weight:800;font-size:7.2pt;margin-bottom:.7mm}
+.pnum{font-weight:800;font-size:calc(7.2pt * var(--content-scale,0.85));margin-bottom:calc(.7mm * var(--content-scale,0.85))}
 .pitem{
- border-left:1.1mm solid var(--item-color,#607d94);border-radius:1.2mm;padding:.8mm;margin:.55mm 0;
- line-height:1.18;overflow:hidden;background:var(--item-color,#f5f7f9)!important;
+ border-left:1.1mm solid var(--item-color,#607d94);border-radius:1.2mm;padding:calc(.8mm * var(--content-scale,0.85));margin:calc(.4mm * var(--content-scale,0.85)) 0;
+ line-height:1.08;font-size:inherit;overflow:hidden;background:var(--item-color,#f5f7f9)!important;
  -webkit-print-color-adjust:exact!important;print-color-adjust:exact!important
 }
-.pitem.conflict{background:#ffeaea!important;border-left-color:#c62828!important}
-.pmanual{display:inline-block;font-weight:800;border:.25mm solid #b68b00;border-radius:5mm;padding:0 .8mm;background:#fff3cd!important}
+.pday.crowded .pitem{margin-top:.15mm;margin-bottom:.15mm;line-height:1.02}.pitem.conflict{background:#ffeaea!important;border-left-color:#c62828!important}
+.pmanual{display:inline-block;font-weight:800;border:.25mm solid #b68b00;border-radius:5mm;padding:0 calc(.8mm * var(--content-scale,0.85));background:#fff3cd!important}
 .pred{color:#b42318}
-footer{height:5mm;display:flex;justify-content:flex-end;align-items:end;font-size:6.2pt;color:#66727e;padding-right:1mm}
+footer{height:4mm;display:flex;justify-content:flex-end;align-items:end;font-size:6.2pt;color:#66727e;padding-right:1mm}
 @media print{
  html,body{width:297mm;height:auto}
  .printPage{margin:0!important}

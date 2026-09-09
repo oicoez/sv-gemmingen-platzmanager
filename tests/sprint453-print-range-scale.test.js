@@ -1,0 +1,14 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import fs from "node:fs";
+const html=fs.readFileSync(new URL("../public/index.html",import.meta.url),"utf8");
+test("free date range remains available",()=>assert.ok(html.includes('value="custom"')));
+test("manual from date switches preset to custom",()=>assert.ok(html.includes('$("printFrom").addEventListener("change",()=>{$("printPreset").value="custom"})')));
+test("manual to date switches preset to custom",()=>assert.ok(html.includes('$("printTo").addEventListener("change",()=>{$("printPreset").value="custom"})')));
+test("print scale slider exists",()=>assert.ok(html.includes('id="printScale"')));
+test("scale supports 60 to 100 percent",()=>{assert.ok(html.includes('min="60"'));assert.ok(html.includes('max="100"'))});
+test("print pages receive content scale",()=>assert.ok(html.includes("--content-scale")));
+test("crowded days detected",()=>assert.ok(html.includes('entries.length>=3?"crowded"')));
+test("crowded day print CSS exists",()=>assert.ok(html.includes(".pday.crowded .pitem")));
+test("one month per page retained",()=>assert.ok(html.includes("break-after:page")));
+test("version 4.5.3 visible",()=>assert.match(html,/Sprint 4\.5\.3/));

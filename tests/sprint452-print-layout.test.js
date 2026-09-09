@@ -11,4 +11,4 @@ test("5 week months scale larger",()=>assert.ok(html.includes(".pgrid.weeks5")))
 test("6 week months fit one page",()=>assert.ok(html.includes(".pgrid.weeks6")));
 test("week row count computed dynamically",()=>assert.ok(html.includes("Math.ceil((firstDow+daysInMonth)/7)")));
 test("location colors passed into print items",()=>assert.ok(html.includes("--item-color")));
-test("version 4.5.2 visible",()=>assert.match(html,/Sprint 4\.5\.2/));
+test("4.5.2 one-page print retained",()=>assert.ok(html.includes("weeks6")));

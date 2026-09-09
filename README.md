@@ -1,12 +1,14 @@
-# ClubPlanner 5.0 – Sprint 4.5.2
+# ClubPlanner 5.0 – Sprint 4.5.3
 
-## PDF-/Druckoptimierung
-- Jeder Monat wird jetzt exakt auf **eine DIN-A4-Seite im Querformat** angepasst.
-- Monate mit 4, 5 oder 6 Kalenderwochen erhalten automatisch unterschiedliche Zeilenhöhen, damit die größtmögliche lesbare Darstellung genutzt wird.
-- Kein Monatskalender darf mehr auf eine zweite Seite umbrechen.
-- Standortfarben werden im PDF-/Druckmodus mit `print-color-adjust: exact` erzwungen.
-- Die festen Farben aus ClubPlanner werden in die Druckansicht übernommen.
-- Konflikte bleiben rot, MANUELL-Kennzeichnungen bleiben sichtbar.
-- Mehrmonats-/Halbjahresausgaben bleiben eine PDF-Datei, aber mit **genau einer Seite je Monat**.
+## Freier Zeitraum und manuelle Druckskalierung
+- Der Zeitraum ist wieder frei wählbar.
+- Sobald `Von` oder `Bis` manuell geändert wird, springt die Vorlage automatisch auf `Zeitraum frei wählen`.
+- Beispiel 01.09.2026 bis 31.12.2026 erzeugt September, Oktober, November und Dezember in einer PDF.
+- Neuer Regler `Inhaltsgröße` von 60 % bis 100 %.
+- Standardwert 85 %.
+- Bei vollen Monaten kann der Benutzer die Inhalte kleiner stellen, ohne die A4-Seite selbst zu verkleinern.
+- Tage mit drei oder mehr Einträgen werden zusätzlich automatisch kompakter gesetzt.
+- Jeder Monat bleibt genau eine DIN-A4-Seite im Querformat.
+- Standortfarben, Konflikte und MANUELL-Markierungen bleiben erhalten.
 
-Alle Funktionen aus Sprint 4.5.1 bleiben erhalten.
+Alle Funktionen aus Sprint 4.5.2 bleiben erhalten.
