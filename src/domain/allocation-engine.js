@@ -1,3 +1,4 @@
+import { matchBlockingMinutes } from "./match-duration.js";
 const mins=t=>{
   const m=String(t||"").match(/^(\d{1,2}):(\d{2})/);
   return m?Number(m[1])*60+Number(m[2]):null;
@@ -8,7 +9,7 @@ export function eventEnd(e){
   const x=mins(e.end_time);
   if(x!==null)return x;
   const st=eventStart(e);
-  return st===null?null:st+(e.event_type==="home_match"?120:90);
+  return st===null?null:st+(e.event_type==="home_match"?matchBlockingMinutes({category:e.category||"",teamName:e.team||e.team_name||e.title||""}):90);
 }
 function stableSort(events){
   return [...events].sort((a,b)=>{

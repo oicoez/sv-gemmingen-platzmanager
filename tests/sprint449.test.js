@@ -1,0 +1,15 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import { matchBlockingMinutes } from "../src/domain/match-duration.js";
+const sync=fs.readFileSync(new URL("../src/services/fussballde/sync-service.js",import.meta.url),"utf8");
+const client=fs.readFileSync(new URL("../src/services/fussballde/matchplan-client.js",import.meta.url),"utf8");
+const html=fs.readFileSync(new URL("../public/index.html",import.meta.url),"utf8");
+test("D1 90",()=>assert.equal(matchBlockingMinutes({category:"D-Junioren"}),90));
+test("D2 90",()=>assert.equal(matchBlockingMinutes({teamName:"D-Junioren - JSG Gemmingen/Stebbach 2"}),90));
+test("D2 compact 90",()=>assert.equal(matchBlockingMinutes({teamName:"D-Junioren - JSG Gemmingen/Stebbach2"}),90));
+test("B remains 120",()=>assert.equal(matchBlockingMinutes({category:"B-Junioren"}),120));
+test("Herren remains 120",()=>assert.equal(matchBlockingMinutes({category:"Herren"}),120));
+test("sync uses D duration",()=>assert.ok(sync.includes("matchBlockingMinutes({category:row.category,teamName:row.home})")));
+test("4.4.8 visible-page import retained",()=>{assert.ok(client.includes("buildVisibleClubUrl"));assert.ok(sync.includes('sourceKind==="visible"'));});
+test("4.4.9 visible",()=>assert.match(html,/Sprint 4\.4\.9/));

@@ -1,5 +1,6 @@
 import { getImportedEvent,updateImportedEventManually,deleteAllImportedGames } from "../repositories/event-repository.js";
 import { findWholePitch } from "../repositories/resource-repository.js";
+import { matchBlockingMinutes } from "../domain/match-duration.js";
 
 function addMinutes(time,minutes){
   const [h,m]=String(time||"").split(":").map(Number);
@@ -34,7 +35,7 @@ export async function editGame(id,input){
 
   const venueName=locationId==="gemmingen"?"Gemmingen":"Stebbach";
   const updated=await updateImportedEventManually(id,{
-    date,kickoff,endTime:addMinutes(kickoff,120),locationId,venueName,
+    date,kickoff,endTime:addMinutes(kickoff,matchBlockingMinutes({teamName:existing.team||existing.team_name||existing.title||""})),locationId,venueName,
     resourceId:resource.id,address
   });
   if(!updated)throw new Error("Spiel konnte nicht aktualisiert werden");

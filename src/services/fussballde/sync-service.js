@@ -8,6 +8,7 @@ import { getClub } from "../../repositories/team-repository.js";
 import { findActiveTeamForFixture } from "../team-service.js";
 import { findWholePitch } from "../../repositories/resource-repository.js";
 import { upsertImportedEvent, deleteConfirmedExternalEvents } from "../../repositories/event-repository.js";
+import { matchBlockingMinutes } from "../../domain/match-duration.js";
 
 const state={running:false,phase:"idle",progress:"Noch nicht synchronisiert",total:0,processed:0,inserted:0,updated:0,unchanged:0,skipped:0,errors:[],startedAt:null,finishedAt:null};
 export function getSyncState(){return {...state,errors:[...state.errors]}}
@@ -169,7 +170,7 @@ export async function startFussballSync(){
           if(!teamId){state.skipped++;continue}
           const resource=await findWholePitch(row.venue.locationId,row.venue.pitchBase||"Hauptplatz");
           const saved=await upsertImportedEvent({
-            clubId:club.id,teamId,date:row.date,kickoff:row.kickoff,endTime:addMinutes(row.kickoff,120),
+            clubId:club.id,teamId,date:row.date,kickoff:row.kickoff,endTime:addMinutes(row.kickoff,matchBlockingMinutes({category:row.category,teamName:row.home})),
             title:`${row.home} – ${row.away}`,opponent:row.away,competition:row.competition,status:row.status,
             locationId:row.venue.locationId,venueName:row.venue.venueName||"",resourceId:resource?.id||null,address:row.venue.address||"",
             externalId:row.externalId,externalUrl:row.url,gameNumber:row.gameNumber||""
