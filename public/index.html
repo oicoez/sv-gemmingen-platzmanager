@@ -29,7 +29,7 @@ table{border-collapse:collapse;width:100%;font-size:14px}th,td{padding:10px;bord
 @media(max-width:1000px){.cards{grid-template-columns:1fr 1fr}.formgrid{grid-template-columns:1fr 1fr}.days{grid-template-columns:repeat(7,220px)}.monthgrid{grid-template-columns:repeat(7,180px);overflow-x:auto}.dashEvent{grid-template-columns:1fr}}
 .hidden{display:none!important}
 </style></head><body><div class="app">
-<header><div><h1>ClubPlanner 5.0</h1><div class="sub">SV Gemmingen · Sprint 4.5.1 · Manuelle Änderungen & PDF-Druck</div></div><div class="toolbar"><span id="health" class="badge">System wird geprüft …</span><button id="login">Bearbeiten</button></div></header>
+<header><div><h1>ClubPlanner 5.0</h1><div class="sub">SV Gemmingen · Sprint 4.5.2 · Farbiger Einseiten-PDF-Druck</div></div><div class="toolbar"><span id="health" class="badge">System wird geprüft …</span><button id="login">Bearbeiten</button></div></header>
 
 <div class="tabs">
 <button class="tab active" data-view="dashboard">Dashboard</button>
@@ -65,13 +65,13 @@ table{border-collapse:collapse;width:100%;font-size:14px}th,td{padding:10px;bord
 
 <div id="printDialog" class="panel hidden" style="position:fixed;z-index:30;left:50%;top:50%;transform:translate(-50%,-50%);width:min(760px,92vw);box-shadow:0 12px 45px #0003">
 <h2>Kalender als PDF / Druckversion</h2>
-<div class="help">Die Druckansicht wird in DIN A4 quer geöffnet. Im Druckdialog kannst du „Als PDF speichern“ wählen. Bei längeren Zeiträumen wird jeder Monat auf einer eigenen A4-Seite ausgegeben.</div>
+<div class="help">Die Druckansicht wird automatisch auf DIN A4 quer optimiert. Jeder Monat wird exakt auf eine Seite skaliert; Standortfarben, Konflikte und MANUELL-Kennzeichnungen werden mitgedruckt. Im Druckdialog kannst du „Als PDF speichern“ wählen.</div>
 <div class="printControls">
  <div class="field"><label>Vorlage</label><select id="printPreset"><option value="month">Aktueller angezeigter Monat</option><option value="hinrunde">Hinrunde bis 31.12.</option><option value="rueckrunde">Rückrunde 01.01.–01.06.</option><option value="custom">Zeitraum frei wählen</option></select></div>
  <div class="field"><label>Von</label><input id="printFrom" type="date"></div>
  <div class="field"><label>Bis</label><input id="printTo" type="date"></div>
 </div>
-<div class="toolbar" style="margin-top:15px"><button id="startPrint" class="primary">Druckansicht öffnen</button><button id="closePrint">Abbrechen</button></div>
+<div class="notice" style="margin-top:10px">Die Standortfarben werden für den PDF-Druck ausdrücklich erzwungen. Jeder Monat wird automatisch auf genau eine A4-Querformat-Seite angepasst.</div><div class="toolbar" style="margin-top:15px"><button id="startPrint" class="primary">Druckansicht öffnen</button><button id="closePrint">Abbrechen</button></div>
 </div>
 
 <section id="view-training" class="hidden">
@@ -527,19 +527,38 @@ function monthsBetween(from,to){
 function printEsc(s){return esc(s)}
 async function buildPrintMonth(ym,from,to){
  const j=await json("/api/v5/planner/month?month="+encodeURIComponent(ym));
- const [yy,mm]=ym.split("-").map(Number),firstDow=(new Date(Date.UTC(yy,mm-1,1)).getUTCDay()+6)%7,cells=[];
+ const [yy,mm]=ym.split("-").map(Number);
+ const firstDow=(new Date(Date.UTC(yy,mm-1,1)).getUTCDay()+6)%7;
+ const daysInMonth=new Date(Date.UTC(yy,mm,0)).getUTCDate();
+ const weekRows=Math.ceil((firstDow+daysInMonth)/7);
+ const cells=[];
  for(let i=0;i<firstDow;i++)cells.push('<div class="pday blank"></div>');
  for(const d of j.days){
-  if(d.date<from||d.date>to){cells.push(`<div class="pday mutedday"><b>${Number(d.date.slice(-2))}</b></div>`);continue}
+  if(d.date<from||d.date>to){
+   cells.push(`<div class="pday mutedday"><b>${Number(d.date.slice(-2))}</b></div>`);
+   continue;
+  }
   const entries=[];
   for(const g of d.groups)for(const s of g.segments){
    const labels=s.items.map(i=>`${i.eventType==="home_match"?"SPIEL":"Training"}: ${i.label}${i.sectionLabel!=="Gesamt"?` (${i.sectionLabel})`:""}`).join(" / ");
    const manual=s.items.some(i=>i.eventType==="home_match"&&i.manuallyChanged);
-   entries.push(`<div class="pitem ${s.conflict?"conflict":""}" style="background:${printEsc(g.color||"#f5f7f9")}"><b>${printEsc(g.location)} · ${printEsc(g.baseName)}</b><br><strong>${s.start}–${s.end}</strong><br>${printEsc(labels)}${manual?' <span class="pmanual">MANUELL</span>':""}${s.conflict?'<br><b class="pred">KONFLIKT</b>':""}</div>`);
+   const color=printEsc(g.color||"#f5f7f9");
+   entries.push(`<div class="pitem ${s.conflict?"conflict":""}" style="--item-color:${color};background:${color};border-left-color:${color}">
+     <b>${printEsc(g.location)} · ${printEsc(g.baseName)}</b><br>
+     <strong>${s.start}–${s.end}</strong><br>
+     ${printEsc(labels)}${manual?' <span class="pmanual">MANUELL</span>':""}${s.conflict?'<br><b class="pred">KONFLIKT</b>':""}
+   </div>`);
   }
   cells.push(`<div class="pday"><div class="pnum">${Number(d.date.slice(-2))}</div>${entries.join("")}</div>`);
  }
- return `<section class="printPage"><header><h1>ClubPlanner · Platzbelegung</h1><div>${printEsc(monthName(ym))}</div></header><div class="pgrid">${["Mo","Di","Mi","Do","Fr","Sa","So"].map(x=>`<div class="pdow">${x}</div>`).join("")}${cells.join("")}</div><footer>SV Gemmingen · erstellt ${new Date().toLocaleDateString("de-DE")}</footer></section>`;
+ while(cells.length<weekRows*7)cells.push('<div class="pday blank"></div>');
+ return `<section class="printPage weeks${weekRows}">
+   <header><h1>ClubPlanner · Platzbelegung</h1><div>${printEsc(monthName(ym))}</div></header>
+   <div class="pgrid weeks${weekRows}">
+    ${["Mo","Di","Mi","Do","Fr","Sa","So"].map(x=>`<div class="pdow">${x}</div>`).join("")}${cells.join("")}
+   </div>
+   <footer>SV Gemmingen · erstellt ${new Date().toLocaleDateString("de-DE")}</footer>
+ </section>`;
 }
 $("startPrint").onclick=async()=>{
  const from=$("printFrom").value,to=$("printTo").value;
@@ -550,14 +569,41 @@ $("startPrint").onclick=async()=>{
   const pages=[];for(const ym of months)pages.push(await buildPrintMonth(ym,from,to));
   const w=window.open("","_blank");if(!w)throw new Error("Druckfenster wurde vom Browser blockiert.");
   w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>ClubPlanner_${from}_${to}</title><style>
-   @page{size:A4 landscape;margin:7mm}*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;color:#14202b}
-   .printPage{page-break-after:always;min-height:190mm;position:relative}.printPage:last-child{page-break-after:auto}
-   header{display:flex;justify-content:space-between;align-items:baseline;border-bottom:2px solid #1f4e78;margin-bottom:4mm}h1{font-size:16pt;margin:0 0 2mm}header div{font-size:13pt;font-weight:700}
-   .pgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:1.4mm}.pdow{text-align:center;font-weight:700;font-size:8pt;padding:1mm}
-   .pday{border:1px solid #bcc7d2;min-height:27mm;padding:1.2mm;font-size:6.8pt;overflow:hidden}.pday.blank,.mutedday{background:#f5f6f7}.pnum{font-weight:800;font-size:8pt;margin-bottom:.8mm}
-   .pitem{border-left:2px solid #607d94;border-radius:2px;padding:1mm;margin:.7mm 0;line-height:1.25}.pitem.conflict{background:#ffeaea!important;border-left-color:#c62828}
-   .pmanual{font-weight:800;border:1px solid #b68b00;border-radius:6px;padding:0 .8mm;background:#fff3cd}.pred{color:#b42318}
-   footer{position:absolute;bottom:0;right:0;font-size:6.5pt;color:#66727e}@media print{button{display:none}}
+   @page{size:A4 landscape;margin:5mm}
+*{box-sizing:border-box;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;color-adjust:exact!important}
+html,body{margin:0;padding:0;font-family:Arial,sans-serif;color:#14202b;background:#fff}
+.printPage{
+ width:287mm;height:200mm;max-height:200mm;overflow:hidden;position:relative;
+ break-after:page;page-break-after:always;break-inside:avoid;page-break-inside:avoid;
+ padding:0;margin:0 auto;background:#fff
+}
+.printPage:last-child{break-after:auto;page-break-after:auto}
+header{height:13mm;display:flex;justify-content:space-between;align-items:center;border-bottom:1.2mm solid #1f4e78;margin:0 0 2mm;padding:0 1mm}
+h1{font-size:14pt;margin:0}header div{font-size:12pt;font-weight:700}
+.pgrid{height:176mm;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:1mm;align-content:stretch}
+.pgrid.weeks4{grid-template-rows:5mm repeat(4,41.75mm)}
+.pgrid.weeks5{grid-template-rows:5mm repeat(5,33.4mm)}
+.pgrid.weeks6{grid-template-rows:5mm repeat(6,27.83mm)}
+.pdow{text-align:center;font-weight:800;font-size:7.5pt;padding:.8mm 0;overflow:hidden}
+.pday{
+ border:.35mm solid #aebdcb;padding:1mm;font-size:6.4pt;line-height:1.18;overflow:hidden;
+ background:#fff;min-width:0;min-height:0
+}
+.pday.blank,.pday.mutedday{background:#f5f6f7!important}
+.pnum{font-weight:800;font-size:7.2pt;margin-bottom:.7mm}
+.pitem{
+ border-left:1.1mm solid var(--item-color,#607d94);border-radius:1.2mm;padding:.8mm;margin:.55mm 0;
+ line-height:1.18;overflow:hidden;background:var(--item-color,#f5f7f9)!important;
+ -webkit-print-color-adjust:exact!important;print-color-adjust:exact!important
+}
+.pitem.conflict{background:#ffeaea!important;border-left-color:#c62828!important}
+.pmanual{display:inline-block;font-weight:800;border:.25mm solid #b68b00;border-radius:5mm;padding:0 .8mm;background:#fff3cd!important}
+.pred{color:#b42318}
+footer{height:5mm;display:flex;justify-content:flex-end;align-items:end;font-size:6.2pt;color:#66727e;padding-right:1mm}
+@media print{
+ html,body{width:297mm;height:auto}
+ .printPage{margin:0!important}
+}
   </style></head><body>${pages.join("")}<script>window.onload=()=>setTimeout(()=>window.print(),250)<\/script></body></html>`);
   w.document.close();$("printDialog").classList.add("hidden");
  }catch(e){alert(e.message)}finally{$("startPrint").disabled=false}

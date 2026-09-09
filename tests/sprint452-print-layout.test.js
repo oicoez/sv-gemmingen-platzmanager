@@ -1,0 +1,14 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import fs from "node:fs";
+const html=fs.readFileSync(new URL("../public/index.html",import.meta.url),"utf8");
+test("A4 landscape remains enabled",()=>assert.ok(html.includes("@page{size:A4 landscape;margin:5mm}")));
+test("each month has fixed one-page dimensions",()=>{assert.ok(html.includes("width:287mm;height:200mm"));assert.ok(html.includes("overflow:hidden"))});
+test("page break after each month",()=>assert.ok(html.includes("break-after:page")));
+test("print colors forced",()=>{assert.ok(html.includes("-webkit-print-color-adjust:exact"));assert.ok(html.includes("print-color-adjust:exact"))});
+test("4 week months scale larger",()=>assert.ok(html.includes(".pgrid.weeks4")));
+test("5 week months scale larger",()=>assert.ok(html.includes(".pgrid.weeks5")));
+test("6 week months fit one page",()=>assert.ok(html.includes(".pgrid.weeks6")));
+test("week row count computed dynamically",()=>assert.ok(html.includes("Math.ceil((firstDow+daysInMonth)/7)")));
+test("location colors passed into print items",()=>assert.ok(html.includes("--item-color")));
+test("version 4.5.2 visible",()=>assert.match(html,/Sprint 4\.5\.2/));

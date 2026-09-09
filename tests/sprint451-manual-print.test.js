@@ -19,4 +19,4 @@ test("A4 landscape print CSS exists",()=>assert.ok(html.includes("@page{size:A4 
 test("half-season presets exist",()=>{assert.ok(html.includes('value="hinrunde"'));assert.ok(html.includes('value="rueckrunde"'))});
 test("custom print range exists",()=>assert.ok(html.includes('value="custom"')));
 test("multi-month print pages exist",()=>assert.ok(html.includes("page-break-after:always")));
-test("version 4.5.1 visible",()=>assert.match(html,/Sprint 4\.5\.1/));
+test("4.5.1 print controls retained",()=>assert.ok(html.includes('id="printCalendar"')));
