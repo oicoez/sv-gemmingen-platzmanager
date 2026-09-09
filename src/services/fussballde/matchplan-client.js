@@ -34,6 +34,15 @@ function seasonBounds(){
   return {from:`${startYear}-07-01`,to:`${startYear+1}-06-30`};
 }
 
+export function buildVisibleClubUrl(clubId=config.fussballdeClubId,slug="sv-gemmingen-baden"){
+  return `${BASE}/verein/${slug}/-/id/${clubId}`;
+}
+export async function loadVisibleClubPage(clubId=config.fussballdeClubId,slug="sv-gemmingen-baden"){
+  const url=buildVisibleClubUrl(clubId,slug);
+  const html=await fetchText(url);
+  return {url,html,clubId};
+}
+
 export function buildSeasonMatchplanUrl(clubId=config.fussballdeClubId){
   const {from,to}=seasonBounds();
   return `${BASE}/ajax.club.matchplan/-/datum-bis/${to}/datum-von/${from}/id/${clubId}/match-type/-1/max/999/mode/PAGE/show-filter/false`;
@@ -46,18 +55,20 @@ export async function loadSeasonMatchplan(clubId=config.fussballdeClubId){
 }
 
 export async function loadClubMatchplans(){
-  const clubIds=[
-    {id:config.fussballdeClubId,sourceClub:"gemmingen"},
-    {id:"00ES8GN9B800005MVV0AG08LVUPGND5I",sourceClub:"stebbach"}
+  const clubs=[
+    {id:config.fussballdeClubId,sourceClub:"gemmingen",slug:"sv-gemmingen-baden"},
+    {id:"00ES8GN9B800005MVV0AG08LVUPGND5I",sourceClub:"stebbach",slug:"1fc-stebbach-baden"}
   ];
   const out=[];
-  for(const c of clubIds){
+  for(const c of clubs){
+    try{
+      const x=await loadVisibleClubPage(c.id,c.slug);
+      out.push({...x,sourceClub:c.sourceClub,sourceKind:"visible"});
+    }catch(e){out.push({clubId:c.id,sourceClub:c.sourceClub,sourceKind:"visible",error:e.message,url:"",html:""});}
     try{
       const x=await loadSeasonMatchplan(c.id);
-      out.push({...x,sourceClub:c.sourceClub});
-    }catch(e){
-      out.push({clubId:c.id,sourceClub:c.sourceClub,error:e.message,url:"",html:""});
-    }
+      out.push({...x,sourceClub:c.sourceClub,sourceKind:"ajax"});
+    }catch(e){out.push({clubId:c.id,sourceClub:c.sourceClub,sourceKind:"ajax",error:e.message,url:"",html:""});}
   }
   return out;
 }

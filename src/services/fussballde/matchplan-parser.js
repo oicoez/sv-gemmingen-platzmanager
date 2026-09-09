@@ -22,7 +22,7 @@ function parseMeta(text){
   let m=t.match(/(\d{2})\.(\d{2})\.(\d{4})\s*[-–]\s*([0-2]?\d:[0-5]\d)\s*Uhr/i);
   if(m){date=iso(m[1],m[2],m[3]);kickoff=m[4].padStart(5,"0")}
   if(!date){
-    m=t.match(/(?:Mo|Di|Mi|Do|Fr|Sa|So),?\s*(\d{2})\.(\d{2})\.(\d{2})\s*(?:\||·)?\s*([0-2]?\d:[0-5]\d)/i);
+    m=t.match(/(?:Mo|Di|Mi|Do|Fr|Sa|So|Montag|Dienstag|Mittwoch|Donnerstag|Freitag|Samstag|Sonntag),?\s*(\d{2})\.(\d{2})\.(\d{2,4})\s*(?:[-–]\s*)?(?:\||·)?\s*([0-2]?\d:[0-5]\d)/i);
     if(m){date=iso(m[1],m[2],m[3]);kickoff=m[4].padStart(5,"0")}
   }
   m=t.match(/\b(Herren(?:-Reserve)?|Frauen|A-Junioren|B-Junioren|C-Junioren|D-Junioren|E-Junioren|F-Junioren)\b/i);

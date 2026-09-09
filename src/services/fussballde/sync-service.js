@@ -61,18 +61,19 @@ export async function startFussballSync(){
       for(const plan of plans){
         if(plan.error||!plan.html)continue;
         for(const row of parseSeasonMatchplan(plan.html,plan.url)){
-          parsed.push({...row,sourceClub:plan.sourceClub});
+          parsed.push({...row,sourceClub:plan.sourceClub,sourceKind:plan.sourceKind||"ajax"});
         }
       }
 
       function fixtureKey(row){
         return row.gameNumber?`game:${row.gameNumber}`:`ext:${row.externalId}`;
       }
-      function preferredSource(){
-        // ClubPlanner is the SV-Gemmingen planner. If the same official game
-        // occurs in both club plans, the current SV-Gemmingen club matchplan
-        // is authoritative. Stebbach remains a fallback for games missing there.
-        return "gemmingen";
+      function sourcePriority(row){
+        if(row.sourceClub==="gemmingen" && row.sourceKind==="visible")return 400;
+        if(row.sourceClub==="stebbach" && row.sourceKind==="visible")return 300;
+        if(row.sourceClub==="gemmingen" && row.sourceKind==="ajax")return 200;
+        if(row.sourceClub==="stebbach" && row.sourceKind==="ajax")return 100;
+        return 0;
       }
 
       const merged=new Map();
@@ -80,9 +81,7 @@ export async function startFussballSync(){
         const key=fixtureKey(row);
         if(!key)continue;
         const current=merged.get(key);
-        if(!current){merged.set(key,row);continue}
-        const wanted=preferredSource(row);
-        if(row.sourceClub===wanted && current.sourceClub!==wanted)merged.set(key,row);
+        if(!current || sourcePriority(row)>sourcePriority(current))merged.set(key,row);
       }
       const all=[...merged.values()];
       const candidateHome=all.filter(x=>isClubHomeTeam(x.home));
@@ -177,7 +176,7 @@ export async function startFussballSync(){
           });
           state[saved.action]++;
           if(row.venueError)state.errors.push(`${row.externalId}: Spielort ${row.venueError}`);
-          logger.info("FUSSBALL.DE Spiel verarbeitet",{n:state.processed,total:state.total,date:row.date,kickoff:row.kickoff,team:row.home,opponent:row.away,location:row.venue.locationId||row.venue.venueName,status:row.status,action:saved.action});
+          logger.info("FUSSBALL.DE Spiel verarbeitet",{n:state.processed,total:state.total,gameNumber:row.gameNumber,sourceClub:row.sourceClub,sourceKind:row.sourceKind,date:row.date,kickoff:row.kickoff,team:row.home,opponent:row.away,location:row.venue.locationId||row.venue.venueName,status:row.status,action:saved.action});
         }catch(e){state.skipped++;state.errors.push(`${row.externalId}: ${e.message}`);logger.error("FUSSBALL.DE Spiel fehlgeschlagen",{externalId:row.externalId,message:e.message})}
       }
       state.phase="done";

@@ -1,18 +1,17 @@
-# ClubPlanner 5.0 – Sprint 4.4.6
+# ClubPlanner 5.0 – Sprint 4.4.8
+Der Import nutzt jetzt vorrangig den sichtbaren öffentlichen Vereinsspielplan von SV Gemmingen,
+also dieselbe FUSSBALL.DE-Seite, auf der die aktuellen Termine im Browser angezeigt werden.
 
-Basis: Sprint 4.4.5.
+Priorität je Spielnummer:
+1. sichtbarer SV-Gemmingen-Vereinsspielplan
+2. sichtbarer 1.-FC-Stebbach-Vereinsspielplan
+3. Gemmingen-AJAX als Fallback
+4. Stebbach-AJAX als Fallback
 
-Zusätzlicher Fix beim FUSSBALL.DE-Mannschaftsabgleich:
-- `SG Stebbach/Gemmingen 2` = `SG Stebbach/Gemmingen2`
-- `JSG Gemmingen/Stebbach 2` = `JSG Gemmingen/Stebbach2`
-- gilt entsprechend auch für weitere Mannschaftsnummern
+Der AJAX-Datensatz kann damit einen aktuelleren sichtbaren Termin nicht mehr überschreiben.
+Referenzfall 920109004: JSG Gemmingen / Stebbach – FC Astoria Walldorf 2,
+17.09.2026, 19:00 Uhr.
 
-Weiterhin ignoriert:
-- Leerzeichen rund um `/`
-- Mehrfach-Leerzeichen
-- geschützte Leerzeichen / unsichtbare Unicode-Zeichen
-- Groß-/Kleinschreibung
-
-Die Mannschaftsnummer selbst wird NICHT ignoriert. D1 und D2 bleiben also unterschiedliche Mannschaften.
-
-Alle Funktionen aus 4.4.5 bleiben erhalten, einschließlich Spiele-Reset, Neuabgleich sowie manueller Spiel-/Trainingsbearbeitung.
+Zusätzlich versteht der Parser ausgeschriebene Wochentage. Im Render-Log werden Spielnummer,
+Quelle und Quellentyp ausgegeben. Alle Funktionen und Mannschafts-Normalisierungen aus 4.4.6
+bleiben erhalten.

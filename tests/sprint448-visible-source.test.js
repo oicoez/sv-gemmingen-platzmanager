@@ -1,0 +1,18 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import fs from "node:fs";
+const client=fs.readFileSync(new URL("../src/services/fussballde/matchplan-client.js",import.meta.url),"utf8");
+const sync=fs.readFileSync(new URL("../src/services/fussballde/sync-service.js",import.meta.url),"utf8");
+const parser=fs.readFileSync(new URL("../src/services/fussballde/matchplan-parser.js",import.meta.url),"utf8");
+const team=fs.readFileSync(new URL("../src/services/team-service.js",import.meta.url),"utf8");
+const html=fs.readFileSync(new URL("../public/index.html",import.meta.url),"utf8");
+test("visible Gemmingen page fetched",()=>{assert.ok(client.includes("buildVisibleClubUrl"));assert.ok(client.includes('slug:"sv-gemmingen-baden"'));});
+test("visible source tagged",()=>assert.ok(client.includes('sourceKind:"visible"')));
+test("AJAX retained only as lower-priority fallback",()=>{assert.ok(client.includes('sourceKind:"ajax"'));assert.ok(sync.includes('return 200'));});
+test("visible Gemmingen highest priority",()=>{assert.ok(sync.includes('sourceKind==="visible"'));assert.ok(sync.includes('return 400'));});
+test("parser supports full weekday names",()=>assert.ok(parser.includes("Donnerstag")));
+test("parser supports 2 or 4 digit year",()=>assert.ok(parser.includes("d{2,4}")));
+test("team slash normalization retained",()=>assert.ok(team.includes('.replace(/\\s*\\/\\s*/g,"/")')));
+test("team number normalization retained",()=>assert.ok(team.includes('.replace(/\\s+(?=\\d+\\s*$)/g,"")')));
+test("sync logs source identity",()=>{assert.ok(sync.includes("gameNumber:row.gameNumber"));assert.ok(sync.includes("sourceKind:row.sourceKind"));});
+test("version 4.4.8 visible",()=>assert.match(html,/Sprint 4\.4\.8/));
