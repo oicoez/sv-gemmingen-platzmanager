@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-title" content="ClubPlanner">
 <link rel="manifest" href="/manifest.json">
 <link rel="apple-touch-icon" href="/icons/icon-192.png">
-<title>ClubPlanner 5.1.1 – Mobile Dialog Fix</title>
+<title>ClubPlanner 5.1.2 – Dashboard Terminarten</title>
 <style>
 :root{font-family:Segoe UI,Arial,sans-serif;color:#17212b;background:#f4f6f8}*{box-sizing:border-box}body{margin:0}.app{max-width:1600px;margin:auto;padding:22px}
 header{display:flex;justify-content:space-between;gap:16px;align-items:center;flex-wrap:wrap}h1{margin:0;font-size:30px}.sub,.muted{color:#6b7785}
@@ -113,7 +113,7 @@ body:not(.adminMode) .monthday:not(.blank):hover{outline:none}
 
 .hidden{display:none!important}
 </style></head><body><div class="app">
-<header><div><h1>ClubPlanner 5.0</h1><div class="sub">SV Gemmingen · Sprint 5.1.1 · Mobile Dialog Fix</div></div><div class="toolbar headerActions"><span id="health" class="badge">System wird geprüft …</span><button id="installApp" class="hidden">App installieren</button><button id="login">Admin</button></div></header>
+<header><div><h1>ClubPlanner 5.0</h1><div class="sub">SV Gemmingen · Sprint 5.1.2 · Dashboard Terminarten</div></div><div class="toolbar headerActions"><span id="health" class="badge">System wird geprüft …</span><button id="installApp" class="hidden">App installieren</button><button id="login">Admin</button></div></header>
 
 <div class="tabs">
 <button class="tab active" data-view="dashboard">Dashboard</button>
@@ -351,7 +351,7 @@ async function loadDashboard(){
   $("dashConflicts").className="big "+(j.conflicts?"bad":"good");
   $("dashboardList").innerHTML=j.events.length?j.events.map(x=>`<div class="dashEvent ${x.conflict?"conflict":""}">
    <div><b>${fmtDate(x.date)}</b></div><div><b>${x.start}</b></div>
-   <div><span class="${x.eventType==="home_match"?"typeGame":"typeTraining"}">${x.eventType==="home_match"?"SPIEL":"TRAINING"}</span><br>${esc(x.label)}${x.conflict?`<br><span class="conflictPill">Konflikt</span>`:""}</div>
+   <div>${(()=>{const manualType=(x.manualType||x.competition||"").trim().toUpperCase();const type=x.eventType==="home_match"?"SPIEL":x.eventType==="manual_event"?(manualType||"TERMIN"):"TRAINING";const cls=(type==="SPIEL"||type==="TURNIER")?"typeGame":"typeTraining";return `<span class="${cls}">${esc(type)}</span>`})()}<br>${esc(x.label)}${x.conflict?`<br><span class="conflictPill">Konflikt</span>`:""}</div>
    <div><b>${esc(x.location)} · ${esc(x.baseName)}</b></div><div>${esc(x.segments.map(s=>`${s.start}–${s.end} ${s.sectionLabel}`).join(" · "))}</div>
   </div>`).join(""):`<div class="empty">Diese Woche stehen keine lokalen Spiele oder Trainings an.</div>`;
  }catch(e){$("dashboardList").innerHTML=`<div class="errorBox">${esc(e.message)}</div>`}
