@@ -1,14 +1,13 @@
-# ClubPlanner 5.0 – Sprint 4.5.3
+# ClubPlanner 5.0 – Sprint 4.5.4
 
-## Freier Zeitraum und manuelle Druckskalierung
-- Der Zeitraum ist wieder frei wählbar.
-- Sobald `Von` oder `Bis` manuell geändert wird, springt die Vorlage automatisch auf `Zeitraum frei wählen`.
-- Beispiel 01.09.2026 bis 31.12.2026 erzeugt September, Oktober, November und Dezember in einer PDF.
-- Neuer Regler `Inhaltsgröße` von 60 % bis 100 %.
-- Standardwert 85 %.
-- Bei vollen Monaten kann der Benutzer die Inhalte kleiner stellen, ohne die A4-Seite selbst zu verkleinern.
-- Tage mit drei oder mehr Einträgen werden zusätzlich automatisch kompakter gesetzt.
-- Jeder Monat bleibt genau eine DIN-A4-Seite im Querformat.
-- Standortfarben, Konflikte und MANUELL-Markierungen bleiben erhalten.
-
-Alle Funktionen aus Sprint 4.5.2 bleiben erhalten.
+## Manuelle Kalendertermine
+- Im Monatskalender direkt auf einen Tag klicken und einen Termin hinzufügen.
+- Für Bambini, F-Jugend, E-Jugend, Turniere, Platzbelegungen und Sondertermine.
+- Arten: Spiel, Turnier, Training, Platzbelegung, Sonstiges.
+- Titel, optionale Mannschaft, Datum, Von/Bis, Ort, Fläche, Belegung, Bemerkung.
+- Konfliktprüfung bleibt dieselbe wie bei Spielen und Trainings.
+- Teilbare Plätze/Hallen werden unterstützt (Hälfte A/B sowie 1/3, 2/3, 3/3).
+- Manuelle Termine tragen sichtbar MANUELL.
+- Manuelle Termine können im Kalender angeklickt, bearbeitet und gelöscht werden.
+- FUSSBALL.DE-Sync und „Alle Spiele löschen“ verändern manuelle Termine nicht.
+- PDF/Druck übernimmt manuelle Termine samt Kennzeichnung.

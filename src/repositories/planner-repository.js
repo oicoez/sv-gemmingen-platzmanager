@@ -17,7 +17,7 @@ export async function listOccupancyEvents(from,to){
     where e.event_date between $1 and $2
       and e.resource_id is not null
       and e.status <> 'cancelled'
-      and e.event_type in ('training','home_match')
+      and e.event_type in ('training','home_match','manual_event')
     order by e.event_date,e.start_time,e.kickoff_time`,[from,to]);
   return q.rows;
 }

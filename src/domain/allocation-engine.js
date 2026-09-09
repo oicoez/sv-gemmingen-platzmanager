@@ -100,9 +100,11 @@ export function buildSegments(events){
         title:x.event.title||"",opponent:x.event.opponent||"",
         label:x.event.event_type==="home_match"
           ? `${x.event.team||x.event.title}${x.event.opponent?` – ${x.event.opponent}`:""}`
-          : (x.event.team||x.event.title||"Training"),
+          : x.event.event_type==="manual_event"
+            ? `${x.event.title||"Manueller Termin"}${x.event.team?` · ${x.event.team}`:""}`
+            : (x.event.team||x.event.title||"Training"),
         section:x.section,sectionLabel:x.sectionLabel,
-        manuallyChanged:Boolean(x.event.manually_changed)
+        manuallyChanged:Boolean(x.event.manually_changed||x.event.event_type==="manual_event")
       }))
     };
     const signature=o=>JSON.stringify({

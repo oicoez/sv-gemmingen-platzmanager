@@ -198,3 +198,43 @@ export async function deleteAllImportedGames(){
     returning id`);
   return q.rowCount;
 }
+
+
+export async function createManualCalendarEvent(input){
+  const id=crypto.randomUUID();
+  await db(`insert into cp5_events(
+    id,club_id,team_id,event_type,event_date,start_time,end_time,title,opponent,competition,status,
+    location_id,venue_name,resource_id,allocation_mode,requested_section,address,note,source,manually_changed,updated_at
+  ) values($1,$2,$3,'manual_event',$4,$5,$6,$7,'',$8,'planned',$9,$10,$11,$12,$13,$14,$15,'manual',true,now())`,
+  [id,input.clubId,input.teamId||null,input.date,input.start,input.end,input.title,input.manualType||"Sonstiges",
+   input.locationId,input.venueName||"",input.resourceId,input.allocationMode,input.requestedSection||"whole",
+   input.address||"",input.note||""]);
+  return id;
+}
+
+export async function getManualCalendarEvent(id){
+  const q=await db(`select e.*,t.name as team,r.base_name as pitch_base,l.name as location
+    from cp5_events e
+    left join cp5_teams t on t.id=e.team_id
+    left join cp5_resources r on r.id=e.resource_id
+    left join cp5_locations l on l.id=e.location_id
+    where e.id=$1 and e.event_type='manual_event' and e.source='manual' limit 1`,[id]);
+  return q.rows[0]||null;
+}
+
+export async function updateManualCalendarEvent(id,input){
+  const q=await db(`update cp5_events set
+    team_id=$2,event_date=$3,start_time=$4,end_time=$5,title=$6,competition=$7,
+    location_id=$8,venue_name=$9,resource_id=$10,allocation_mode=$11,requested_section=$12,
+    address=$13,note=$14,manually_changed=true,updated_at=now()
+    where id=$1 and event_type='manual_event' and source='manual' returning id`,
+  [id,input.teamId||null,input.date,input.start,input.end,input.title,input.manualType||"Sonstiges",
+   input.locationId,input.venueName||"",input.resourceId,input.allocationMode,input.requestedSection||"whole",
+   input.address||"",input.note||""]);
+  return q.rows[0]||null;
+}
+
+export async function deleteManualCalendarEvent(id){
+  const q=await db(`delete from cp5_events where id=$1 and event_type='manual_event' and source='manual' returning id`,[id]);
+  return q.rowCount>0;
+}

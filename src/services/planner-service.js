@@ -20,6 +20,7 @@ function summarizeDayEvents(day){
           end:s.end,
           section:i.section,
           sectionLabel:i.sectionLabel,
+          manuallyChanged:Boolean(i.manuallyChanged),
           conflict:s.conflict,
           reason:s.reason
         });

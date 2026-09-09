@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { requireEditPin } from "../middleware/auth.js";
 import { listImportedEvents } from "../repositories/event-repository.js";
-import { getGame,editGame,resetImportedGames } from "../services/event-service.js";
+import { getGame,editGame,resetImportedGames,addManualEvent,getManualEvent,editManualEvent,removeManualEvent } from "../services/event-service.js";
 
 export const eventsRouter=Router();
 
@@ -17,6 +17,20 @@ eventsRouter.delete("/all",requireEditPin,async(req,res,next)=>{
     const deleted=await resetImportedGames();
     res.json({ok:true,deleted});
   }catch(e){next(e)}
+});
+
+
+eventsRouter.post("/manual",requireEditPin,async(req,res,next)=>{
+  try{res.status(201).json({ok:true,id:await addManualEvent(req.body||{})})}catch(e){next(e)}
+});
+eventsRouter.get("/manual/:id",async(req,res,next)=>{
+  try{const item=await getManualEvent(req.params.id);if(!item)return res.status(404).json({error:"Termin nicht gefunden"});res.json({item})}catch(e){next(e)}
+});
+eventsRouter.put("/manual/:id",requireEditPin,async(req,res,next)=>{
+  try{res.json({ok:true,id:await editManualEvent(req.params.id,req.body||{})})}catch(e){next(e)}
+});
+eventsRouter.delete("/manual/:id",requireEditPin,async(req,res,next)=>{
+  try{await removeManualEvent(req.params.id);res.json({ok:true})}catch(e){next(e)}
 });
 
 eventsRouter.get("/:id",async(req,res,next)=>{

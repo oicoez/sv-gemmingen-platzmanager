@@ -11,4 +11,4 @@ test("print pages receive content scale",()=>assert.ok(html.includes("--content-
 test("crowded days detected",()=>assert.ok(html.includes('entries.length>=3?"crowded"')));
 test("crowded day print CSS exists",()=>assert.ok(html.includes(".pday.crowded .pitem")));
 test("one month per page retained",()=>assert.ok(html.includes("break-after:page")));
-test("version 4.5.3 visible",()=>assert.match(html,/Sprint 4\.5\.3/));
+test("4.5.3 print scaling retained",()=>assert.ok(html.includes('id="printScale"')));
