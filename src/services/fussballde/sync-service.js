@@ -89,9 +89,11 @@ export async function startFussballSync(){
       const candidateAway=all.filter(x=>isClubHomeTeam(x.away));
 
       const homeAll=[];
+      const unmatchedHome=[];
       for(const row of candidateHome){
         const team=await findActiveTeamForFixture(club.id,{category:row.category,externalName:row.home});
         if(team)homeAll.push({...row,matchedTeamId:team.id});
+        else unmatchedHome.push({date:row.date,kickoff:row.kickoff,category:row.category,home:row.home,away:row.away,gameNumber:row.gameNumber});
       }
 
       const awayAll=[];
@@ -114,11 +116,11 @@ export async function startFussballSync(){
       const upcomingCount=homeAll.filter(isUpcomingFixture).length;
       const past=homeAll.length-upcomingCount;
       state.total=homeAll.length;
-      state.progress=`${all.length} Spiele gefunden · ${homeAll.length} Spiele aktiver Mannschaften · ${upcomingCount} kommende Heimspiele · ${awayAll.length} Auswärtsspiele geprüft`;
+      state.progress=`${all.length} Spiele gefunden · ${homeAll.length} Spiele aktiver Mannschaften · ${upcomingCount} kommende Heimspiele · ${awayAll.length} Auswärtsspiele geprüft${unmatchedHome.length?` · ${unmatchedHome.length} Mannschaftsnamen nicht zugeordnet`:""}`;
       logger.info("FUSSBALL.DE Spielplan geladen",{
         sources:plans.map(x=>({sourceClub:x.sourceClub,ok:!x.error,error:x.error||""})),
         parsed:parsed.length,merged:all.length,homeAll:homeAll.length,awayAll:awayAll.length,
-        removedTrueAway,upcoming:upcomingCount,pastHidden:past
+        unmatchedHome,removedTrueAway,upcoming:upcomingCount,pastHidden:past
       });
 
       state.phase="venues";

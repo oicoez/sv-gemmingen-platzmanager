@@ -1,17 +1,18 @@
-# ClubPlanner 5.0 – Sprint 4.4.4
+# ClubPlanner 5.0 – Sprint 4.4.6
 
-## Korrektur FUSSBALL.DE
-- SV Gemmingen ist bei identischen Partien jetzt die Hauptquelle.
-- 1. FC Stebbach bleibt nur Fallback, wenn ein Spiel im Gemminger Vereinsspielplan fehlt.
-- Identische Spiele werden weiterhin über Spielnummer bzw. externe ID zusammengeführt.
-- Dadurch wird ein aktueller Gemminger Termin nicht mehr durch einen älteren Stebbacher Stand überschrieben.
+Basis: Sprint 4.4.5.
 
-## Neuer Vollreset für Spiele
-Im Bereich Spiele gibt es „Alle Spiele löschen“.
-- löscht ausschließlich aus FUSSBALL.DE importierte Spiele
-- Trainings und Trainingsserien bleiben unangetastet
-- Mannschaften, Plätze und Kabinen bleiben unangetastet
-- doppelte Sicherheitsabfrage
-- danach FUSSBALL.DE synchronisieren = kompletter Neuaufbau der Spiele aus dem aktuellen offiziellen Spielplan
+Zusätzlicher Fix beim FUSSBALL.DE-Mannschaftsabgleich:
+- `SG Stebbach/Gemmingen 2` = `SG Stebbach/Gemmingen2`
+- `JSG Gemmingen/Stebbach 2` = `JSG Gemmingen/Stebbach2`
+- gilt entsprechend auch für weitere Mannschaftsnummern
 
-Manuelle Spiel- und Trainingsbearbeitung bleibt erhalten.
+Weiterhin ignoriert:
+- Leerzeichen rund um `/`
+- Mehrfach-Leerzeichen
+- geschützte Leerzeichen / unsichtbare Unicode-Zeichen
+- Groß-/Kleinschreibung
+
+Die Mannschaftsnummer selbst wird NICHT ignoriert. D1 und D2 bleiben also unterschiedliche Mannschaften.
+
+Alle Funktionen aus 4.4.5 bleiben erhalten, einschließlich Spiele-Reset, Neuabgleich sowie manueller Spiel-/Trainingsbearbeitung.

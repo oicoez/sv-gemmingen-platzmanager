@@ -40,11 +40,22 @@ export async function removeTeam(id){
 }
 
 export async function findActiveTeamForFixture(clubId,{category,externalName}){
+  const normalize=value=>String(value??"")
+    .replace(/[\u200b\u200c\u200d\u2060]/g,"")
+    .replace(/\u00a0/g," ")
+    .replace(/\s*\/\s*/g,"/")
+    .replace(/\s+(?=\d+\s*$)/g,"")
+    .replace(/\s+/g," ")
+    .trim()
+    .toLocaleLowerCase("de-DE");
+
   const ext=clean(externalName);
   const cat=clean(category);
-  const display=cat?`${cat} - ${ext}`:ext;
+  const wanted=normalize(cat?`${cat} - ${ext}`:ext);
+
   const q=await db(`select * from cp5_teams
-    where club_id=$1 and active=true and lower(name)=lower($2)
-    limit 1`,[clubId,display]);
-  return q.rows[0]||null;
+    where club_id=$1 and active=true
+    order by name`,[clubId]);
+
+  return q.rows.find(row=>normalize(row.name)===wanted)||null;
 }
