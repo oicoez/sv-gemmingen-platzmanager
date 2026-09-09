@@ -9,3 +9,7 @@ Sprint 5.1.0 baut auf dem stabilen ClubPlanner 5.0 RC1 auf.
 - PWA: Manifest, App-Icons und Service Worker. Installation auf Home-Bildschirm möglich.
 - API-Daten werden absichtlich nicht offline gecacht, damit keine veralteten Platzbelegungen angezeigt werden.
 - Fachlogik aus 5.0 bleibt unverändert: FUSSBALL.DE, Konflikte, Serien, manuelle Termine, Hallenteilung, D-Junioren-Regel, PDF/Druck.
+
+
+## Sprint 5.1.1 – Mobile Dialog Fix
+Terminfenster mobil scrollbar; Abbrechen/Speichern erreichbar; zusätzliches × oben rechts; Hintergrundscroll gesperrt.

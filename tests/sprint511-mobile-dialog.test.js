@@ -1,0 +1,15 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import fs from "node:fs";
+const html=fs.readFileSync(new URL("../public/index.html",import.meta.url),"utf8");
+const sw=fs.readFileSync(new URL("../public/service-worker.js",import.meta.url),"utf8");
+test("version 5.1.1 visible",()=>assert.match(html,/Sprint 5\.1\.1/));
+test("top close X exists",()=>assert.ok(html.includes('id="closeManualTop"')));
+test("cancel and X close",()=>{assert.ok(html.includes('$("closeManual").onclick=closeManualDialog'));assert.ok(html.includes('$("closeManualTop").onclick=closeManualDialog'))});
+test("modal uses top bottom viewport bounds",()=>{assert.ok(html.includes('top:max(8px,env(safe-area-inset-top))'));assert.ok(html.includes('bottom:max(8px,env(safe-area-inset-bottom))'))});
+test("modal internally scrolls",()=>assert.ok(html.includes('overflow-y:auto!important')));
+test("actions sticky",()=>assert.ok(html.includes('#manualDialog .modalActions')));
+test("background locked",()=>assert.ok(html.includes('body.modalOpen{overflow:hidden')));
+test("open applies lock",()=>assert.ok(html.includes('document.body.classList.add("modalOpen")')));
+test("close releases lock",()=>assert.ok(html.includes('document.body.classList.remove("modalOpen")')));
+test("service worker cache bumped",()=>assert.ok(sw.includes('clubplanner-shell-v5.1.1')));

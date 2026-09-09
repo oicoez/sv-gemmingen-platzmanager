@@ -1,6 +1,6 @@
 {
   "name": "clubplanner-5",
-  "version": "5.1.0",
+  "version": "5.1.1",
   "private": true,
   "type": "module",
   "scripts": {
@@ -14,5 +14,5 @@
     "pg": "^8.16.3",
     "cheerio": "^1.1.2"
   },
-  "description": "ClubPlanner 5.1.0 - Mobile/PWA mit Lesemodus und Admin-PIN"
+  "description": "ClubPlanner 5.1.1 - Mobile Dialog Fix"
 }

@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-title" content="ClubPlanner">
 <link rel="manifest" href="/manifest.json">
 <link rel="apple-touch-icon" href="/icons/icon-192.png">
-<title>ClubPlanner 5.1 – Mobile & PWA</title>
+<title>ClubPlanner 5.1.1 – Mobile Dialog Fix</title>
 <style>
 :root{font-family:Segoe UI,Arial,sans-serif;color:#17212b;background:#f4f6f8}*{box-sizing:border-box}body{margin:0}.app{max-width:1600px;margin:auto;padding:22px}
 header{display:flex;justify-content:space-between;gap:16px;align-items:center;flex-wrap:wrap}h1{margin:0;font-size:30px}.sub,.muted{color:#6b7785}
@@ -88,9 +88,32 @@ body:not(.adminMode) .monthday:not(.blank):hover{outline:none}
 }
 @media(display-mode:standalone){.app{padding-top:calc(12px + env(safe-area-inset-top))}}
 
+
+/* Sprint 5.1.1 – Mobile Dialog Fix */
+.modalCloseX{position:absolute;right:10px;top:10px;z-index:5;width:42px;height:42px;min-height:42px;padding:0;border-radius:999px;font-size:28px;line-height:1;background:#fff}
+@media(max-width:700px){
+ body.modalOpen{overflow:hidden;overscroll-behavior:none}
+ #manualDialog.mobileModal,#printDialog.mobileModal{
+  box-sizing:border-box!important;left:8px!important;right:8px!important;
+  top:max(8px,env(safe-area-inset-top))!important;bottom:max(8px,env(safe-area-inset-bottom))!important;
+  width:auto!important;height:auto!important;max-height:none!important;transform:none!important;
+  overflow-y:auto!important;overflow-x:hidden!important;-webkit-overflow-scrolling:touch;
+  padding:14px 12px 86px!important
+ }
+ #manualDialog h2{padding-right:50px;margin-top:4px}
+ #manualDialog .modalActions{
+  position:sticky;bottom:-86px;z-index:4;margin-left:-12px;margin-right:-12px;margin-bottom:-86px;
+  padding:10px 12px calc(10px + env(safe-area-inset-bottom));background:#fff;
+  border-top:1px solid #d8dee6;box-shadow:0 -5px 14px #0001
+ }
+ #manualDialog .modalActions button{flex:1 1 120px}
+ #manualDialog .modalActions #manualMsg{flex-basis:100%}
+ .modalCloseX{position:sticky;float:right;top:0;margin:0 0 -42px 8px}
+}
+
 .hidden{display:none!important}
 </style></head><body><div class="app">
-<header><div><h1>ClubPlanner 5.0</h1><div class="sub">SV Gemmingen · Sprint 5.1.0 · Mobile & PWA</div></div><div class="toolbar headerActions"><span id="health" class="badge">System wird geprüft …</span><button id="installApp" class="hidden">App installieren</button><button id="login">Admin</button></div></header>
+<header><div><h1>ClubPlanner 5.0</h1><div class="sub">SV Gemmingen · Sprint 5.1.1 · Mobile Dialog Fix</div></div><div class="toolbar headerActions"><span id="health" class="badge">System wird geprüft …</span><button id="installApp" class="hidden">App installieren</button><button id="login">Admin</button></div></header>
 
 <div class="tabs">
 <button class="tab active" data-view="dashboard">Dashboard</button>
@@ -124,7 +147,8 @@ body:not(.adminMode) .monthday:not(.blank):hover{outline:none}
 <div class="help"><b>Lesemodus:</b> Alle lokalen Spiele, Trainings und manuellen Termine sind sichtbar. PDF/Druck ist für alle verfügbar. Änderungen sind nur im Admin-Modus möglich. Rot = tatsächlicher Konflikt.</div>
 <div id="monthError"></div><div id="monthGrid" class="monthgrid"></div></div></section>
 
-<div id="manualDialog" class="panel hidden" style="position:fixed;z-index:35;left:50%;top:50%;transform:translate(-50%,-50%);width:min(820px,94vw);max-height:90vh;overflow:auto;box-shadow:0 12px 45px #0003">
+<div id="manualDialog" class="panel hidden mobileModal" style="position:fixed;z-index:35;left:50%;top:50%;transform:translate(-50%,-50%);width:min(820px,94vw);max-height:90vh;overflow:auto;box-shadow:0 12px 45px #0003">
+<button id="closeManualTop" class="modalCloseX" type="button" aria-label="Fenster schließen">×</button>
 <h2 id="manualDialogTitle">Manuellen Termin eintragen</h2>
 <div class="help">Für Turniere, Bambini-, F- und E-Jugendspiele, Platzbelegungen oder andere Termine. Diese Einträge bleiben bei FUSSBALL.DE-Synchronisierungen unverändert.</div>
 <div class="formgrid">
@@ -139,10 +163,10 @@ body:not(.adminMode) .monthday:not(.blank):hover{outline:none}
 <div class="field"><label>Belegung</label><select id="manualMode"></select></div>
 <div class="field span2"><label>Bemerkung</label><input id="manualNote" placeholder="optional"></div>
 </div>
-<div class="toolbar" style="margin-top:15px"><button id="saveManual" class="primary" disabled>Termin speichern</button><button id="deleteManual" class="hidden">Termin löschen</button><button id="closeManual">Abbrechen</button><span id="manualMsg" class="muted"></span></div>
+<div class="toolbar modalActions" style="margin-top:15px"><button id="saveManual" class="primary" disabled>Termin speichern</button><button id="deleteManual" class="hidden">Termin löschen</button><button id="closeManual">Abbrechen</button><span id="manualMsg" class="muted"></span></div>
 </div>
 
-<div id="printDialog" class="panel hidden" style="position:fixed;z-index:30;left:50%;top:50%;transform:translate(-50%,-50%);width:min(760px,92vw);box-shadow:0 12px 45px #0003">
+<div id="printDialog" class="panel hidden mobileModal" style="position:fixed;z-index:30;left:50%;top:50%;transform:translate(-50%,-50%);width:min(760px,92vw);box-shadow:0 12px 45px #0003">
 <h2>Kalender als PDF / Druckversion</h2>
 <div class="help">Die Druckansicht wird automatisch auf DIN A4 quer optimiert. Jeder Monat wird exakt auf eine Seite skaliert; Standortfarben, Konflikte und MANUELL-Kennzeichnungen werden mitgedruckt. Im Druckdialog kannst du „Als PDF speichern“ wählen.</div>
 <div class="printControls">
@@ -483,7 +507,7 @@ function openManualDialog(date){
  editingManualId="";$("manualDialogTitle").textContent="Manuellen Termin eintragen";fillManualTeams();updateManualLocations();
  $("manualType").value="Turnier";$("manualTitle").value="";$("manualTeam").value="";$("manualDate").value=date||"";
  $("manualStart").value="08:00";$("manualEnd").value="17:00";$("manualNote").value="";$("manualMsg").textContent="";
- $("deleteManual").classList.add("hidden");$("manualDialog").classList.remove("hidden");
+ $("deleteManual").classList.add("hidden");$("manualDialog").classList.remove("hidden");document.body.classList.add("modalOpen");
 }
 async function editManualDialog(id){
  try{
@@ -493,10 +517,15 @@ async function editManualDialog(id){
   $("manualStart").value=String(x.start_time||"").slice(0,5);$("manualEnd").value=String(x.end_time||"").slice(0,5);
   $("manualLocation").value=x.location_id||"";updateManualBases();$("manualBase").value=x.pitch_base||"";updateManualModes();
   $("manualMode").value=x.allocation_mode||"exclusive";$("manualNote").value=x.note||"";$("manualMsg").textContent="";
-  $("deleteManual").classList.remove("hidden");$("manualDialog").classList.remove("hidden");
+  $("deleteManual").classList.remove("hidden");$("manualDialog").classList.remove("hidden");document.body.classList.add("modalOpen");
  }catch(e){alert(e.message)}
 }
-$("closeManual").onclick=()=>{$("manualDialog").classList.add("hidden");editingManualId=""};
+function closeManualDialog(){
+ $("manualDialog").classList.add("hidden");editingManualId="";
+ document.body.classList.remove("modalOpen");
+}
+$("closeManual").onclick=closeManualDialog;
+$("closeManualTop").onclick=closeManualDialog;
 $("saveManual").onclick=async()=>{try{
  const body={manualType:$("manualType").value,title:$("manualTitle").value,teamId:$("manualTeam").value||null,date:$("manualDate").value,
  start:$("manualStart").value,end:$("manualEnd").value,locationId:$("manualLocation").value,baseName:$("manualBase").value,
@@ -792,6 +821,9 @@ async function poll(){try{const s=await json("/api/v5/sync/status");$("syncState
 
 (async()=>{try{await bootstrapToday();syncTrainingModeUI();await Promise.all([check(),loadTeams(),loadGames(),loadResources()]);await loadCabins();await loadSeries();await loadDashboard();await loadWeek();await loadMonth();poll()}catch(e){console.error(e);alert("Startfehler: "+e.message)}})();
 
+document.addEventListener("keydown",e=>{
+ if(e.key==="Escape"&&!$("manualDialog").classList.contains("hidden"))closeManualDialog();
+});
 let deferredInstallPrompt=null;
 window.addEventListener("beforeinstallprompt",e=>{
  e.preventDefault();deferredInstallPrompt=e;
