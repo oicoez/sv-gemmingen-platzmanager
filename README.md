@@ -21,3 +21,7 @@ Der Backend-Planer überträgt bei manuellen Kalenderterminen jetzt die gespeich
 
 ## Sprint 5.1.4 – Konfliktdiagnose
 Konfliktberechnung unverändert. Klick auf Konflikt-Badge zeigt Datum, Zeit, Ort/Platz, Grund und betroffene Termine in Woche und Monat.
+
+
+## Sprint 5.1.5 – Platzüberschneidung
+Kabinen werden nicht mehr als Konflikt gezählt. Erlaubte gemeinsame Platzbelegungen bis 30 Minuten werden in Woche und Monat orange als „ÜBERSCHNEIDUNG · PLATZ GETEILT“ gekennzeichnet, bleiben aber konfliktfrei.
