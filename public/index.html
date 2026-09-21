@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-title" content="ClubPlanner">
 <link rel="manifest" href="/manifest.json">
 <link rel="apple-touch-icon" href="/icons/icon-192.png">
-<title>ClubPlanner 5.1.2 – Dashboard Terminarten</title>
+<title>ClubPlanner 5.1.4 – Konfliktdiagnose</title>
 <style>
 :root{font-family:Segoe UI,Arial,sans-serif;color:#17212b;background:#f4f6f8}*{box-sizing:border-box}body{margin:0}.app{max-width:1600px;margin:auto;padding:22px}
 header{display:flex;justify-content:space-between;gap:16px;align-items:center;flex-wrap:wrap}h1{margin:0;font-size:30px}.sub,.muted{color:#6b7785}
@@ -111,9 +111,10 @@ body:not(.adminMode) .monthday:not(.blank):hover{outline:none}
  .modalCloseX{position:sticky;float:right;top:0;margin:0 0 -42px 8px}
 }
 
+.conflictBadgeButton{cursor:pointer;text-decoration:underline;text-underline-offset:2px}.conflictDetails{margin-top:10px;border:1px solid #efb0b0;background:#fff8f8;border-radius:8px;padding:10px}.conflictDetail{padding:9px 0;border-bottom:1px solid #f2d2d2}.conflictDetail:last-child{border-bottom:0}.conflictDetailTitle{font-weight:800;color:#9d1c14}.conflictDetailItems{margin-top:4px}
 .hidden{display:none!important}
 </style></head><body><div class="app">
-<header><div><h1>ClubPlanner 5.0</h1><div class="sub">SV Gemmingen · Sprint 5.1.2 · Dashboard Terminarten</div></div><div class="toolbar headerActions"><span id="health" class="badge">System wird geprüft …</span><button id="installApp" class="hidden">App installieren</button><button id="login">Admin</button></div></header>
+<header><div><h1>ClubPlanner 5.0</h1><div class="sub">SV Gemmingen · Sprint 5.1.4 · Konfliktdiagnose</div></div><div class="toolbar headerActions"><span id="health" class="badge">System wird geprüft …</span><button id="installApp" class="hidden">App installieren</button><button id="login">Admin</button></div></header>
 
 <div class="tabs">
 <button class="tab active" data-view="dashboard">Dashboard</button>
@@ -139,11 +140,11 @@ body:not(.adminMode) .monthday:not(.blank):hover{outline:none}
 <div class="toolbar"><button id="prevWeek">‹ Vorherige Woche</button><button id="todayWeek">Aktuelle Woche</button><button id="nextWeek">Nächste Woche ›</button></div>
 <h2 id="weekTitle" style="margin:0"></h2><div id="conflictCount" class="badge"></div></div>
 <div class="help"><b>Wochenplan:</b> Spiele und Trainings werden gemeinsam angezeigt. Flexible Trainings erscheinen je Zeitabschnitt als <b>Gesamt</b>, <b>Hälfte A</b> oder <b>Hälfte B</b>. Rot = echter Konflikt. Kabinenkonflikte werden zusätzlich unter dem Wochenplan angezeigt.</div>
-<div class="weekLegend"><span class="legendTag">Gesamt</span><span class="legendTag halfA">Hälfte A</span><span class="legendTag halfB">Hälfte B</span><span class="legendTag conflictLegend">Konflikt</span></div><div id="weekDays" class="days"></div><div id="weekCabinConflicts"></div></div></section>
+<div class="weekLegend"><span class="legendTag">Gesamt</span><span class="legendTag halfA">Hälfte A</span><span class="legendTag halfB">Hälfte B</span><span class="legendTag conflictLegend">Konflikt</span></div><div id="weekConflictDetails" class="conflictDetails hidden"></div><div id="weekDays" class="days"></div><div id="weekCabinConflicts"></div></div></section>
 
 <section id="view-month" class="hidden"><div class="panel"><div class="weeknav">
 <div class="toolbar"><button id="prevMonth">‹ Vorheriger Monat</button><button id="todayMonth">Aktueller Monat</button><button id="nextMonth">Nächster Monat ›</button><button id="printCalendar">PDF / Drucken</button></div>
-<h2 id="monthTitle" style="margin:0"></h2><div id="monthConflictCount" class="badge"></div></div>
+<h2 id="monthTitle" style="margin:0"></h2><div id="monthConflictCount" class="badge"></div><div id="monthConflictDetails" class="conflictDetails hidden"></div></div>
 <div class="help"><b>Lesemodus:</b> Alle lokalen Spiele, Trainings und manuellen Termine sind sichtbar. PDF/Druck ist für alle verfügbar. Änderungen sind nur im Admin-Modus möglich. Rot = tatsächlicher Konflikt.</div>
 <div id="monthError"></div><div id="monthGrid" class="monthgrid"></div></div></section>
 
@@ -357,6 +358,9 @@ async function loadDashboard(){
  }catch(e){$("dashboardList").innerHTML=`<div class="errorBox">${esc(e.message)}</div>`}
 }
 
+function conflictItemLabel(i){return i?.label||i?.team||i?.title||"Belegung"}
+function conflictDetailsHtml(conflicts){return (conflicts||[]).map(c=>{const items=(c.items||[]).map(conflictItemLabel).filter(Boolean);const where=[c.location,c.baseName].filter(Boolean).join(" · ");const title=`${fmtDate(c.date)} · ${c.start||""}${c.end?`–${c.end}`:""}${where?` · ${where}`:""}`;return `<div class="conflictDetail"><div class="conflictDetailTitle">${esc(title)}</div><div>${esc(c.reason||"Überschneidung erkannt.")}</div>${items.length?`<div class="conflictDetailItems"><b>Betrifft:</b> ${items.map(esc).join(" ↔ ")}</div>`:""}</div>`}).join("")}
+function bindConflictToggle(badgeId,panelId,conflicts){const badge=$(badgeId),panel=$(panelId);if(!badge||!panel)return;if(conflicts?.length){badge.classList.add("conflictBadgeButton");badge.title="Klicken: Konflikt anzeigen";panel.innerHTML=`<b>Konfliktdetails</b>${conflictDetailsHtml(conflicts)}`;badge.onclick=()=>panel.classList.toggle("hidden")}else{badge.classList.remove("conflictBadgeButton");badge.removeAttribute("title");badge.onclick=null;panel.innerHTML="";panel.classList.add("hidden")}}
 async function loadWeek(useServerCurrent=false){
  try{
   const url=useServerCurrent?"/api/v5/planner/week":"/api/v5/planner/week?start="+encodeURIComponent(weekStart);
@@ -364,6 +368,7 @@ async function loadWeek(useServerCurrent=false){
   $("weekTitle").textContent=`Woche ${fmtDate(j.start)} – ${fmtDate(j.end)}`;
   $("conflictCount").textContent=j.conflicts.length?`${j.conflicts.length} Konflikt(e)`:"Keine Konflikte";
   $("conflictCount").className="badge "+(j.conflicts.length?"bad":"good");
+  bindConflictToggle("conflictCount","weekConflictDetails",j.conflicts);
   $("weekDays").innerHTML=j.days.map((d,idx)=>`<div class="day"><div class="dayhead">${dayNames[idx]}, ${fmtDate(d.date)}</div>${d.groups.length?d.groups.map(g=>`<div class="pitch"><div class="pitchtitle"><span class="placeSwatch" style="background:${esc(g.color||"#f5f7f9")}"></span><b>${esc(g.location)} · ${esc(g.baseName)}</b></div>${g.segments.map(s=>`<div class="seg ${s.conflict?"conflict":(s.items.length===2?"split":"")}" style="--place-color:${esc(g.color||"#f5f7f9")}"><div class="time">${s.start}–${s.end}</div>${s.items.map(i=>`<div class="${i.eventType==="training"?"trainingClick":(i.eventType==="home_match"?"trainingClick":"")}" ${i.eventType==="training"?`data-training-id="${esc(i.id)}" title="Training bearbeiten"`:(i.eventType==="home_match"?`data-game-id="${esc(i.id)}" title="Spiel bearbeiten"`:(i.eventType==="manual_event"?`data-manual-id="${esc(i.id)}" title="Manuellen Termin bearbeiten"`:""))}>${i.eventType==="home_match"?"⚽":(i.eventType==="manual_event"?"◆":"●")} ${esc(i.label)}${i.manuallyChanged?` <span class="manualBadge">MANUELL</span>`:""} · <span class="allocationPill ${esc(i.section)}">${esc(i.sectionLabel)}</span></div>`).join("")}${s.conflict?`<div class="conflictText">${esc(s.reason)}</div>`:""}</div>`).join("")}</div>`).join(""):`<div class="empty">frei</div>`}</div>`).join("");
  }catch(e){$("weekDays").innerHTML=`<div class="errorBox">${esc(e.message)}</div>`}
 }
@@ -381,6 +386,7 @@ async function loadMonth(useServerCurrent=false){
   $("monthTitle").textContent=monthName(j.month);
   $("monthConflictCount").textContent=j.conflictCount?`${j.conflictCount} Konflikt(e)`:"Keine Konflikte";
   $("monthConflictCount").className="badge "+(j.conflictCount?"bad":"good");
+  bindConflictToggle("monthConflictCount","monthConflictDetails",j.conflictDetails||[]);
   const [yy,mm]=j.month.split("-").map(Number),firstDow=(new Date(Date.UTC(yy,mm-1,1)).getUTCDay()+6)%7,cells=[];
   for(let i=0;i<firstDow;i++)cells.push(`<div class="monthday blank"></div>`);
   for(const d of j.days){
