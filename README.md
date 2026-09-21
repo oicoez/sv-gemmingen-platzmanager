@@ -25,3 +25,7 @@ Konfliktberechnung unverändert. Klick auf Konflikt-Badge zeigt Datum, Zeit, Ort
 
 ## Sprint 5.1.5 – Platzüberschneidung
 Kabinen werden nicht mehr als Konflikt gezählt. Erlaubte gemeinsame Platzbelegungen bis 30 Minuten werden in Woche und Monat orange als „ÜBERSCHNEIDUNG · PLATZ GETEILT“ gekennzeichnet, bleiben aber konfliktfrei.
+
+
+## Sprint 5.1.6 – Gemmingen Trainingsplatz nur Gesamt
+Der Trainingsplatz Gemmingen ist nicht teilbar. Bestehende Hälfte-A/B-Termine werden beim Schema-Start auf Gesamt/exklusiv umgestellt; dadurch werden parallele Belegungen als echte Platzkonflikte sichtbar und können anschließend manuell korrigiert oder gelöscht werden. Bestehende Serien auf diesem Platz werden ebenfalls auf Gesamt/exklusiv gestellt.
