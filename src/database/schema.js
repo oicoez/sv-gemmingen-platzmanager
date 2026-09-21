@@ -154,7 +154,7 @@ export async function initSchema() {
   const BUILTIN_PITCHES={
   gemmingen:{
     Hauptplatz:{division:2,color:"#FFF4BF"},
-    Trainingsplatz:{division:2,color:"#E4F1FF"}
+    Trainingsplatz:{division:1,color:"#E4F1FF"}
   },
   stebbach:{
     Hauptplatz:{division:2,color:"#E1F4E5"},
@@ -165,13 +165,33 @@ export async function initSchema() {
 for(const loc of LOCATIONS){
   for(const base of ["Hauptplatz","Trainingsplatz"]){
     const cfg=BUILTIN_PITCHES[loc.id][base];
-    for(const [section,label] of [["whole","Gesamt"],["half_a","Hälfte A"],["half_b","Hälfte B"]]){
+    const builtinSections=cfg.division===1
+      ? [["whole","Gesamt"]]
+      : [["whole","Gesamt"],["half_a","Hälfte A"],["half_b","Hälfte B"]];
+    for(const [section,label] of builtinSections){
       const display=`${base} – ${label}`;
       await db(`insert into cp5_resources(id,location_id,resource_type,base_name,section,display_name,division_count,calendar_color,user_managed)
         values($1,$2,'pitch',$3,$4,$5,$6,$7,false)
         on conflict(location_id,resource_type,display_name) do update set
           active=true,division_count=excluded.division_count,calendar_color=excluded.calendar_color`,
         [crypto.randomUUID(),loc.id,base,section,display,cfg.division,cfg.color]);
+    }
+    if(cfg.division===1){
+      await db(`update cp5_resources set active=false,division_count=1
+        where location_id=$1 and resource_type='pitch' and base_name=$2 and section in ('half_a','half_b')`,
+        [loc.id,base]);
+      const whole=(await db(`select id from cp5_resources
+        where location_id=$1 and resource_type='pitch' and base_name=$2 and section='whole' limit 1`,
+        [loc.id,base])).rows[0];
+      if(whole){
+        await db(`update cp5_events set resource_id=$1,allocation_mode='exclusive',requested_section='whole',updated_at=now()
+          where location_id=$2 and resource_id in (
+            select id from cp5_resources where location_id=$2 and resource_type='pitch' and base_name=$3 and section in ('half_a','half_b')
+          )`,[whole.id,loc.id,base]);
+        await db(`update cp5_training_series set allocation_mode='exclusive',updated_at=now()
+          where location_id=$1 and base_name=$2 and allocation_mode in ('flexible','half_a','half_b')`,
+          [loc.id,base]);
+      }
     }
   }
   for(const cabin of ["Heimkabine","Gastkabine"]){
