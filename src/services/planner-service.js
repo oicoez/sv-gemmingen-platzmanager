@@ -90,7 +90,7 @@ export async function buildMonthPlan(monthInput){
   }
 
   const daysInMonth=new Date(Date.UTC(year,month,0)).getUTCDate();
-  const days=[];let conflictCount=0,eventCount=0;
+  const days=[];let conflictCount=0,eventCount=0;const pitchConflicts=[];
   for(let n=1;n<=daysInMonth;n++){
     const date=`${year}-${String(month).padStart(2,"0")}-${String(n).padStart(2,"0")}`;
     const dayEvents=byDay.get(date)||[];eventCount+=dayEvents.length;
@@ -103,12 +103,15 @@ export async function buildMonthPlan(monthInput){
     }
     const groups=[...grouped.values()].map(g=>{
       const segments=buildSegments(g.events);
-      conflictCount+=segments.filter(s=>s.conflict).length;
+      const conflicts=segments.filter(s=>s.conflict);
+      conflictCount+=conflicts.length;
+      for(const s of conflicts) pitchConflicts.push({date,location:g.location,baseName:g.baseName,start:s.start,end:s.end,reason:s.reason,items:s.items});
       return {location:g.location,baseName:g.baseName,color:g.color,divisionCount:g.divisionCount,segments};
     });
     days.push({date,groups});
   }
   const cabinConflicts=findCabinConflicts(events);
   conflictCount+=cabinConflicts.length;
-  return {month:ym,year,monthNumber:month,first,last,eventCount,conflictCount,days,cabinConflicts};
+  const conflictDetails=[...pitchConflicts,...cabinConflicts];
+  return {month:ym,year,monthNumber:month,first,last,eventCount,conflictCount,days,cabinConflicts,pitchConflicts,conflictDetails};
 }
