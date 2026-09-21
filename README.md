@@ -13,3 +13,11 @@ Sprint 5.1.0 baut auf dem stabilen ClubPlanner 5.0 RC1 auf.
 
 ## Sprint 5.1.1 – Mobile Dialog Fix
 Terminfenster mobil scrollbar; Abbrechen/Speichern erreichbar; zusätzliches × oben rechts; Hintergrundscroll gesperrt.
+
+
+## Sprint 5.1.3 – Turnier-Anzeige
+Der Backend-Planer überträgt bei manuellen Kalenderterminen jetzt die gespeicherte Art (z. B. Turnier) bis ins Dashboard. Dadurch erscheint ein als Turnier angelegter Termin dort als TURNIER statt TERMIN.
+
+
+## Sprint 5.1.4 – Konfliktdiagnose
+Konfliktberechnung unverändert. Klick auf Konflikt-Badge zeigt Datum, Zeit, Ort/Platz, Grund und betroffene Termine in Woche und Monat.
