@@ -65,7 +65,7 @@ export async function buildWeekPlan(startInput){
     }))
   ));
   const cabinConflicts=findCabinConflicts(events);
-  const conflicts=[...pitchConflicts,...cabinConflicts];
+  const conflicts=[...pitchConflicts];
   const dayItems=days.map(d=>({date:d.date,items:summarizeDayEvents(d)}));
   return {start,end,days,dayItems,conflicts,pitchConflicts,cabinConflicts};
 }
@@ -111,7 +111,6 @@ export async function buildMonthPlan(monthInput){
     days.push({date,groups});
   }
   const cabinConflicts=findCabinConflicts(events);
-  conflictCount+=cabinConflicts.length;
-  const conflictDetails=[...pitchConflicts,...cabinConflicts];
+  const conflictDetails=[...pitchConflicts];
   return {month:ym,year,monthNumber:month,first,last,eventCount,conflictCount,days,cabinConflicts,pitchConflicts,conflictDetails};
 }
