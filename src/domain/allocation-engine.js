@@ -95,6 +95,7 @@ export function buildSegments(events){
     const seg={
       start:hhmm(start),end:hhmm(end),
       conflict:allocation.conflict,reason:allocation.reason,
+      overlap:!allocation.conflict && allocation.items.length>=2 && (end-start)<=30,
       items:allocation.items.map(x=>({
         id:x.event.id,eventType:x.event.event_type,team:x.event.team||"",
         title:x.event.title||"",opponent:x.event.opponent||"",
@@ -104,11 +105,13 @@ export function buildSegments(events){
             ? `${x.event.title||"Manueller Termin"}${x.event.team?` · ${x.event.team}`:""}`
             : (x.event.team||x.event.title||"Training"),
         section:x.section,sectionLabel:x.sectionLabel,
+        manualType:x.event.event_type==="manual_event"?(x.event.competition||""): "",
         manuallyChanged:Boolean(x.event.manually_changed||x.event.event_type==="manual_event")
       }))
     };
     const signature=o=>JSON.stringify({
       conflict:o.conflict,
+      overlap:Boolean(o.overlap),
       items:o.items.map(i=>[i.id,i.section]).sort()
     });
     const prev=out[out.length-1];
